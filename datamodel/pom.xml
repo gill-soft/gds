@@ -9,7 +9,7 @@
 		<version>0.0.1</version>
 	</parent>
 
-	<artifactId>datamodel</artifactId>
+	<artifactId>gds-datamodel</artifactId>
 	<packaging>jar</packaging>
 	<name>GDS datamodel</name>
 

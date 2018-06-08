@@ -9,7 +9,7 @@
 		<version>0.0.1</version>
 	</parent>
 
-	<artifactId>web-service</artifactId>
+	<artifactId>gds-web-service</artifactId>
 	<packaging>war</packaging>
 	<name>GDS web service</name>
 
