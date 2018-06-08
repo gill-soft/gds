@@ -16,7 +16,6 @@
 
 	<modules>
 		<module>datamodel</module>
-		<!--module>web-service</module-->
 		<module>web-service</module>
 	</modules>
 
