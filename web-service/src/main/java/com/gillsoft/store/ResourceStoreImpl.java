@@ -6,7 +6,7 @@ import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.service.ResourceService;
 import com.gillsoft.service.rest.RestResourceService;
 
-@Component("ResourceStore")
+@Component
 public class ResourceStoreImpl implements ResourceStore {
 
 	@Override
