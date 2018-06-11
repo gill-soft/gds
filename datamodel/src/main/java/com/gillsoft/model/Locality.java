@@ -1,5 +1,5 @@
 package com.gillsoft.model;
 
-public class Location {
+public class Locality {
 
 }

@@ -2,6 +2,7 @@ package com.gillsoft.service.rest;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,12 +12,11 @@ import com.gillsoft.model.Method;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.service.AdditionalService;
-import com.gillsoft.service.LocationService;
+import com.gillsoft.service.LocalityService;
 import com.gillsoft.service.OrderService;
 import com.gillsoft.service.ResourceService;
 import com.gillsoft.service.SearchService;
 import com.gillsoft.service.TicketService;
-import com.sun.javafx.collections.MappingChange.Map;
 
 public class RestResourceService implements ResourceService {
 	
@@ -50,7 +50,7 @@ public class RestResourceService implements ResourceService {
 	}
 
 	@Override
-	public LocationService getLocationService() {
+	public LocalityService getLocationService() {
 		// TODO Auto-generated method stub
 		return null;
 	}

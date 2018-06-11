@@ -12,4 +12,10 @@ public class ResourceRequest {
 		this.params = params;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		// TODO Auto-generated method stub
+		return super.equals(obj);
+	}
+	
 }

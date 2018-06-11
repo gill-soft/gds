@@ -13,30 +13,30 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.gillsoft.model.Location;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.store.ResourceStore;
 
 @RestController
 @RequestMapping("/location")
 @Api(tags = { "Locations" }, produces = "application/json")
-public class LocationController {
+public class LocalityApiController {
 
 	@Autowired
 	private ResourceStore store;
 
 	@ApiOperation(value = "The list of all cities, stations, stoppings, etc of resource",
-			response = Location.class, responseContainer = "List")
+			response = Locality.class, responseContainer = "List")
 	@PostMapping("/all")
-	public List<Location> getAll(@Validated @RequestBody ResourceRequest request) {
+	public List<Locality> getAll(@Validated @RequestBody ResourceRequest request) {
 		return store.getResourceService(request.getParams())
 				.getLocationService().getAll();
 	}
 
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc of resource wich can use in search",
-			response = Location.class, responseContainer = "List")
+			response = Locality.class, responseContainer = "List")
 	@PostMapping("/used")
-	public List<Location> getUsed(
+	public List<Locality> getUsed(
 			@Validated @RequestBody ResourceRequest request) {
 		return store.getResourceService(request.getParams())
 				.getLocationService().getUsed();

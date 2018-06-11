@@ -16,7 +16,7 @@ public interface ResourceService {
 	
 	public List<Method> getAvailableMethods();
 	
-	public LocationService getLocationService();
+	public LocalityService getLocationService();
 	
 	public SearchService getSearchService();
 	
