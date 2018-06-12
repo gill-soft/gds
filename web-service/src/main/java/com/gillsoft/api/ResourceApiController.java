@@ -24,7 +24,7 @@ public class ResourceApiController {
 
 	@ApiOperation(value = "Information about resource", response = Resource.class)
 	@PostMapping
-	public List<Resource> getResource(@Validated @RequestBody List<ResourceRequest> request) {
+	public List<Resource> getResources(@Validated @RequestBody List<ResourceRequest> request) {
 		return ResourceController.getInstance().getResources(request);
 	}
 
