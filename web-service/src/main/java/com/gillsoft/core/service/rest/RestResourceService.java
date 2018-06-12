@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -49,9 +50,13 @@ public class RestResourceService implements ResourceService {
 		String uuid = UUID.randomUUID().toString();
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(getHost() + Method.PING)
 				.queryParam("id", uuid);
-		ResponseEntity<Ping> resp = template.getForEntity(builder.toUriString(), Ping.class, getMap());
-		return resp.getStatusCode() == HttpStatus.OK
-				&& Objects.equals(resp.getBody().getId(), uuid);
+		try {
+			ResponseEntity<Ping> resp = template.getForEntity(builder.toUriString(), Ping.class, getMap());
+			return resp.getStatusCode() == HttpStatus.OK
+					&& Objects.equals(resp.getBody().getId(), uuid);
+		} catch (RestClientException e) {
+			return false;
+		}
 	}
 
 	@Override

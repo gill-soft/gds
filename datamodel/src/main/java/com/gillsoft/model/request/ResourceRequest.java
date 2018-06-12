@@ -5,7 +5,7 @@ import java.util.Objects;
 public class ResourceRequest {
 	
 	private ResourceParams params;
-
+	
 	public ResourceParams getParams() {
 		return params;
 	}

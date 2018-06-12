@@ -17,6 +17,9 @@ import com.gillsoft.model.request.ResourceRequest;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class ResourceActivity {
 	
+	// объекты синхронизации
+	private static ConcurrentMap<ResourceRequest, Object> locks = new ConcurrentHashMap<>();
+	
 	@Autowired
 	private ResourceStore store;
 	
@@ -30,17 +33,35 @@ public class ResourceActivity {
 		Activity activity = activities.get(request);
 		if (activity == null ||
 				checkTime(activity)) {
-			activity = updateActivity(request);
+			
+			// синхронизация проверки активности ресурса, чтобы не выполнять лишние запросы
+			synchronized (getLock(request)) {
+				activity = activities.get(request);
+				if (activity == null ||
+						checkTime(activity)) {
+					activity = updateActivity(request);
+				}
+			}
 		}
 		if (!activity.isActiv()) {
 			throw createAccessException(request); 
 		}
 	}
 	
+	private Object getLock(ResourceRequest request) {
+		Object lock = locks.get(request);
+		if (lock == null) {
+			lock = new Object();
+			locks.put(request, lock);
+		}
+		return lock;
+	}
+	
 	private boolean checkTime(Activity activity) {
 		return System.currentTimeMillis() - activity.getLastCheck().getTime() > 30000;
 	}
 	
+	//TODO синхронизировать
 	private Activity updateActivity(ResourceRequest request) {
 		boolean activ = store.getResourceService(request.getParams()).isAvailable();
 		Activity activity = new Activity(activ);

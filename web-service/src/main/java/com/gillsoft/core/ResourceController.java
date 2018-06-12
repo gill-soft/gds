@@ -27,16 +27,15 @@ public class ResourceController {
 
 	public List<Resource> getResources(List<ResourceRequest> requests) {
 		List<Callable<Resource>> callables = new ArrayList<>();
-		List<Resource> result = new ArrayList<>(requests.size());
 		for (final ResourceRequest request : requests) {
-			try {
-				activity.check(request);
-				callables.add(() -> {
+			callables.add(() -> {
+				try {
+					activity.check(request);
 					return store.getResourceService(request.getParams()).getInfo();
-				});
-			} catch (AccessException e) {
-				result.add(new Resource(e));
-			}
+				} catch (AccessException e) {
+					return new Resource(e);
+				}
+			});
 		}
 		return ThreadPoolStore.getResult(PoolType.RESOURCE_INFO, callables);
 	}
