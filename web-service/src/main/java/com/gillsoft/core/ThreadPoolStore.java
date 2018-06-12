@@ -3,6 +3,7 @@ package com.gillsoft.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +15,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class ThreadPoolStore {
 	
-	private static ConcurrentMap<PoolType, ExecutorService> executors;
+	private static ConcurrentMap<PoolType, ExecutorService> executors = new ConcurrentHashMap<>();
 	
 	public static <T> Future<T> execute(PoolType poolType, Callable<T> task) {
 		ExecutorService executor = executors.get(poolType);

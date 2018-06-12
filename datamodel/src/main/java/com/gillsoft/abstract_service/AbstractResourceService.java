@@ -11,8 +11,8 @@ import com.gillsoft.model.Resource;
 
 public abstract class AbstractResourceService {
 	
-	@GetMapping(Method.PING + "/{id}")
-	public abstract Ping ping(@RequestParam String id);
+	@GetMapping(Method.PING)
+	public abstract Ping ping(@RequestParam("id") String id);
 	
 	@GetMapping(Method.INFO)
 	public abstract Resource getInfo();

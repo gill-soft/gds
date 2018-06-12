@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gillsoft.core.store.ResourceStore;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.request.ResourceRequest;
-import com.gillsoft.store.ResourceStore;
 
 @RestController
 @RequestMapping("/location")

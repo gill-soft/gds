@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import java.rmi.AccessException;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,11 +22,14 @@ import com.gillsoft.model.request.ResourceRequest;
 @RequestMapping("/resource")
 @Api(tags = { "Resources" }, produces = "application/json")
 public class ResourceApiController {
+	
+	@Autowired
+	private ResourceController controller;
 
 	@ApiOperation(value = "Information about resource", response = Resource.class)
 	@PostMapping
 	public List<Resource> getResources(@Validated @RequestBody List<ResourceRequest> request) {
-		return ResourceController.getInstance().getResources(request);
+		return controller.getResources(request);
 	}
 
 	@ApiOperation(value = "Information about available API methods of resource",
@@ -33,7 +37,7 @@ public class ResourceApiController {
 	@PostMapping("/method")
 	public List<Method> getMethods(
 			@Validated @RequestBody ResourceRequest request) throws AccessException {
-		return ResourceController.getInstance().getMethods(request);
+		return controller.getMethods(request);
 	}
 
 }

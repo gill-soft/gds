@@ -1,5 +1,7 @@
 package com.gillsoft.model.request;
 
+import java.util.Objects;
+
 public class ResourceRequest {
 	
 	private ResourceParams params;
@@ -14,8 +16,17 @@ public class ResourceRequest {
 	
 	@Override
 	public boolean equals(Object obj) {
-		// TODO Auto-generated method stub
-		return super.equals(obj);
+		if (obj == null
+				|| !(obj instanceof ResourceRequest)) {
+			return false;
+		}
+		ResourceRequest request = (ResourceRequest) obj;
+		return Objects.equals(params, request.getParams());
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(params);
 	}
 	
 }

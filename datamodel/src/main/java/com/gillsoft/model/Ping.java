@@ -10,7 +10,7 @@ public class Ping {
 	private String id;
 	
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
-	private Date time;
+	private Date time = new Date();
 
 	public String getId() {
 		return id;

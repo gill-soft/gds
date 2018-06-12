@@ -6,13 +6,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+import com.gillsoft.core.store.ResourceStore;
 import com.gillsoft.model.request.ResourceRequest;
-import com.gillsoft.store.ResourceStore;
 
+@Component
+@Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class ResourceActivity {
-	
-	private static ResourceActivity instance;
 	
 	@Autowired
 	private ResourceStore store;
@@ -20,17 +23,7 @@ public class ResourceActivity {
 	private ConcurrentMap<ResourceRequest, Activity> activities = new ConcurrentHashMap<>();
 	
 	private ResourceActivity() {
-	}
-
-	public static ResourceActivity getInstance() {
-		if (instance == null) {
-			synchronized (ResourceActivity.class) {
-				if (instance == null) {
-					instance = new ResourceActivity();
-				}
-			}
-		}
-		return instance;
+		
 	}
 
 	public void check(ResourceRequest request) throws AccessException {

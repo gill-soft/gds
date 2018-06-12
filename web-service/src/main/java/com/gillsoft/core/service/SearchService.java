@@ -1,4 +1,4 @@
-package com.gillsoft.service;
+package com.gillsoft.core.service;
 
 public interface SearchService {
 
