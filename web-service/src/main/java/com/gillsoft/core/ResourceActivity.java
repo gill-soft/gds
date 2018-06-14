@@ -61,7 +61,6 @@ public class ResourceActivity {
 		return System.currentTimeMillis() - activity.getLastCheck().getTime() > 30000;
 	}
 	
-	//TODO синхронизировать
 	private Activity updateActivity(ResourceRequest request) {
 		boolean activ = store.getResourceService(request.getParams()).isAvailable();
 		Activity activity = new Activity(activ);

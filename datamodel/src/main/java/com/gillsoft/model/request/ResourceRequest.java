@@ -6,6 +6,8 @@ public class ResourceRequest {
 	
 	private ResourceParams params;
 	
+	private LocalityRequest localityRequest;
+	
 	public ResourceParams getParams() {
 		return params;
 	}
@@ -14,6 +16,14 @@ public class ResourceRequest {
 		this.params = params;
 	}
 	
+	public LocalityRequest getLocalityRequest() {
+		return localityRequest;
+	}
+
+	public void setLocalityRequest(LocalityRequest localityRequest) {
+		this.localityRequest = localityRequest;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj == null

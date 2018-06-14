@@ -1,4 +1,4 @@
-package com.gillsoft.abstract_service;
+package com.gillsoft.abstract_rest_service;
 
 import java.util.List;
 
@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Ping;
 import com.gillsoft.model.Resource;
+import com.gillsoft.model.service.ResourceInfoService;
 
-public abstract class AbstractResourceService {
+public abstract class AbstractResourceService implements ResourceInfoService {
 	
 	@GetMapping(Method.PING)
 	public abstract Ping ping(@RequestParam("id") String id);
@@ -18,6 +19,6 @@ public abstract class AbstractResourceService {
 	public abstract Resource getInfo();
 	
 	@GetMapping(Method.METHOD)
-	public abstract List<Method> getMethods();
+	public abstract List<Method> getAvailableMethods();
 
 }

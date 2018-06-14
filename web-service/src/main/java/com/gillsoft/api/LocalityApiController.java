@@ -18,8 +18,8 @@ import com.gillsoft.model.Locality;
 import com.gillsoft.model.request.ResourceRequest;
 
 @RestController
-@RequestMapping("/location")
-@Api(tags = { "Locations" }, produces = "application/json")
+@RequestMapping("/locality")
+@Api(tags = { "Localities" }, produces = "application/json")
 public class LocalityApiController {
 
 	@Autowired
@@ -30,7 +30,7 @@ public class LocalityApiController {
 	@PostMapping("/all")
 	public List<Locality> getAll(@Validated @RequestBody ResourceRequest request) {
 		return store.getResourceService(request.getParams())
-				.getLocationService().getAll();
+				.getLocalityService().getAll(request.getLocalityRequest());
 	}
 
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc of resource wich can use in search",
@@ -39,7 +39,7 @@ public class LocalityApiController {
 	public List<Locality> getUsed(
 			@Validated @RequestBody ResourceRequest request) {
 		return store.getResourceService(request.getParams())
-				.getLocationService().getUsed();
+				.getLocalityService().getUsed(request.getLocalityRequest());
 	}
 
 	@ApiOperation("The binding beetwen cities, stations, stoppings, etc of resource")
@@ -47,7 +47,7 @@ public class LocalityApiController {
 	public Map<String, List<String>> getBinding(
 			@Validated @RequestBody ResourceRequest request) {
 		return store.getResourceService(request.getParams())
-				.getLocationService().getBinding();
+				.getLocalityService().getBinding(request.getLocalityRequest());
 	}
 
 }

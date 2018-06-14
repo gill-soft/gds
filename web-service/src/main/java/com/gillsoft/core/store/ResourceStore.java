@@ -1,7 +1,7 @@
 package com.gillsoft.core.store;
 
-import com.gillsoft.core.service.ResourceService;
 import com.gillsoft.model.request.ResourceParams;
+import com.gillsoft.model.service.ResourceService;
 
 public interface ResourceStore {
 	

@@ -8,6 +8,12 @@ public class Method {
 	
 	public static final String METHOD = "/api/method";
 	
+	public static final String LOCALITY_ALL = "/api/locality/all";
+	
+	public static final String LOCALITY_USED = "/api/locality/used";
+	
+	public static final String LOCALITY_BINDING = "/api/locality/binding";
+	
 	private String name;
 	
 	private String url;

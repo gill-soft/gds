@@ -1,4 +1,4 @@
-package com.gillsoft.core.service;
+package com.gillsoft.model.service;
 
 public interface AdditionalService {
 

@@ -3,25 +3,26 @@ package com.gillsoft.core.service.rest;
 import java.util.List;
 import java.util.Map;
 
-import com.gillsoft.core.service.LocalityService;
 import com.gillsoft.model.Locality;
+import com.gillsoft.model.request.LocalityRequest;
+import com.gillsoft.model.service.LocalityService;
 
 public class RestLocalityService implements LocalityService {
 
 	@Override
-	public List<Locality> getAll() {
+	public List<Locality> getAll(LocalityRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<Locality> getUsed() {
+	public List<Locality> getUsed(LocalityRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Map<String, List<String>> getBinding() {
+	public Map<String, List<String>> getBinding(LocalityRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}

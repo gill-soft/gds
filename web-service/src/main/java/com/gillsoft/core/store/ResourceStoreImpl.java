@@ -2,9 +2,9 @@ package com.gillsoft.core.store;
 
 import org.springframework.stereotype.Component;
 
-import com.gillsoft.core.service.ResourceService;
 import com.gillsoft.core.service.rest.RestResourceService;
 import com.gillsoft.model.request.ResourceParams;
+import com.gillsoft.model.service.ResourceService;
 
 @Component
 public class ResourceStoreImpl implements ResourceStore {

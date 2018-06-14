@@ -1,5 +1,6 @@
 package com.gillsoft.core.service.rest;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -7,22 +8,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.gillsoft.core.service.AdditionalService;
-import com.gillsoft.core.service.LocalityService;
-import com.gillsoft.core.service.OrderService;
-import com.gillsoft.core.service.ResourceService;
-import com.gillsoft.core.service.SearchService;
-import com.gillsoft.core.service.TicketService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Ping;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.request.ResourceParams;
+import com.gillsoft.model.service.AdditionalService;
+import com.gillsoft.model.service.LocalityService;
+import com.gillsoft.model.service.OrderService;
+import com.gillsoft.model.service.ResourceService;
+import com.gillsoft.model.service.SearchService;
+import com.gillsoft.model.service.TicketService;
 
 public class RestResourceService implements ResourceService {
 	
@@ -45,18 +45,20 @@ public class RestResourceService implements ResourceService {
 		return host.toString();
 	}
 
-	@Override
 	public boolean isAvailable() {
 		String uuid = UUID.randomUUID().toString();
-		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(getHost() + Method.PING)
-				.queryParam("id", uuid);
 		try {
-			ResponseEntity<Ping> resp = template.getForEntity(builder.toUriString(), Ping.class, getMap());
-			return resp.getStatusCode() == HttpStatus.OK
-					&& Objects.equals(resp.getBody().getId(), uuid);
+			return Objects.equals(ping(uuid).getId(), uuid);
 		} catch (RestClientException e) {
 			return false;
 		}
+	}
+	
+	@Override
+	public Ping ping(String id) {
+		URI uri = UriComponentsBuilder.fromUriString(getHost() + Method.PING)
+				.queryParam("id", id).build().toUri();
+		return template.getForEntity(uri, Ping.class).getBody();
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class RestResourceService implements ResourceService {
 	}
 
 	@Override
-	public LocalityService getLocationService() {
+	public LocalityService getLocalityService() {
 		// TODO Auto-generated method stub
 		return null;
 	}
