@@ -1,6 +1,8 @@
 package com.gillsoft.model;
 
 import java.math.BigDecimal;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class Locality {
@@ -47,21 +49,55 @@ public class Locality {
 		this.timezone = timezone;
 	}
 
-	public ConcurrentMap<String, String> getNames() {
-		return names;
-	}
+	public String getName(String lang) {
+        if (names == null) {
+            return null;
+        }
+        String name = names.get(lang);
+        if (name == null) {
+            for (String pointName : names.values()) {
+                if (pointName != null) {
+                    return pointName;
+                }
+            }
+        }
+        return name;
+    }
 
-	public void setNames(ConcurrentMap<String, String> names) {
-		this.names = names;
-	}
+    public void setName(String lang, String name) {
+        if (name == null) {
+            return;
+        }
+        if (names == null) {
+            names = new ConcurrentHashMap<>();
+        }
+        names.put(lang, name);
+    }
 
-	public ConcurrentMap<String, String> getAddresses() {
-		return addresses;
-	}
+    public String getAddress(String lang) {
+        if (addresses == null) {
+            return null;
+        }
+        String address = addresses.get(lang);
+        if (address == null) {
+            for (String pointAddress : addresses.values()) {
+                if (pointAddress != null) {
+                    return pointAddress;
+                }
+            }
+        }
+        return address;
+    }
 
-	public void setAddresses(ConcurrentMap<String, String> addresses) {
-		this.addresses = addresses;
-	}
+    public void setAddress(String lang, String address) {
+        if (address == null) {
+            return;
+        }
+        if (addresses == null) {
+            addresses = new ConcurrentHashMap<>();
+        }
+        addresses.put(lang, address);
+    }
 
 	public BigDecimal getLatitude() {
 		return latitude;
@@ -93,6 +129,29 @@ public class Locality {
 
 	public void setDetails(String details) {
 		this.details = details;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null
+				|| !(obj instanceof Locality)) {
+			return false;
+		}
+		Locality locality = (Locality) obj;
+		return Objects.equals(id, locality.id)
+				&& Objects.equals(code, locality.code)
+				&& Objects.equals(details, locality.details)
+				&& Objects.equals(timezone, locality.timezone)
+				&& Objects.equals(latitude, locality.latitude)
+				&& Objects.equals(longitude, locality.longitude)
+				&& Objects.equals(names, locality.names)
+				&& Objects.equals(addresses, locality.addresses)
+				&& Objects.equals(parent, locality.parent);
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, code, details, timezone, latitude, longitude, names, addresses, parent);
 	}
     
 }
