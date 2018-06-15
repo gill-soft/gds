@@ -6,14 +6,8 @@ public class Resource {
 	private String name;
 	private String description;
 	
-	private Exception exception;
-
 	public Resource() {
 		
-	}
-
-	public Resource(Exception exception) {
-		this.exception = exception;
 	}
 
 	public String getCode() {
@@ -40,12 +34,4 @@ public class Resource {
 		this.description = description;
 	}
 
-	public Exception getException() {
-		return exception;
-	}
-
-	public void setException(Exception exception) {
-		this.exception = exception;
-	}
-	
 }

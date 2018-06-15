@@ -2,11 +2,9 @@ package com.gillsoft.model.request;
 
 import java.util.Objects;
 
-public class ResourceRequest {
+public class ResourceRequest extends Request {
 	
 	private ResourceParams params;
-	
-	private LocalityRequest localityRequest;
 	
 	public ResourceParams getParams() {
 		return params;
@@ -14,14 +12,6 @@ public class ResourceRequest {
 
 	public void setParams(ResourceParams params) {
 		this.params = params;
-	}
-	
-	public LocalityRequest getLocalityRequest() {
-		return localityRequest;
-	}
-
-	public void setLocalityRequest(LocalityRequest localityRequest) {
-		this.localityRequest = localityRequest;
 	}
 
 	@Override

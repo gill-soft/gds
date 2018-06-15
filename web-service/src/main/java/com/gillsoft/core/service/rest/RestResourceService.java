@@ -24,10 +24,12 @@ import com.gillsoft.model.service.ResourceService;
 import com.gillsoft.model.service.SearchService;
 import com.gillsoft.model.service.TicketService;
 
+// TODO добавить обработку статусов ответов ResponseEntity
 public class RestResourceService implements ResourceService {
 	
 	private RestTemplate template;
 	private ResourceParams params;
+	private RestLocalityService localityService;
 	
 	private Map<String, ?> getMap() {
 		return new HashMap<>(0);
@@ -39,7 +41,11 @@ public class RestResourceService implements ResourceService {
 		template = RestTemplateManager.getTemplate(params);
 	}
 	
-	private String getHost() {
+	public RestTemplate getTemplate() {
+		return template;
+	}
+
+	public String getHost() {
 		StringBuilder host = new StringBuilder();
 		host.append(params.getHost());
 		return host.toString();
@@ -75,8 +81,11 @@ public class RestResourceService implements ResourceService {
 
 	@Override
 	public LocalityService getLocalityService() {
-		// TODO Auto-generated method stub
-		return null;
+		if (localityService == null) {
+			localityService = new RestLocalityService();
+			localityService.setResourceService(this);
+		}
+		return localityService;
 	}
 
 	@Override

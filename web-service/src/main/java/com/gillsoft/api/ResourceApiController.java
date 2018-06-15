@@ -17,6 +17,8 @@ import com.gillsoft.core.ResourceController;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.request.ResourceRequest;
+import com.gillsoft.model.response.ResourceMethodResponse;
+import com.gillsoft.model.response.ResourceResponse;
 
 @RestController
 @RequestMapping("/resource")
@@ -28,15 +30,15 @@ public class ResourceApiController {
 
 	@ApiOperation(value = "Information about resource", response = Resource.class)
 	@PostMapping
-	public List<Resource> getResources(@Validated @RequestBody List<ResourceRequest> request) {
+	public List<ResourceResponse> getResources(@Validated @RequestBody List<ResourceRequest> request) {
 		return controller.getResources(request);
 	}
 
 	@ApiOperation(value = "Information about available API methods of resource",
 			response = Method.class, responseContainer = "List")
 	@PostMapping("/method")
-	public List<Method> getMethods(
-			@Validated @RequestBody ResourceRequest request) throws AccessException {
+	public List<ResourceMethodResponse> getMethods(
+			@Validated @RequestBody List<ResourceRequest> request) throws AccessException {
 		return controller.getMethods(request);
 	}
 

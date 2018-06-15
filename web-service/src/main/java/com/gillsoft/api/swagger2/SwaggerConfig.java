@@ -38,7 +38,7 @@ public class SwaggerConfig extends WebMvcConfigurerAdapter {
 				.build()
 				.apiInfo(metaData())
 				.tags(new Tag("Resources", "Methods to get information about resources", 0),
-						new Tag("Locations", "Methods to get information about resource available cities", 1));
+						new Tag("Localities", "Methods to get information about resource available cities", 1));
 	}
 	
 	private ApiInfo metaData() {

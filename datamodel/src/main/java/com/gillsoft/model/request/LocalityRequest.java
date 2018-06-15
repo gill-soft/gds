@@ -1,5 +1,5 @@
 package com.gillsoft.model.request;
 
-public class LocalityRequest {
+public class LocalityRequest extends ResourceRequest {
 
 }
