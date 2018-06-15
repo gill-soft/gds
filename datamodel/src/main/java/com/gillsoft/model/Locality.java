@@ -99,6 +99,22 @@ public class Locality {
         addresses.put(lang, address);
     }
 
+	public ConcurrentMap<String, String> getNames() {
+		return names;
+	}
+
+	public void setNames(ConcurrentMap<String, String> names) {
+		this.names = names;
+	}
+
+	public ConcurrentMap<String, String> getAddresses() {
+		return addresses;
+	}
+
+	public void setAddresses(ConcurrentMap<String, String> addresses) {
+		this.addresses = addresses;
+	}
+
 	public BigDecimal getLatitude() {
 		return latitude;
 	}

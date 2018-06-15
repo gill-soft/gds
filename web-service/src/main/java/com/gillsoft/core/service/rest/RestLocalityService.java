@@ -22,25 +22,25 @@ public class RestLocalityService implements LocalityService {
 	
 	@Override
 	public List<Locality> getAll(LocalityRequest request) {
-		return getResult(request, Method.LOCALITY_ALL);
+		return getResult(request, Method.LOCALITY_ALL, new ParameterizedTypeReference<List<Locality>>() { });
 	}
 
 	@Override
 	public List<Locality> getUsed(LocalityRequest request) {
-		return getResult(request, Method.LOCALITY_USED);
+		return getResult(request, Method.LOCALITY_USED, new ParameterizedTypeReference<List<Locality>>() { });
 	}
 
 	@Override
 	public Map<String, List<String>> getBinding(LocalityRequest request) {
-		return getResult(request, Method.LOCALITY_BINDING);
+		return getResult(request, Method.LOCALITY_BINDING, new ParameterizedTypeReference<Map<String, List<String>>>() { });
 	}
 	
-	private <T> T getResult(LocalityRequest request, String method) {
-		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.LOCALITY_BINDING)
+	private <T> T getResult(LocalityRequest request, String method, ParameterizedTypeReference<T> type) {
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + method)
 				.build().toUri();
 		RequestEntity<LocalityRequest> requestEntity = new RequestEntity<LocalityRequest>(request, HttpMethod.POST, uri);
 		ResponseEntity<T> response = resourceService.getTemplate().exchange(
-				requestEntity, new ParameterizedTypeReference<T>() { });
+				requestEntity, type);
 		return response.getBody();
 	}
 
