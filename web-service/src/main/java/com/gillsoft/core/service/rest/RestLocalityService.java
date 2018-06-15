@@ -39,8 +39,7 @@ public class RestLocalityService implements LocalityService {
 		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + method)
 				.build().toUri();
 		RequestEntity<LocalityRequest> requestEntity = new RequestEntity<LocalityRequest>(request, HttpMethod.POST, uri);
-		ResponseEntity<T> response = resourceService.getTemplate().exchange(
-				requestEntity, type);
+		ResponseEntity<T> response = resourceService.getTemplate().exchange(requestEntity, type);
 		return response.getBody();
 	}
 

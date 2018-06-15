@@ -25,10 +25,6 @@ public class ResourceActivity {
 	
 	private ConcurrentMap<ResourceRequest, Activity> activities = new ConcurrentHashMap<>();
 	
-	private ResourceActivity() {
-		
-	}
-
 	public void check(ResourceRequest request) throws AccessException {
 		Activity activity = activities.get(request);
 		if (activity == null ||

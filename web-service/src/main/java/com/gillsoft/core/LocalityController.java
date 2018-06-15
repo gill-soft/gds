@@ -37,7 +37,7 @@ public class LocalityController {
 				}
 			});
 		}
-		return ThreadPoolStore.getResult(PoolType.RESOURCE_INFO, callables);
+		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
 	}
 	
 	public List<LocalityResponse> getUsed(List<LocalityRequest> requests) {
@@ -53,7 +53,7 @@ public class LocalityController {
 				}
 			});
 		}
-		return ThreadPoolStore.getResult(PoolType.RESOURCE_INFO, callables);
+		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
 	}
 	
 	public List<LocalityResponse> getBinding(List<LocalityRequest> requests) {
@@ -69,7 +69,7 @@ public class LocalityController {
 				}
 			});
 		}
-		return ThreadPoolStore.getResult(PoolType.RESOURCE_INFO, callables);
+		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
 	}
 
 }
