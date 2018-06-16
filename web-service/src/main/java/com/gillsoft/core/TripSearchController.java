@@ -41,8 +41,8 @@ public class TripSearchController {
 			callables.add(() -> {
 				try {
 					activity.check(request);
-					return new TripSearchResponse(request.getId(),
-							store.getResourceService(request.getParams()).getSearchService().initSearch(request), request);
+					return new TripSearchResponse(request.getId(), store.getResourceService(
+							request.getParams()).getSearchService().initSearch(request).getSearchId(), request);
 				} catch (AccessException e) {
 					return new TripSearchResponse(request.getId(), e);
 				}

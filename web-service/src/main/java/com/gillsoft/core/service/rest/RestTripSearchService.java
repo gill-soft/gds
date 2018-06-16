@@ -1,9 +1,14 @@
 package com.gillsoft.core.service.rest;
 
+import java.net.URI;
 import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Fare;
+import com.gillsoft.model.Method;
 import com.gillsoft.model.Required;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
@@ -19,15 +24,22 @@ public class RestTripSearchService implements TripSearchService {
 	private RestResourceService resourceService;
 
 	@Override
-	public String initSearch(TripSearchRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+	public TripSearchResponse initSearch(TripSearchRequest request) {
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH_INIT)
+				.build().toUri();
+		ResponseEntity<TripSearchResponse> response = resourceService.getTemplate()
+				.postForEntity(uri, request, TripSearchResponse.class);
+		return response.getBody();
 	}
 
 	@Override
 	public TripSearchResponse getSearchResult(String searchId) {
-		// TODO Auto-generated method stub
-		return null;
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH_RESULT)
+				.queryParam("searchId", searchId)
+				.build().toUri();
+		ResponseEntity<TripSearchResponse> response = resourceService.getTemplate()
+				.getForEntity(uri, TripSearchResponse.class);
+		return response.getBody();
 	}
 
 	@Override
@@ -67,7 +79,7 @@ public class RestTripSearchService implements TripSearchService {
 	}
 
 	@Override
-	public Seat updateSeat(String tripId, Seat seat) {
+	public Seat updateSeat(String tripId, List<Seat> seats) {
 		// TODO Auto-generated method stub
 		return null;
 	}

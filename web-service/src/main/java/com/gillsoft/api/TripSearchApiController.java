@@ -5,10 +5,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.core.TripSearchController;
@@ -35,8 +35,8 @@ public class TripSearchApiController {
 	
 	@ApiOperation(value = "Return part of founded trips and link id to next result",
 			response = TripSearchResponse.class)
-	@GetMapping("/result/{searchId}")
-	public TripSearchResponse getSearchResult(@Validated @PathVariable String searchId) {
+	@GetMapping("/result")
+	public TripSearchResponse getSearchResult(@Validated @RequestParam("searchId") String searchId) {
 		return controller.getSearchResult(searchId);
 	}
 

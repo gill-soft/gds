@@ -21,9 +21,9 @@ public interface TripSearchService {
 	 * 
 	 * @param request
 	 *            Запрос инициализации поиска.
-	 * @return ИД поиска.
+	 * @return Ответ с ИД поиска.
 	 */
-	public String initSearch(TripSearchRequest request);
+	public TripSearchResponse initSearch(TripSearchRequest request);
 	
 	/**
 	 * Нужно много написать //TODO
@@ -44,7 +44,7 @@ public interface TripSearchService {
 	
 	public Required getRequiredFields(String tripId);
 	
-	public Seat updateSeat(String tripId, Seat seat);
+	public Seat updateSeat(String tripId, List<Seat> seats);
 	
 	public List<ReturnCondition> getConditions(String tripId, String fareId);
 	
