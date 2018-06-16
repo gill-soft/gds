@@ -35,7 +35,7 @@
 
 		<dependency>
 			<groupId>com.gillsoft</groupId>
-			<artifactId>gds-datamodel</artifactId>
+			<artifactId>gds-commons</artifactId>
 			<version>0.0.1</version>
 			<scope>compile</scope>
 		</dependency>

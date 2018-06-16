@@ -9,9 +9,9 @@
 		<version>0.0.1</version>
 	</parent>
 
-	<artifactId>gds-datamodel</artifactId>
+	<artifactId>gds-commons</artifactId>
 	<packaging>jar</packaging>
-	<name>GDS datamodel</name>
+	<name>GDS commons</name>
 
 	<dependencies>
 
@@ -25,7 +25,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>gds-datamodel</finalName>
+		<finalName>gds-commons</finalName>
 		<pluginManagement>
 			<plugins>
 				<plugin>

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.core.LocalityController;
-import com.gillsoft.model.Locality;
 import com.gillsoft.model.request.LocalityRequest;
 import com.gillsoft.model.response.LocalityResponse;
 
@@ -26,21 +25,22 @@ public class LocalityApiController {
 	private LocalityController controller;
 
 	@ApiOperation(value = "The list of all cities, stations, stoppings, etc of resource",
-			response = Locality.class, responseContainer = "List")
+			response = LocalityResponse.class, responseContainer = "List")
 	@PostMapping("/all")
 	public List<LocalityResponse> getAll(@Validated @RequestBody List<LocalityRequest> request) {
 		return controller.getAll(request);
 	}
 
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc of resource wich can use in search",
-			response = Locality.class, responseContainer = "List")
+			response = LocalityResponse.class, responseContainer = "List")
 	@PostMapping("/used")
 	public List<LocalityResponse> getUsed(
 			@Validated @RequestBody List<LocalityRequest> request) {
 		return controller.getUsed(request);
 	}
 
-	@ApiOperation("The binding beetwen cities, stations, stoppings, etc of resource")
+	@ApiOperation(value = "The binding beetwen cities, stations, stoppings, etc of resource",
+			response = LocalityResponse.class, responseContainer = "List")
 	@PostMapping("/binding")
 	public List<LocalityResponse> getBinding(
 			@Validated @RequestBody List<LocalityRequest> request) {
