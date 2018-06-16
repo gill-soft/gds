@@ -1,6 +1,5 @@
 package com.gillsoft.core;
 
-import java.rmi.AccessException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +15,8 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
+import com.gillsoft.concurrent.PoolType;
+import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.core.store.ResourceStore;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
@@ -43,7 +44,7 @@ public class TripSearchController {
 					activity.check(request);
 					return new TripSearchResponse(request.getId(), store.getResourceService(
 							request.getParams()).getSearchService().initSearch(request).getSearchId(), request);
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new TripSearchResponse(request.getId(), e);
 				}
 			});
@@ -76,14 +77,19 @@ public class TripSearchController {
 							TripSearchResponse response = store.getResourceService(
 									request.getParams()).getSearchService().getSearchResult(searchResponse.getSearchId());
 							return new TripSearchResponse(request.getId(), response.getSearchId(), response.getTrips(), request);
-						} catch (AccessException e) {
+						} catch (Exception e) {
 							return new TripSearchResponse(request.getId(), e);
 						}
 					});
 				}
 			}
-			// создаем ссылку на следующую часть результата поиска
-			TripSearchResponse response = putToCache(ThreadPoolStore.getResult(PoolType.SEARCH, callables));
+			// создаем ссылку на следующую часть результата поиска или завершаем его
+			TripSearchResponse response = null;
+			if (!callables.isEmpty()) {
+				response = putToCache(ThreadPoolStore.getResult(PoolType.SEARCH, callables));
+			} else {
+				response = new TripSearchResponse();
+			}
 			response.setResult(new ArrayList<>());
 			for (TripSearchResponse searchResponse : searchResponses) {
 				
