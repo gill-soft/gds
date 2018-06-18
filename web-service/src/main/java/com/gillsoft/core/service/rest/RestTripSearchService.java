@@ -79,7 +79,7 @@ public class RestTripSearchService implements TripSearchService {
 	}
 
 	@Override
-	public Seat updateSeat(String tripId, List<Seat> seats) {
+	public List<Seat> updateSeats(String tripId, List<Seat> seats) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -44,7 +44,7 @@ public interface TripSearchService {
 	
 	public Required getRequiredFields(String tripId);
 	
-	public Seat updateSeat(String tripId, List<Seat> seats);
+	public List<Seat> updateSeats(String tripId, List<Seat> seats);
 	
 	public List<ReturnCondition> getConditions(String tripId, String fareId);
 	

@@ -23,37 +23,81 @@ import com.gillsoft.model.service.TripSearchService;
 public abstract class AbstractTripSearchService implements TripSearchService {
 
 	@PostMapping(Method.SEARCH_INIT)
-	public abstract TripSearchResponse initSearch(@RequestBody TripSearchRequest request);
+	public final TripSearchResponse initSearch(@RequestBody TripSearchRequest request) {
+		return initSearchResponse(request);
+	}
+	
+	public abstract TripSearchResponse initSearchResponse(TripSearchRequest request);
 
 	@GetMapping(Method.SEARCH_RESULT)
-	public abstract TripSearchResponse getSearchResult(@RequestParam("searchId") String searchId);
+	public final TripSearchResponse getSearchResult(@RequestParam("searchId") String searchId) {
+		return getSearchResultResponse(searchId);
+	}
+	
+	public abstract TripSearchResponse getSearchResultResponse(String searchId);
 
 	@GetMapping(Method.SEARCH_TRIP)
-	public abstract Trip getInfo(@RequestParam("tripId") String tripId);
+	public final Trip getInfo(@RequestParam("tripId") String tripId) {
+		return getInfoResponse(tripId);
+	}
+	
+	public abstract Trip getInfoResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_ROUTE)
-	public abstract Route getRoute(@RequestParam("tripId") String tripId);
+	public final Route getRoute(@RequestParam("tripId") String tripId) {
+		return getRouteResponse(tripId);
+	}
+	
+	public abstract Route getRouteResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_SEATS_SCHEME)
-	public abstract SeatsScheme getSeatsScheme(@RequestParam("tripId") String tripId);
+	public final SeatsScheme getSeatsScheme(@RequestParam("tripId") String tripId) {
+		return getSeatsSchemeResponse(tripId);
+	}
+	
+	public abstract SeatsScheme getSeatsSchemeResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_SEATS)
-	public abstract List<Seat> getSeats(@RequestParam("tripId") String tripId);
+	public final List<Seat> getSeats(@RequestParam("tripId") String tripId) {
+		return getSeatsResponse(tripId);
+	}
+	
+	public abstract List<Seat> getSeatsResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_FARES)
-	public abstract List<Fare> getFares(@RequestParam("tripId") String tripId);
+	public final List<Fare> getFares(@RequestParam("tripId") String tripId) {
+		return getFaresResponse(tripId);
+	}
+	
+	public abstract List<Fare> getFaresResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_REQUIRED)
-	public abstract Required getRequiredFields(@RequestParam("tripId") String tripId);
+	public final Required getRequiredFields(@RequestParam("tripId") String tripId) {
+		return getRequiredFieldsResponse(tripId);
+	}
+	
+	public abstract Required getRequiredFieldsResponse(String tripId);
 
 	@PostMapping(Method.SEARCH_TRIP_SEATS_UPDATE)
-	public abstract Seat updateSeat(@RequestParam("tripId") String tripId, @RequestBody List<Seat> seats);
+	public final List<Seat> updateSeats(@RequestParam("tripId") String tripId, @RequestBody List<Seat> seats) {
+		return updateSeatsResponse(tripId, seats);
+	}
+	
+	public abstract List<Seat> updateSeatsResponse(String tripId, List<Seat> seats);
 
 	@GetMapping(Method.SEARCH_TRIP_CONDITIONS)
-	public abstract List<ReturnCondition> getConditions(@RequestParam("tripId") String tripId,
-			@RequestParam("fareId") String fareId);
+	public final List<ReturnCondition> getConditions(@RequestParam("tripId") String tripId,
+			@RequestParam("fareId") String fareId) {
+		return getConditionsResponse(tripId, fareId);
+	}
+	
+	public abstract List<ReturnCondition> getConditionsResponse(String tripId, String fareId);
 
 	@GetMapping(Method.SEARCH_TRIP_DOCUMENTS)
-	public abstract List<Document> getDocuments(@RequestParam("tripId") String tripId);
+	public final List<Document> getDocuments(@RequestParam("tripId") String tripId) {
+		return getDocumentsResponse(tripId);
+	}
+	
+	public abstract List<Document> getDocumentsResponse(String tripId);
 
 }
