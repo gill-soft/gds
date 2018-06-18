@@ -76,7 +76,7 @@ public class TripSearchController {
 							// формируем новый ответ с новым ид поиска
 							TripSearchResponse response = store.getResourceService(
 									request.getParams()).getSearchService().getSearchResult(searchResponse.getSearchId());
-							return new TripSearchResponse(request.getId(), response.getSearchId(), response.getTrips(), request);
+							return new TripSearchResponse(request.getId(), response.getSearchId(), response.getTripContainers(), request);
 						} catch (Exception e) {
 							return new TripSearchResponse(request.getId(), e);
 						}
@@ -96,7 +96,7 @@ public class TripSearchController {
 				// в результат нужно добавить только ид запроса и список рейсов
 				TripSearchResponse copy = new TripSearchResponse();
 				copy.setId(searchResponse.getId());
-				copy.setTrips(searchResponse.getTrips());
+				copy.setTripContainers(searchResponse.getTripContainers());
 				response.getResult().add(copy);
 			}
 			return response;

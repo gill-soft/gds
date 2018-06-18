@@ -2,7 +2,7 @@ package com.gillsoft.model.response;
 
 import java.util.List;
 
-import com.gillsoft.model.Trip;
+import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.request.TripSearchRequest;
 
 public class TripSearchResponse extends Response {
@@ -11,7 +11,7 @@ public class TripSearchResponse extends Response {
 	
 	private TripSearchRequest request;
 	
-	private List<Trip> trips;
+	private List<TripContainer> tripContainers;
 	
 	private List<TripSearchResponse> result;
 	
@@ -30,10 +30,10 @@ public class TripSearchResponse extends Response {
 		this.request = request;
 	}
 	
-	public TripSearchResponse(String id, String searchId, List<Trip> trips, TripSearchRequest request) {
+	public TripSearchResponse(String id, String searchId, List<TripContainer> tripContainers, TripSearchRequest request) {
 		setId(id);
 		this.searchId = searchId;
-		this.trips = trips;
+		this.tripContainers = tripContainers;
 		this.request = request;
 	}
 
@@ -58,12 +58,12 @@ public class TripSearchResponse extends Response {
 		this.request = request;
 	}
 
-	public List<Trip> getTrips() {
-		return trips;
+	public List<TripContainer> getTripContainers() {
+		return tripContainers;
 	}
 
-	public void setTrips(List<Trip> trips) {
-		this.trips = trips;
+	public void setTripContainers(List<TripContainer> tripContainers) {
+		this.tripContainers = tripContainers;
 	}
 
 	public List<TripSearchResponse> getResult() {
