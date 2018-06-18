@@ -2,8 +2,11 @@ package com.gillsoft.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.gillsoft.model.request.TripSearchRequest;
 
+@JsonInclude(Include.NON_NULL)
 public class TripContainer {
 	
 	private TripSearchRequest request;
