@@ -27,6 +27,7 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 	
 	public MemoryCacheHandler() {
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+		scheduler.initialize();
 		scheduler.scheduleWithFixedDelay(this, 1000);
 	}
 
