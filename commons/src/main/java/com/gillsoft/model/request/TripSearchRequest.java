@@ -3,10 +3,15 @@ package com.gillsoft.model.request;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
+
 public class TripSearchRequest extends ResourceRequest {
 	
 	private String searchId;
 	private List<String[]> localityPairs;
+	
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
 	private List<Date> dates;
 
 	public String getSearchId() {

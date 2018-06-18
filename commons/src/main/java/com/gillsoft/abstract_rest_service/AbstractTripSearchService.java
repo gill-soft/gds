@@ -23,7 +23,7 @@ import com.gillsoft.model.service.TripSearchService;
 public abstract class AbstractTripSearchService implements TripSearchService {
 
 	@PostMapping(Method.SEARCH_INIT)
-	public abstract TripSearchResponse initSearch(TripSearchRequest request);
+	public abstract TripSearchResponse initSearch(@RequestBody TripSearchRequest request);
 
 	@GetMapping(Method.SEARCH_RESULT)
 	public abstract TripSearchResponse getSearchResult(@RequestParam("searchId") String searchId);
