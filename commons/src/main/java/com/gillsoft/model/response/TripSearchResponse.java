@@ -1,8 +1,13 @@
 package com.gillsoft.model.response;
 
 import java.util.List;
+import java.util.Map;
 
+import com.gillsoft.model.Locality;
+import com.gillsoft.model.Organisation;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.TripContainer;
+import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.TripSearchRequest;
 
 public class TripSearchResponse extends Response {
@@ -10,6 +15,14 @@ public class TripSearchResponse extends Response {
 	private String searchId;
 	
 	private TripSearchRequest request;
+	
+	private Map<String, Organisation> organisations;
+	
+	private Map<String, Locality> localities;
+	
+	private Map<String, Vehicle> vehicles;
+	
+	private Map<String, Segment> segments;
 	
 	private List<TripContainer> tripContainers;
 	
@@ -56,6 +69,38 @@ public class TripSearchResponse extends Response {
 
 	public void setRequest(TripSearchRequest request) {
 		this.request = request;
+	}
+
+	public Map<String, Organisation> getOrganisations() {
+		return organisations;
+	}
+
+	public void setOrganisations(Map<String, Organisation> organisations) {
+		this.organisations = organisations;
+	}
+
+	public Map<String, Locality> getLocalities() {
+		return localities;
+	}
+
+	public void setLocalities(Map<String, Locality> localities) {
+		this.localities = localities;
+	}
+
+	public Map<String, Vehicle> getVehicles() {
+		return vehicles;
+	}
+
+	public void setVehicles(Map<String, Vehicle> vehicles) {
+		this.vehicles = vehicles;
+	}
+
+	public Map<String, Segment> getSegments() {
+		return segments;
+	}
+
+	public void setSegments(Map<String, Segment> segments) {
+		this.segments = segments;
 	}
 
 	public List<TripContainer> getTripContainers() {
