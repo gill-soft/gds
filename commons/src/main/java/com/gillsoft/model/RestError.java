@@ -8,14 +8,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.NON_NULL)
-public class RestException {
+public class RestError {
 
 	@JsonFormat(shape=Shape.STRING)
 	private Date time = new Date();
 	private String error;
 	private String message;
 	
-	public RestException(String error, String message) {
+	public RestError(String message) {
+		this.message = message;
+	}
+
+	public RestError(String error, String message) {
 		this.error = error;
 		this.message = message;
 	}

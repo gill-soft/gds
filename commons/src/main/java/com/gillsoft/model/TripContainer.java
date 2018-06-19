@@ -11,7 +11,7 @@ public class TripContainer {
 	
 	private TripSearchRequest request;
 	
-	private Error error;
+	private RestError error;
 	
 	private List<Trip> trips;
 
@@ -23,11 +23,11 @@ public class TripContainer {
 		this.request = request;
 	}
 
-	public Error getError() {
+	public RestError getError() {
 		return error;
 	}
 
-	public void setError(Error error) {
+	public void setError(RestError error) {
 		this.error = error;
 	}
 
