@@ -2,9 +2,9 @@ package com.gillsoft.model;
 
 public enum SeatType {
 
-	FREE,
-	SALED,
-	EMPTY,
-	LOCKED
+	SEAT,
+	FLOOR,
+	EXIT,
+	DRIVER
 	
 }

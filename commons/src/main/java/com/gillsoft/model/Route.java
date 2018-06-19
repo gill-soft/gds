@@ -11,7 +11,7 @@ public class Route {
 	private String id;
 	private String number;
 	private String name;
-	private List<Locality> path;
+	private List<RoutePoint> path;
 	private Organisation carrier;
 	private RouteType type;
 
@@ -39,11 +39,11 @@ public class Route {
 		this.name = name;
 	}
 
-	public List<Locality> getPath() {
+	public List<RoutePoint> getPath() {
 		return path;
 	}
 
-	public void setPath(List<Locality> path) {
+	public void setPath(List<RoutePoint> path) {
 		this.path = path;
 	}
 

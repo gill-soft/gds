@@ -9,7 +9,6 @@ import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
-import com.gillsoft.model.Trip;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 
@@ -31,8 +30,6 @@ public interface TripSearchService {
 	 * @return
 	 */
 	public TripSearchResponse getSearchResult(String searchId);
-	
-	public Trip getInfo(String tripId);
 	
 	public Route getRoute(String tripId);
 	

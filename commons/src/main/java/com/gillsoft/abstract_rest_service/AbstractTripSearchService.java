@@ -15,7 +15,6 @@ import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
-import com.gillsoft.model.Trip;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.model.service.TripSearchService;
@@ -35,13 +34,6 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	}
 	
 	public abstract TripSearchResponse getSearchResultResponse(String searchId);
-
-	@GetMapping(Method.SEARCH_TRIP)
-	public final Trip getInfo(@RequestParam("tripId") String tripId) {
-		return getInfoResponse(tripId);
-	}
-	
-	public abstract Trip getInfoResponse(String tripId);
 
 	@GetMapping(Method.SEARCH_TRIP_ROUTE)
 	public final Route getRoute(@RequestParam("tripId") String tripId) {
