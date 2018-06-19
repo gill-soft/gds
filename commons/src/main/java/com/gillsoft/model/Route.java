@@ -12,7 +12,6 @@ public class Route {
 	private String number;
 	private String name;
 	private List<RoutePoint> path;
-	private Organisation carrier;
 	private RouteType type;
 
 	public String getId() {
@@ -45,14 +44,6 @@ public class Route {
 
 	public void setPath(List<RoutePoint> path) {
 		this.path = path;
-	}
-
-	public Organisation getCarrier() {
-		return carrier;
-	}
-
-	public void setCarrier(Organisation carrier) {
-		this.carrier = carrier;
 	}
 
 	public RouteType getType() {

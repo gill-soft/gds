@@ -15,7 +15,9 @@ public class Segment {
 	private String number;
 	private TripType type;
 	private Route route;
+	private String vehicleId;
 	private String insuranceId;
+	private String carrierId;
 
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
 	private Date departureDate;
@@ -27,6 +29,7 @@ public class Segment {
 	private String arrivalId;
 	private String timeInWay;
 	private Required required;
+	private int freeSeatsCount;
 	private List<Seat> seats;
 	private Price price;
 
@@ -62,12 +65,28 @@ public class Segment {
 		this.route = route;
 	}
 
+	public String getVehicleId() {
+		return vehicleId;
+	}
+
+	public void setVehicleId(String vehicleId) {
+		this.vehicleId = vehicleId;
+	}
+
 	public String getInsuranceId() {
 		return insuranceId;
 	}
 
 	public void setInsuranceId(String insuranceId) {
 		this.insuranceId = insuranceId;
+	}
+
+	public String getCarrierId() {
+		return carrierId;
+	}
+
+	public void setCarrierId(String carrierId) {
+		this.carrierId = carrierId;
 	}
 
 	public Date getDepartureDate() {
@@ -116,6 +135,14 @@ public class Segment {
 
 	public void setRequired(Required required) {
 		this.required = required;
+	}
+
+	public int getFreeSeatsCount() {
+		return freeSeatsCount;
+	}
+
+	public void setFreeSeatsCount(int freeSeatsCount) {
+		this.freeSeatsCount = freeSeatsCount;
 	}
 
 	public List<Seat> getSeats() {

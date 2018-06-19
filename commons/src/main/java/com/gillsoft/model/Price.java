@@ -9,17 +9,17 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 @JsonInclude(Include.NON_NULL)
 public class Price {
 
-	private String currency;
+	private Currency currency;
 	private BigDecimal amount;
 	private BigDecimal vat;
 	private Fare fare;
 	private List<Fee> fees;
 
-	public String getCurrency() {
+	public Currency getCurrency() {
 		return currency;
 	}
 
-	public void setCurrency(String currency) {
+	public void setCurrency(Currency currency) {
 		this.currency = currency;
 	}
 
