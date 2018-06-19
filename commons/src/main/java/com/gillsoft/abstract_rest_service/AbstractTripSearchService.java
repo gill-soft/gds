@@ -21,20 +21,23 @@ import com.gillsoft.model.service.TripSearchService;
 
 public abstract class AbstractTripSearchService implements TripSearchService {
 
-	@PostMapping(Method.SEARCH_INIT)
+	@Override
+	@PostMapping(Method.SEARCH)
 	public final TripSearchResponse initSearch(@RequestBody TripSearchRequest request) {
 		return initSearchResponse(request);
 	}
 	
 	public abstract TripSearchResponse initSearchResponse(TripSearchRequest request);
 
-	@GetMapping(Method.SEARCH_RESULT)
+	@Override
+	@GetMapping(Method.SEARCH)
 	public final TripSearchResponse getSearchResult(@RequestParam("searchId") String searchId) {
 		return getSearchResultResponse(searchId);
 	}
 	
 	public abstract TripSearchResponse getSearchResultResponse(String searchId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_ROUTE)
 	public final Route getRoute(@RequestParam("tripId") String tripId) {
 		return getRouteResponse(tripId);
@@ -42,6 +45,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract Route getRouteResponse(String tripId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_SEATS_SCHEME)
 	public final SeatsScheme getSeatsScheme(@RequestParam("tripId") String tripId) {
 		return getSeatsSchemeResponse(tripId);
@@ -49,6 +53,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract SeatsScheme getSeatsSchemeResponse(String tripId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_SEATS)
 	public final List<Seat> getSeats(@RequestParam("tripId") String tripId) {
 		return getSeatsResponse(tripId);
@@ -56,6 +61,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract List<Seat> getSeatsResponse(String tripId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_FARES)
 	public final List<Fare> getFares(@RequestParam("tripId") String tripId) {
 		return getFaresResponse(tripId);
@@ -63,6 +69,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract List<Fare> getFaresResponse(String tripId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_REQUIRED)
 	public final Required getRequiredFields(@RequestParam("tripId") String tripId) {
 		return getRequiredFieldsResponse(tripId);
@@ -70,13 +77,15 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract Required getRequiredFieldsResponse(String tripId);
 
-	@PostMapping(Method.SEARCH_TRIP_SEATS_UPDATE)
+	@Override
+	@PostMapping(Method.SEARCH_TRIP_SEATS)
 	public final List<Seat> updateSeats(@RequestParam("tripId") String tripId, @RequestBody List<Seat> seats) {
 		return updateSeatsResponse(tripId, seats);
 	}
 	
 	public abstract List<Seat> updateSeatsResponse(String tripId, List<Seat> seats);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_CONDITIONS)
 	public final List<ReturnCondition> getConditions(@RequestParam("tripId") String tripId,
 			@RequestParam("fareId") String fareId) {
@@ -85,6 +94,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	
 	public abstract List<ReturnCondition> getConditionsResponse(String tripId, String fareId);
 
+	@Override
 	@GetMapping(Method.SEARCH_TRIP_DOCUMENTS)
 	public final List<Document> getDocuments(@RequestParam("tripId") String tripId) {
 		return getDocumentsResponse(tripId);

@@ -22,7 +22,6 @@ import com.gillsoft.model.service.LocalityService;
 import com.gillsoft.model.service.OrderService;
 import com.gillsoft.model.service.ResourceService;
 import com.gillsoft.model.service.TripSearchService;
-import com.gillsoft.model.service.TicketService;
 
 // TODO добавить обработку статусов ответов ResponseEntity
 public class RestResourceService implements ResourceService {
@@ -31,6 +30,7 @@ public class RestResourceService implements ResourceService {
 	private ResourceParams params;
 	private RestLocalityService localityService;
 	private RestTripSearchService searchService;
+	private RestOrderService orderService;
 	
 	private Map<String, ?> getMap() {
 		return new HashMap<>(0);
@@ -99,15 +99,12 @@ public class RestResourceService implements ResourceService {
 	}
 
 	@Override
-	public TicketService getTicketService() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public OrderService getOrderService() {
-		// TODO Auto-generated method stub
-		return null;
+		if (orderService == null) {
+			orderService = new RestOrderService();
+			orderService.setResourceService(this);
+		}
+		return orderService;
 	}
 
 	@Override

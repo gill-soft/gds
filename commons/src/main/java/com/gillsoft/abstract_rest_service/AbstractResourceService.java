@@ -12,6 +12,7 @@ import com.gillsoft.model.service.ResourceInfoService;
 
 public abstract class AbstractResourceService implements ResourceInfoService {
 	
+	@Override
 	@GetMapping(Method.PING)
 	public final Ping ping(@RequestParam("id") String id) {
 		return ping(id);
@@ -19,6 +20,7 @@ public abstract class AbstractResourceService implements ResourceInfoService {
 	
 	public abstract Ping pingResponse(String id);
 	
+	@Override
 	@GetMapping(Method.INFO)
 	public final Resource getInfo() {
 		return getInfoResponse();
@@ -26,6 +28,7 @@ public abstract class AbstractResourceService implements ResourceInfoService {
 	
 	public abstract Resource getInfoResponse();
 	
+	@Override
 	@GetMapping(Method.METHOD)
 	public final List<Method> getAvailableMethods() {
 		return getAvailableMethodsResponse();

@@ -18,19 +18,13 @@ public class Method {
 	
 	public static final String LOCALITY_BINDING = "/api/locality/binding";
 	
-	public static final String SEARCH_INIT = "/api/search/init";
-	
-	public static final String SEARCH_RESULT = "/api/search/result";
-	
-	public static final String SEARCH_TRIP = "/api/search/trip";
+	public static final String SEARCH = "/api/search";
 	
 	public static final String SEARCH_TRIP_ROUTE = "/api/search/trip/route";
 	
 	public static final String SEARCH_TRIP_SEATS_SCHEME = "/api/search/trip/seats/scheme";
 	
 	public static final String SEARCH_TRIP_SEATS = "/api/search/trip/seats";
-	
-	public static final String SEARCH_TRIP_SEATS_UPDATE = "/api/search/trip/seats/update";
 	
 	public static final String SEARCH_TRIP_FARES = "/api/search/trip/fares";
 	
@@ -40,9 +34,17 @@ public class Method {
 	
 	public static final String SEARCH_TRIP_DOCUMENTS = "/api/search/trip/documents";
 	
+	public static final String ORDER = "/api/order";
+	
+	public static final String ORDER_TICKET = "/api/order/ticket";
+	
+	public static final String ORDER_RETURN = "/api/order/return";
+	
 	private String name;
 	
 	private String url;
+	
+	private MethodType type;
 
 	public String getName() {
 		return name;
@@ -58,6 +60,14 @@ public class Method {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public MethodType getType() {
+		return type;
+	}
+
+	public void setType(MethodType type) {
+		this.type = type;
 	}
 	
 }

@@ -35,13 +35,6 @@ public interface ResourceService extends ResourceInfoService {
 	public TripSearchService getSearchService();
 
 	/**
-	 * Возвращает сервис работы с билетами в ресурсе.
-	 * 
-	 * @return Сервис.
-	 */
-	public TicketService getTicketService();
-
-	/**
 	 * Возвращает сервис работы с заказами в ресурсе.
 	 * 
 	 * @return Сервис.

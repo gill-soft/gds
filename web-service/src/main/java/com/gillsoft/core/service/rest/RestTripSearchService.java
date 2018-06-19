@@ -24,7 +24,7 @@ public class RestTripSearchService implements TripSearchService {
 
 	@Override
 	public TripSearchResponse initSearch(TripSearchRequest request) {
-		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH_INIT)
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH)
 				.build().toUri();
 		ResponseEntity<TripSearchResponse> response = resourceService.getTemplate()
 				.postForEntity(uri, request, TripSearchResponse.class);
@@ -33,7 +33,7 @@ public class RestTripSearchService implements TripSearchService {
 
 	@Override
 	public TripSearchResponse getSearchResult(String searchId) {
-		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH_RESULT)
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH)
 				.queryParam("searchId", searchId)
 				.build().toUri();
 		ResponseEntity<TripSearchResponse> response = resourceService.getTemplate()

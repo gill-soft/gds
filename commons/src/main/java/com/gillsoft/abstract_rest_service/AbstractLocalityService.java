@@ -13,6 +13,7 @@ import com.gillsoft.model.service.LocalityService;
 
 public abstract class AbstractLocalityService implements LocalityService {
 	
+	@Override
 	@PostMapping(Method.LOCALITY_ALL)
 	public final List<Locality> getAll(@RequestBody LocalityRequest request) {
 		return getAllResponse(request);
@@ -20,6 +21,7 @@ public abstract class AbstractLocalityService implements LocalityService {
 	
 	public abstract List<Locality> getAllResponse(LocalityRequest request);
 	
+	@Override
 	@PostMapping(Method.LOCALITY_USED)
 	public final List<Locality> getUsed(@RequestBody LocalityRequest request) {
 		return getUsedResponse(request);
@@ -27,6 +29,7 @@ public abstract class AbstractLocalityService implements LocalityService {
 	
 	public abstract List<Locality> getUsedResponse(LocalityRequest request);
 	
+	@Override
 	@PostMapping(Method.LOCALITY_BINDING)
 	public final Map<String, List<String>> getBinding(@RequestBody LocalityRequest request) {
 		return getBindingResponse(request);

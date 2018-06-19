@@ -3,7 +3,7 @@ package com.gillsoft.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class StringUtil {
+public abstract class StringUtil {
 	
 	public static String md5(String st) {
 	    try {
