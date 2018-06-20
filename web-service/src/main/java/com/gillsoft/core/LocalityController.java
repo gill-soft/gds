@@ -1,6 +1,5 @@
 package com.gillsoft.core;
 
-import java.rmi.AccessException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,7 +33,7 @@ public class LocalityController {
 					activity.check(request);
 					return new LocalityResponse(request.getId(),
 							store.getResourceService(request.getParams()).getLocalityService().getAll(request));
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new LocalityResponse(request.getId(), e);
 				}
 			});
@@ -50,7 +49,7 @@ public class LocalityController {
 					activity.check(request);
 					return new LocalityResponse(request.getId(),
 							store.getResourceService(request.getParams()).getLocalityService().getUsed(request));
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new LocalityResponse(request.getId(), e);
 				}
 			});
@@ -66,7 +65,7 @@ public class LocalityController {
 					activity.check(request);
 					return new LocalityResponse(request.getId(),
 							store.getResourceService(request.getParams()).getLocalityService().getBinding(request));
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new LocalityResponse(request.getId(), e);
 				}
 			});

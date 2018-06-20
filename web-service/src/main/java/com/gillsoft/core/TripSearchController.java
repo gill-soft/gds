@@ -1,6 +1,5 @@
 package com.gillsoft.core;
 
-import java.rmi.AccessException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -163,7 +162,7 @@ public class TripSearchController {
 					activity.check(request);
 					return new SeatsResponse(request.getId(),
 							store.getResourceService(request.getParams()).getSearchService().getSeats(request.getTripId()));
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new SeatsResponse(request.getId(), e);
 				}
 			});

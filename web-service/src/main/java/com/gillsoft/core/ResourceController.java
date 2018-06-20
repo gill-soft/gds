@@ -1,6 +1,5 @@
 package com.gillsoft.core;
 
-import java.rmi.AccessException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -35,7 +34,7 @@ public class ResourceController {
 					activity.check(request);
 					return new ResourceResponse(request.getId(),
 							store.getResourceService(request.getParams()).getInfo());
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new ResourceResponse(request.getId(), e);
 				}
 			});
@@ -43,7 +42,7 @@ public class ResourceController {
 		return ThreadPoolStore.getResult(PoolType.RESOURCE_INFO, callables);
 	}
 	
-	public List<ResourceMethodResponse> getMethods(List<ResourceRequest> requests) throws AccessException {
+	public List<ResourceMethodResponse> getMethods(List<ResourceRequest> requests) {
 		List<Callable<ResourceMethodResponse>> callables = new ArrayList<>();
 		for (final ResourceRequest request : requests) {
 			callables.add(() -> {
@@ -51,7 +50,7 @@ public class ResourceController {
 					activity.check(request);
 					return new ResourceMethodResponse(request.getId(),
 							store.getResourceService(request.getParams()).getAvailableMethods());
-				} catch (AccessException e) {
+				} catch (Exception e) {
 					return new ResourceMethodResponse(request.getId(), e);
 				}
 			});
