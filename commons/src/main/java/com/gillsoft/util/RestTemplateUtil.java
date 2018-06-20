@@ -28,7 +28,7 @@ public abstract class RestTemplateUtil {
 		
 		// настраиваем таймауты
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
-		factory.setConnectTimeout(1000);
+		factory.setConnectTimeout(10000);
 		factory.setConnectionRequestTimeout(requestTimeout);
 		factory.setHttpClient(httpClient);
 		return factory;

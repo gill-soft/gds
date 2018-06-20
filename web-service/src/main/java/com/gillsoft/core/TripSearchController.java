@@ -1,5 +1,6 @@
 package com.gillsoft.core;
 
+import java.rmi.AccessException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,9 @@ import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.concurrent.PoolType;
 import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.core.store.ResourceStore;
+import com.gillsoft.model.request.SeatsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.SeatsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 
 @Component
@@ -60,33 +63,19 @@ public class TripSearchController {
 			// вытаскиваем с кэша ресурсы, по которым нужно получить результат поиска
 			@SuppressWarnings("unchecked")
 			List<TripSearchResponse> searchResponses = (List<TripSearchResponse>) cache.read(params);
-			List<Callable<TripSearchResponse>> callables = new ArrayList<>();
-			
-			// запускаем получение результата поиска
-			for (final TripSearchResponse searchResponse : searchResponses) {
-
-				// берем из ответа ид поиска и, если он есть, то отправляем запрос на связанный м ид поиска ресурс
-				if (searchResponse.getSearchId() != null
-						&& searchResponse.getRequest() != null) {
-					final TripSearchRequest request = searchResponse.getRequest();
-					callables.add(() -> {
-						try {
-							activity.check(request);
-							
-							// формируем новый ответ с новым ид поиска
-							TripSearchResponse response = store.getResourceService(
-									request.getParams()).getSearchService().getSearchResult(searchResponse.getSearchId());
-							return new TripSearchResponse(request.getId(), response.getSearchId(), response.getTripContainers(), request);
-						} catch (Exception e) {
-							return new TripSearchResponse(request.getId(), e);
-						}
-					});
-				}
+			if (searchResponses == null) {
+				throw new IOCacheException("Too late for getting result");
 			}
+			List<Callable<TripSearchResponse>> callables = initSearchResult(searchResponses);
+			
 			// создаем ссылку на следующую часть результата поиска или завершаем его
 			TripSearchResponse response = null;
 			if (!callables.isEmpty()) {
-				response = putToCache(ThreadPoolStore.getResult(PoolType.SEARCH, callables));
+				
+				// проверяем выполнились какие-нибудь задания
+				searchResponses = ThreadPoolStore.getResult(PoolType.SEARCH, callables);
+				
+				response = isPresentNextResult(searchResponses) ? putToCache(searchResponses) : new TripSearchResponse();
 			} else {
 				response = new TripSearchResponse();
 			}
@@ -94,10 +83,7 @@ public class TripSearchController {
 			for (TripSearchResponse searchResponse : searchResponses) {
 				
 				// в результат нужно добавить только ид запроса и список рейсов
-				TripSearchResponse copy = new TripSearchResponse();
-				copy.setId(searchResponse.getId());
-				copy.setTripContainers(searchResponse.getTripContainers());
-				response.getResult().add(copy);
+				response.getResult().add(createCopy(searchResponse));
 			}
 			return response;
 		} catch (IOCacheException e) {
@@ -105,17 +91,84 @@ public class TripSearchController {
 		}
 	}
 	
+	/*
+	 * проверяет есть ли ссылка на следующий результат
+	 */
+	private boolean isPresentNextResult(List<TripSearchResponse> searchResponses) {
+		for (TripSearchResponse tripSearchResponse : searchResponses) {
+			if (tripSearchResponse.getSearchId() != null) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private List<Callable<TripSearchResponse>> initSearchResult(List<TripSearchResponse> searchResponses) {
+		List<Callable<TripSearchResponse>> callables = new ArrayList<>();
+		
+		// запускаем получение результата поиска
+		for (final TripSearchResponse searchResponse : searchResponses) {
+
+			// берем из ответа ид поиска и, если он есть, то отправляем запрос на связанный с ид поиска ресурс
+			if (searchResponse.getSearchId() != null
+					&& searchResponse.getRequest() != null) {
+				final TripSearchRequest request = searchResponse.getRequest();
+				callables.add(() -> {
+					try {
+						activity.check(request);
+						
+						// формируем новый ответ с новым ид поиска
+						TripSearchResponse response = store.getResourceService(
+								request.getParams()).getSearchService().getSearchResult(searchResponse.getSearchId());
+						response.setRequest(request);
+						return response;
+					} catch (Exception e) {
+						return new TripSearchResponse(request.getId(), e);
+					}
+				});
+			}
+		}
+		return callables;
+	}
+	
+	private TripSearchResponse createCopy(TripSearchResponse searchResponse) {
+		TripSearchResponse copy = new TripSearchResponse();
+		copy.setId(searchResponse.getId());
+		copy.setLocalities(searchResponse.getLocalities());
+		copy.setOrganisations(searchResponse.getOrganisations());
+		copy.setVehicles(searchResponse.getVehicles());
+		copy.setSegments(searchResponse.getSegments());
+		copy.setTripContainers(searchResponse.getTripContainers());
+		return copy;
+	}
+	
 	private TripSearchResponse putToCache(List<TripSearchResponse> searchResponses) {
 		String searchId = UUID.randomUUID().toString();
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
-		params.put(MemoryCacheHandler.TIME_TO_LIVE, 60000);
+		params.put(MemoryCacheHandler.TIME_TO_LIVE, 60000l);
 		try {
 			cache.write(searchResponses, params);
 			return new TripSearchResponse(null, searchId);
 		} catch (IOCacheException e) {
 			return new TripSearchResponse(null, e);
 		}
+	}
+	
+	public List<SeatsResponse> getSeats(List<SeatsRequest> requests) {
+		List<Callable<SeatsResponse>> callables = new ArrayList<>();
+		for (final SeatsRequest request : requests) {
+			callables.add(() -> {
+				try {
+					activity.check(request);
+					return new SeatsResponse(request.getId(),
+							store.getResourceService(request.getParams()).getSearchService().getSeats(request.getTripId()));
+				} catch (AccessException e) {
+					return new SeatsResponse(request.getId(), e);
+				}
+			});
+		}
+		return ThreadPoolStore.getResult(PoolType.SEARCH, callables);
 	}
 
 }

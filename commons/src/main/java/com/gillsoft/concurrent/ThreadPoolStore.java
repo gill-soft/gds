@@ -76,6 +76,17 @@ public class ThreadPoolStore {
 		for (Callable<T> callable : callables) {
 			futures.add(execute(poolType, callable));
 		}
+		return getResult(futures);
+	}
+	
+	/**
+	 * Дожидается и возвращает результат функций.
+	 * 
+	 * @param futures
+	 *            Функции
+	 * @return Результат
+	 */
+	public static <T> List<T> getResult(List<Future<T>> futures) {
 		List<T> resources = new ArrayList<>();
 		for (Future<T> future : futures) {
 			try {
@@ -87,6 +98,9 @@ public class ThreadPoolStore {
 		return resources;
 	}
 	
+	/**
+	 * Закрывает все ExecutorService
+	 */
 	public static void shutdown() {
 		for (ExecutorService service : executors.values()) {
 			service.shutdown();

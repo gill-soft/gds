@@ -3,6 +3,9 @@ package com.gillsoft.core.service.rest;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -55,8 +58,14 @@ public class RestTripSearchService implements TripSearchService {
 
 	@Override
 	public List<Seat> getSeats(String tripId) {
-		// TODO Auto-generated method stub
-		return null;
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.SEARCH_TRIP_SEATS)
+				.queryParam("tripId", tripId)
+				.build().toUri();
+		RequestEntity<?> entity = new RequestEntity<>(HttpMethod.GET, uri);
+		ParameterizedTypeReference<List<Seat>> type = new ParameterizedTypeReference<List<Seat>>() { };
+		ResponseEntity<List<Seat>> response = resourceService.getTemplate()
+				.exchange(entity, type);
+		return response.getBody();
 	}
 
 	@Override
