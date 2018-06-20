@@ -15,7 +15,7 @@ public abstract class AbstractResourceService implements ResourceInfoService {
 	@Override
 	@GetMapping(Method.PING)
 	public final Ping ping(@RequestParam("id") String id) {
-		return ping(id);
+		return pingResponse(id);
 	}
 	
 	public abstract Ping pingResponse(String id);
