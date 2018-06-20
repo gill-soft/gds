@@ -29,6 +29,14 @@ public class Locality {
     
     private String details;
 
+	public Locality() {
+		
+	}
+
+	public Locality(String id) {
+		this.id = id;
+	}
+
 	public String getId() {
 		return id;
 	}

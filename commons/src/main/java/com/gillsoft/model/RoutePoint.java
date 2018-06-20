@@ -12,8 +12,15 @@ public class RoutePoint {
 	private String platform;
 	private int distance;
 	private int arrivalDay;
-	private String localityId;
 	private Locality locality;
+	
+	public RoutePoint() {
+		
+	}
+
+	public RoutePoint(String id) {
+		this.id = id;
+	}
 
 	public String getId() {
 		return id;
@@ -61,14 +68,6 @@ public class RoutePoint {
 
 	public void setArrivalDay(int arrivalDay) {
 		this.arrivalDay = arrivalDay;
-	}
-
-	public String getLocalityId() {
-		return localityId;
-	}
-
-	public void setLocalityId(String localityId) {
-		this.localityId = localityId;
 	}
 
 	public Locality getLocality() {

@@ -15,9 +15,9 @@ public class Segment {
 	private String number;
 	private TripType type;
 	private Route route;
-	private String vehicleId;
-	private String insuranceId;
-	private String carrierId;
+	private Vehicle vehicle;
+	private Organisation insurance;
+	private Organisation carrier;
 
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
 	private Date departureDate;
@@ -25,8 +25,8 @@ public class Segment {
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
 	private Date arrivalDate;
 
-	private String departureId;
-	private String arrivalId;
+	private Locality departure;
+	private Locality arrival;
 	private String timeInWay;
 	private Required required;
 	private int freeSeatsCount;
@@ -65,28 +65,28 @@ public class Segment {
 		this.route = route;
 	}
 
-	public String getVehicleId() {
-		return vehicleId;
+	public Vehicle getVehicle() {
+		return vehicle;
 	}
 
-	public void setVehicleId(String vehicleId) {
-		this.vehicleId = vehicleId;
+	public void setVehicle(Vehicle vehicle) {
+		this.vehicle = vehicle;
 	}
 
-	public String getInsuranceId() {
-		return insuranceId;
+	public Organisation getInsurance() {
+		return insurance;
 	}
 
-	public void setInsuranceId(String insuranceId) {
-		this.insuranceId = insuranceId;
+	public void setInsurance(Organisation insurance) {
+		this.insurance = insurance;
 	}
 
-	public String getCarrierId() {
-		return carrierId;
+	public Organisation getCarrier() {
+		return carrier;
 	}
 
-	public void setCarrierId(String carrierId) {
-		this.carrierId = carrierId;
+	public void setCarrier(Organisation carrier) {
+		this.carrier = carrier;
 	}
 
 	public Date getDepartureDate() {
@@ -105,20 +105,20 @@ public class Segment {
 		this.arrivalDate = arrivalDate;
 	}
 
-	public String getDepartureId() {
-		return departureId;
+	public Locality getDeparture() {
+		return departure;
 	}
 
-	public void setDepartureId(String departureId) {
-		this.departureId = departureId;
+	public void setDeparture(Locality departure) {
+		this.departure = departure;
 	}
 
-	public String getArrivalId() {
-		return arrivalId;
+	public Locality getArrival() {
+		return arrival;
 	}
 
-	public void setArrivalId(String arrivalId) {
-		this.arrivalId = arrivalId;
+	public void setArrival(Locality arrival) {
+		this.arrival = arrival;
 	}
 
 	public String getTimeInWay() {

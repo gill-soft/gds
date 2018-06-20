@@ -14,6 +14,14 @@ public class Organisation {
 	private List<String> phones;
 	private String address;
 
+	public Organisation() {
+		
+	}
+
+	public Organisation(String id) {
+		this.id = id;
+	}
+
 	public String getId() {
 		return id;
 	}

@@ -11,6 +11,14 @@ public class Vehicle {
 	private String number;
 	private int capacity;
 
+	public Vehicle() {
+		
+	}
+
+	public Vehicle(String id) {
+		this.id = id;
+	}
+
 	public String getId() {
 		return id;
 	}
