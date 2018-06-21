@@ -2,6 +2,7 @@ package com.gillsoft.util;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 public abstract class StringUtil {
 	
@@ -29,5 +30,9 @@ public abstract class StringUtil {
         }
         return hash.toString();
     }
+	
+	public static String generateUUID() {
+		return UUID.randomUUID().toString();
+	}
 
 }

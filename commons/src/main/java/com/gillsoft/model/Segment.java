@@ -2,6 +2,7 @@ package com.gillsoft.model;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,6 +33,7 @@ public class Segment {
 	private int freeSeatsCount;
 	private List<Seat> seats;
 	private Price price;
+	private Map<String, String> additionals;
 
 	public String getId() {
 		return id;
@@ -159,6 +161,14 @@ public class Segment {
 
 	public void setPrice(Price price) {
 		this.price = price;
+	}
+
+	public Map<String, String> getAdditionals() {
+		return additionals;
+	}
+
+	public void setAdditionals(Map<String, String> additionals) {
+		this.additionals = additionals;
 	}
 
 }

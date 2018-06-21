@@ -3,26 +3,26 @@ package com.gillsoft.model.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.gillsoft.model.request.Request;
-import com.gillsoft.model.Exception;
+import com.gillsoft.model.RestError;
 
 @JsonInclude(Include.NON_NULL)
 public abstract class Response extends Request {
 	
-	private Exception exception;
+	private RestError error;
 
-	public Exception getException() {
-		return exception;
+	public RestError getError() {
+		return error;
 	}
 
-	public void setException(Exception exception) {
-		this.exception = exception;
+	public void setError(RestError error) {
+		this.error = error;
 	}
-	
+
 	public void setException(java.lang.Exception exception) {
-		this.exception = new Exception();
-		this.exception.setMessage(exception.getMessage());
+		this.error = new RestError();
+		this.error.setError(exception.getMessage());
 		if (exception.getCause() != null) {
-			this.exception.setCause(exception.getCause().getMessage());
+			this.error.setMessage(exception.getCause().getMessage());
 		}
 	}
 	

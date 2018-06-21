@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import com.gillsoft.model.request.SeatsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.SeatsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -142,7 +142,7 @@ public class TripSearchController {
 	}
 	
 	private TripSearchResponse putToCache(List<TripSearchResponse> searchResponses) {
-		String searchId = UUID.randomUUID().toString();
+		String searchId = StringUtil.generateUUID();
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
 		params.put(MemoryCacheHandler.TIME_TO_LIVE, 60000l);

@@ -4,22 +4,22 @@ import java.util.List;
 import java.util.Map;
 
 import com.gillsoft.model.Customer;
-import com.gillsoft.model.Ticket;
+import com.gillsoft.model.ServiceItem;
 
 public class OrderRequest extends ResourceRequest {
 	
-	private List<Ticket> tickets;
+	private List<ServiceItem> services;
 	
 	private Map<String, Customer> customers;
 	
 	private List<OrderRequest> resources;
 
-	public List<Ticket> getTickets() {
-		return tickets;
+	public List<ServiceItem> getServices() {
+		return services;
 	}
 
-	public void setTickets(List<Ticket> tickets) {
-		this.tickets = tickets;
+	public void setServices(List<ServiceItem> services) {
+		this.services = services;
 	}
 
 	public Map<String, Customer> getCustomers() {

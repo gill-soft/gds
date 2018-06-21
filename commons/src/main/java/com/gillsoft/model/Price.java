@@ -12,8 +12,8 @@ public class Price {
 	private Currency currency;
 	private BigDecimal amount;
 	private BigDecimal vat;
-	private Fare fare;
-	private List<Fee> fees;
+	private Tariff tariff;
+	private List<Commission> commissions;
 
 	public Currency getCurrency() {
 		return currency;
@@ -39,20 +39,20 @@ public class Price {
 		this.vat = vat;
 	}
 
-	public Fare getFare() {
-		return fare;
+	public Tariff getTariff() {
+		return tariff;
 	}
 
-	public void setFare(Fare fare) {
-		this.fare = fare;
+	public void setTariff(Tariff tariff) {
+		this.tariff = tariff;
 	}
 
-	public List<Fee> getFees() {
-		return fees;
+	public List<Commission> getCommissions() {
+		return commissions;
 	}
 
-	public void setFees(List<Fee> fees) {
-		this.fees = fees;
+	public void setCommissions(List<Commission> commissions) {
+		this.commissions = commissions;
 	}
 
 }

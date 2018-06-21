@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.model.Document;
-import com.gillsoft.model.Fare;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Required;
 import com.gillsoft.model.ReturnCondition;
@@ -69,7 +69,7 @@ public class RestTripSearchService implements TripSearchService {
 	}
 
 	@Override
-	public List<Fare> getFares(String tripId) {
+	public List<Tariff> getTariffs(String tripId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -87,7 +87,7 @@ public class RestTripSearchService implements TripSearchService {
 	}
 
 	@Override
-	public List<ReturnCondition> getConditions(String tripId, String fareId) {
+	public List<ReturnCondition> getConditions(String tripId, String tariffId) {
 		// TODO Auto-generated method stub
 		return null;
 	}

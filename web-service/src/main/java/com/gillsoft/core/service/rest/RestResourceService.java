@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
@@ -22,6 +21,7 @@ import com.gillsoft.model.service.LocalityService;
 import com.gillsoft.model.service.OrderService;
 import com.gillsoft.model.service.ResourceService;
 import com.gillsoft.model.service.TripSearchService;
+import com.gillsoft.util.StringUtil;
 
 // TODO добавить обработку статусов ответов ResponseEntity
 public class RestResourceService implements ResourceService {
@@ -53,7 +53,7 @@ public class RestResourceService implements ResourceService {
 	}
 
 	public boolean isAvailable() {
-		String uuid = UUID.randomUUID().toString();
+		String uuid = StringUtil.generateUUID();
 		try {
 			return Objects.equals(ping(uuid).getId(), uuid);
 		} catch (RestClientException e) {

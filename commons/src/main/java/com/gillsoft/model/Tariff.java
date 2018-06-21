@@ -1,22 +1,20 @@
 package com.gillsoft.model;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.NON_NULL)
-public class Fee {
+public class Tariff {
 
 	private String id;
 	private String code;
 	private String name;
 	private String description;
 	private BigDecimal value;
-	private BigDecimal vat;
-	private CalcType valueCalcType; // тип начисления комиссии
-	private CalcType vatCalcType; // тип начисления НДС комиссии
-	private ValueType type; // тип измерения значения комиссии (расчитанное значение или процент)
+	private List<ReturnCondition> returnConditions;
 
 	public String getId() {
 		return id;
@@ -58,36 +56,12 @@ public class Fee {
 		this.value = value;
 	}
 
-	public BigDecimal getVat() {
-		return vat;
+	public List<ReturnCondition> getReturnConditions() {
+		return returnConditions;
 	}
 
-	public void setVat(BigDecimal vat) {
-		this.vat = vat;
-	}
-
-	public CalcType getValueCalcType() {
-		return valueCalcType;
-	}
-
-	public void setValueCalcType(CalcType valueCalcType) {
-		this.valueCalcType = valueCalcType;
-	}
-
-	public CalcType getVatCalcType() {
-		return vatCalcType;
-	}
-
-	public void setVatCalcType(CalcType vatCalcType) {
-		this.vatCalcType = vatCalcType;
-	}
-
-	public ValueType getType() {
-		return type;
-	}
-
-	public void setType(ValueType type) {
-		this.type = type;
+	public void setReturnConditions(List<ReturnCondition> returnConditions) {
+		this.returnConditions = returnConditions;
 	}
 
 }

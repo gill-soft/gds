@@ -26,7 +26,7 @@ public class Method {
 	
 	public static final String SEARCH_TRIP_SEATS = "/api/search/trip/seats";
 	
-	public static final String SEARCH_TRIP_FARES = "/api/search/trip/fares";
+	public static final String SEARCH_TRIP_TARIFFS = "/api/search/trip/tariffs";
 	
 	public static final String SEARCH_TRIP_REQUIRED = "/api/search/trip/required";
 	

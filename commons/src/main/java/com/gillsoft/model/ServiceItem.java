@@ -1,8 +1,10 @@
 package com.gillsoft.model;
 
-public class Ticket {
+public class ServiceItem {
 	
 	private String id;
+	
+	private String number;
 	
 	private Customer customer;
 	
@@ -10,7 +12,9 @@ public class Ticket {
 	
 	private Seat seat;
 	
-	private Fare fare;
+	private Price price;
+	
+	private RestError error;
 
 	public String getId() {
 		return id;
@@ -18,6 +22,14 @@ public class Ticket {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getNumber() {
+		return number;
+	}
+
+	public void setNumber(String number) {
+		this.number = number;
 	}
 
 	public Customer getCustomer() {
@@ -44,12 +56,20 @@ public class Ticket {
 		this.seat = seat;
 	}
 
-	public Fare getFare() {
-		return fare;
+	public Price getPrice() {
+		return price;
 	}
 
-	public void setFare(Fare fare) {
-		this.fare = fare;
+	public void setPrice(Price price) {
+		this.price = price;
+	}
+
+	public RestError getError() {
+		return error;
+	}
+
+	public void setError(RestError error) {
+		this.error = error;
 	}
 
 }

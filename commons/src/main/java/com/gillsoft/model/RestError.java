@@ -15,6 +15,10 @@ public class RestError {
 	private String error;
 	private String message;
 	
+	public RestError() {
+		
+	}
+
 	public RestError(String message) {
 		this.message = message;
 	}

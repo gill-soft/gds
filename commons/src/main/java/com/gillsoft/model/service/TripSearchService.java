@@ -3,7 +3,7 @@ package com.gillsoft.model.service;
 import java.util.List;
 
 import com.gillsoft.model.Document;
-import com.gillsoft.model.Fare;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Required;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
@@ -37,13 +37,13 @@ public interface TripSearchService {
 	
 	public List<Seat> getSeats(String tripId);
 	
-	public List<Fare> getFares(String tripId);
+	public List<Tariff> getTariffs(String tripId);
 	
 	public Required getRequiredFields(String tripId);
 	
 	public List<Seat> updateSeats(String tripId, List<Seat> seats);
 	
-	public List<ReturnCondition> getConditions(String tripId, String fareId);
+	public List<ReturnCondition> getConditions(String tripId, String tariffId);
 	
 	public List<Document> getDocuments(String tripId);
 

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gillsoft.model.Document;
-import com.gillsoft.model.Fare;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Required;
 import com.gillsoft.model.ReturnCondition;
@@ -62,12 +62,12 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	public abstract List<Seat> getSeatsResponse(String tripId);
 
 	@Override
-	@GetMapping(Method.SEARCH_TRIP_FARES)
-	public final List<Fare> getFares(@RequestParam("tripId") String tripId) {
-		return getFaresResponse(tripId);
+	@GetMapping(Method.SEARCH_TRIP_TARIFFS)
+	public final List<Tariff> getTariffs(@RequestParam("tripId") String tripId) {
+		return getTariffsResponse(tripId);
 	}
 	
-	public abstract List<Fare> getFaresResponse(String tripId);
+	public abstract List<Tariff> getTariffsResponse(String tripId);
 
 	@Override
 	@GetMapping(Method.SEARCH_TRIP_REQUIRED)
@@ -88,11 +88,11 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	@Override
 	@GetMapping(Method.SEARCH_TRIP_CONDITIONS)
 	public final List<ReturnCondition> getConditions(@RequestParam("tripId") String tripId,
-			@RequestParam("fareId") String fareId) {
-		return getConditionsResponse(tripId, fareId);
+			@RequestParam("tariffId") String tariffId) {
+		return getConditionsResponse(tripId, tariffId);
 	}
 	
-	public abstract List<ReturnCondition> getConditionsResponse(String tripId, String fareId);
+	public abstract List<ReturnCondition> getConditionsResponse(String tripId, String tariffId);
 
 	@Override
 	@GetMapping(Method.SEARCH_TRIP_DOCUMENTS)
