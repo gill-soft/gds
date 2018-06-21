@@ -1,5 +1,11 @@
 package com.gillsoft.core.service.rest;
 
+import java.net.URI;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import com.gillsoft.model.Method;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.service.OrderService;
@@ -10,8 +16,11 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse create(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.ORDER)
+				.build().toUri();
+		ResponseEntity<OrderResponse> response = resourceService.getTemplate()
+				.postForEntity(uri, request, OrderResponse.class);
+		return response.getBody();
 	}
 
 	@Override
