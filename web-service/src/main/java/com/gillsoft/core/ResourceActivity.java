@@ -44,6 +44,22 @@ public class ResourceActivity {
 		}
 	}
 	
+	public void check(ResourceRequest request, int tryCount) throws AccessException {
+		int count = 0;
+		while (count++ < tryCount) {
+			try {
+				check(request);
+				return;
+			} catch (Exception e) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+				}
+			}
+		}
+		throw createAccessException(request);
+	}
+	
 	private Object getLock(ResourceRequest request) {
 		Object lock = locks.get(request);
 		if (lock == null) {

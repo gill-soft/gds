@@ -1,7 +1,5 @@
 package com.gillsoft.api;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,7 +23,7 @@ public class OrderApiController {
 	@ApiOperation(value = "Return new order created from selected services",
 			response = OrderResponse.class)
 	@PostMapping
-	public OrderResponse create(List<OrderRequest> request) {
+	public OrderResponse create(OrderRequest request) {
 		return controller.create(request);
 	}
 

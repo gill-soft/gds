@@ -11,6 +11,8 @@ import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.Vehicle;
 
 public class OrderResponse extends Response {
+	
+	private String orderId;
 
 	private Map<String, Organisation> organisations;
 
@@ -27,6 +29,23 @@ public class OrderResponse extends Response {
 	private List<OrderResponse> resources;
 
 	private Map<String, String> additionals;
+	
+	public OrderResponse() {
+		
+	}
+
+	public OrderResponse(String id, Exception e) {
+		setId(id);
+		setException(e);
+	}
+
+	public String getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
+	}
 
 	public Map<String, Organisation> getOrganisations() {
 		return organisations;

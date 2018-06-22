@@ -4,7 +4,8 @@ public enum PoolType {
 	
 	RESOURCE_INFO(10),
 	LOCALITY(20),
-	SEARCH(100);
+	SEARCH(100),
+	ORDER(20);
 
 	private int size;
 	
