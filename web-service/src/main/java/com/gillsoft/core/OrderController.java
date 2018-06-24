@@ -36,20 +36,26 @@ public class OrderController {
 			
 			// выбираем закзчиков только выбранного ресурса
 			Map<String, Customer> requestCustomers = new HashMap<>();
-			for (ServiceItem item : request.getServices()) {
+			for (ServiceItem item : orderRequest.getServices()) {
 				requestCustomers.put(item.getCustomer().getId(), customers.get(item.getCustomer().getId()));
 			}
 			orderRequest.setCustomers(requestCustomers);
 			callables.add(() -> {
-				activity.check(request, 5);
-				OrderResponse response = store.getResourceService(request.getParams()).getOrderService().create(request);
-				response.setId(request.getId());
+				activity.check(orderRequest, 5);
+				OrderResponse response = store.getResourceService(orderRequest.getParams())
+						.getOrderService().create(orderRequest);
+				response.setId(orderRequest.getId());
 				return response;
 			});
 		}
 		OrderResponse response = new OrderResponse();
 		response.setCustomers(customers);
 		response.setResources(ThreadPoolStore.getResult(PoolType.ORDER, callables));
+		
+		// удаляем пассажиров с заказов ресурса так как они в общем ответе
+		for (OrderResponse orderResponse : response.getResources()) {
+			orderResponse.setCustomers(null);
+		}
 		return response;
 	}
 
