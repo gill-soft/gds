@@ -119,6 +119,7 @@ public class TripSearchController {
 						// формируем новый ответ с новым ид поиска
 						TripSearchResponse response = store.getResourceService(
 								request.getParams()).getSearchService().getSearchResult(searchResponse.getSearchId());
+						response.setId(request.getId());
 						response.setRequest(request);
 						return response;
 					} catch (Exception e) {
