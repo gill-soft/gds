@@ -24,61 +24,71 @@ public class RestOrderService implements OrderService {
 	}
 
 	@Override
-	public OrderResponse addTickets(OrderRequest request) {
+	public OrderResponse addServices(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse removeTickets(OrderRequest request) {
+	public OrderResponse removeServices(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse updatePassengers(OrderRequest request) {
+	public OrderResponse updateCustomers(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse get(String id) {
+	public OrderResponse get(String orderId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse getTicket(String ticketId) {
+	public OrderResponse getService(String serviceId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse book(String id) {
+	public OrderResponse booking(String orderId) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse pay(String id) {
+	public OrderResponse confirm(String orderId) {
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.ORDER_CONFIRM)
+				.queryParam("orderId", orderId)
+				.build().toUri();
+		ResponseEntity<OrderResponse> response = resourceService.getTemplate()
+				.postForEntity(uri, null, OrderResponse.class);
+		return response.getBody();
+	}
+
+	@Override
+	public OrderResponse cancel(String orderId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public OrderResponse prepareReturnServices(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse cancel(String id) {
+	public OrderResponse returnServices(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public OrderResponse returnTickets(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public OrderResponse getPdfTickets(OrderRequest request) {
+	public OrderResponse getPdfDocuments(OrderRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}

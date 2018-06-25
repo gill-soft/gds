@@ -36,9 +36,23 @@ public class Method {
 	
 	public static final String ORDER = "/api/order";
 	
-	public static final String ORDER_TICKET = "/api/order/ticket";
+	public static final String ORDER_BOOKING = "/api/order/booking";
 	
-	public static final String ORDER_RETURN = "/api/order/return";
+	public static final String ORDER_CONFIRM = "/api/order/confirm";
+	
+	public static final String ORDER_CANCEL = "/api/order/cancel";
+	
+	public static final String ORDER_SERVICE = "/api/order/service";
+	
+	public static final String ORDER_SERVICE_ADD = "/api/order/service/add";
+	
+	public static final String ORDER_SERVICE_REMOVE = "/api/order/service/remove";
+	
+	public static final String ORDER_CUSTOMER_UPDATE = "/api/order/customer/update";
+	
+	public static final String ORDER_RETURN_PREPARE = "/api/order/return/prepare";
+	
+	public static final String ORDER_RETURN_CONFIRM = "/api/order/return/confirm";
 	
 	private String name;
 	

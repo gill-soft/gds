@@ -8,6 +8,8 @@ public class ServiceItem {
 	
 	private String id;
 	
+	private Boolean confirmed;
+	
 	private String number;
 	
 	private Customer customer;
@@ -26,6 +28,14 @@ public class ServiceItem {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public Boolean getConfirmed() {
+		return confirmed;
+	}
+
+	public void setConfirmed(Boolean confirmed) {
+		this.confirmed = confirmed;
 	}
 
 	public String getNumber() {

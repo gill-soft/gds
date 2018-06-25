@@ -1,10 +1,7 @@
 package com.gillsoft.abstract_rest_service;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -24,83 +21,91 @@ public abstract class AbstractOrderService implements OrderService {
 	public abstract OrderResponse createResponse(OrderRequest request);
 
 	@Override
-	@PutMapping(Method.ORDER_TICKET)
-	public OrderResponse addTickets(@RequestBody OrderRequest request) {
-		return addTicketsResponse(request);
+	@PostMapping(Method.ORDER_SERVICE_ADD)
+	public OrderResponse addServices(@RequestBody OrderRequest request) {
+		return addServicesResponse(request);
 	}
 	
-	public abstract OrderResponse addTicketsResponse(OrderRequest request);
+	public abstract OrderResponse addServicesResponse(OrderRequest request);
 
 	@Override
-	@DeleteMapping(Method.ORDER_TICKET)
-	public OrderResponse removeTickets(@RequestBody OrderRequest request) {
-		return removeTicketsResponse(request);
+	@PostMapping(Method.ORDER_SERVICE_REMOVE)
+	public OrderResponse removeServices(@RequestBody OrderRequest request) {
+		return removeServicesResponse(request);
 	}
 	
-	public abstract OrderResponse removeTicketsResponse(OrderRequest request);
+	public abstract OrderResponse removeServicesResponse(OrderRequest request);
 
 	@Override
-	@PatchMapping(Method.ORDER_TICKET)
-	public OrderResponse updatePassengers(@RequestBody OrderRequest request) {
-		return updatePassengersResponse(request);
+	@PostMapping(Method.ORDER_CUSTOMER_UPDATE)
+	public OrderResponse updateCustomers(@RequestBody OrderRequest request) {
+		return updateCustomersResponse(request);
 	}
 	
-	public abstract OrderResponse updatePassengersResponse(OrderRequest request);
+	public abstract OrderResponse updateCustomersResponse(OrderRequest request);
 
 	@Override
 	@GetMapping(Method.ORDER)
-	public OrderResponse get(@RequestParam("id") String id) {
-		return getResponse(id);
+	public OrderResponse get(@RequestParam("orderId") String orderId) {
+		return getResponse(orderId);
 	}
 	
-	public abstract OrderResponse getResponse(String id);
+	public abstract OrderResponse getResponse(String orderId);
 	
 	@Override
-	@GetMapping(Method.ORDER_TICKET)
-	public OrderResponse getTicket(@RequestParam("ticketId") String ticketId) {
-		return getTicketResponse(ticketId);
+	@GetMapping(Method.ORDER_SERVICE)
+	public OrderResponse getService(@RequestParam("serviceId") String serviceId) {
+		return getServiceResponse(serviceId);
 	}
 	
-	public abstract OrderResponse getTicketResponse(String ticketId);
+	public abstract OrderResponse getServiceResponse(String serviceId);
 
 	@Override
-	@PatchMapping(Method.ORDER)
-	public OrderResponse book(@RequestParam("id") String id) {
-		return bookResponse(id);
+	@PostMapping(Method.ORDER_BOOKING)
+	public OrderResponse booking(@RequestParam("orderId") String orderId) {
+		return bookingResponse(orderId);
 	}
 	
-	public abstract OrderResponse bookResponse(String id);
+	public abstract OrderResponse bookingResponse(String orderId);
 
 	@Override
-	@PutMapping(Method.ORDER)
-	public OrderResponse pay(@RequestParam("id") String id) {
-		return payResponse(id);
+	@PostMapping(Method.ORDER_CONFIRM)
+	public OrderResponse confirm(@RequestParam("orderId") String orderId) {
+		return confirmResponse(orderId);
 	}
 	
-	public abstract OrderResponse payResponse(String id);
+	public abstract OrderResponse confirmResponse(String orderId);
 
 	@Override
-	@DeleteMapping(Method.ORDER)
-	public OrderResponse cancel(@RequestParam("id") String id) {
-		return cancelResponse(id);
+	@PostMapping(Method.ORDER_CANCEL)
+	public OrderResponse cancel(@RequestParam("orderId") String orderId) {
+		return cancelResponse(orderId);
 	}
 	
-	public abstract OrderResponse cancelResponse(String id);
+	public abstract OrderResponse cancelResponse(String orderId);
 
 	@Override
-	@PostMapping(Method.ORDER_RETURN)
-	public OrderResponse returnTickets(@RequestBody OrderRequest request) {
-		return returnTicketsResponse(request);
+	@PostMapping(Method.ORDER_RETURN_PREPARE)
+	public OrderResponse prepareReturnServices(OrderRequest request) {
+		return prepareReturnServicesResponse(request);
 	}
 	
-	public abstract OrderResponse returnTicketsResponse(OrderRequest request);
+	public abstract OrderResponse prepareReturnServicesResponse(OrderRequest request);
+	
+	@Override
+	@PostMapping(Method.ORDER_RETURN_CONFIRM)
+	public OrderResponse returnServices(@RequestBody OrderRequest request) {
+		return returnServicesResponse(request);
+	}
+	
+	public abstract OrderResponse returnServicesResponse(OrderRequest request);
 
 	@Override
-	@PostMapping(Method.ORDER_TICKET)
-	public OrderResponse getPdfTickets(@RequestBody OrderRequest request) {
-		return getPdfTicketsResponse(request);
+	@PostMapping(Method.ORDER_SERVICE)
+	public OrderResponse getPdfDocuments(@RequestBody OrderRequest request) {
+		return getPdfDocumentsResponse(request);
 	}
 	
-	public abstract OrderResponse getPdfTicketsResponse(OrderRequest request);
+	public abstract OrderResponse getPdfDocumentsResponse(OrderRequest request);
 
 }

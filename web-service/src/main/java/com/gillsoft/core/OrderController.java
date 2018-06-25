@@ -41,11 +41,15 @@ public class OrderController {
 			}
 			orderRequest.setCustomers(requestCustomers);
 			callables.add(() -> {
-				activity.check(orderRequest, 5);
-				OrderResponse response = store.getResourceService(orderRequest.getParams())
-						.getOrderService().create(orderRequest);
-				response.setId(orderRequest.getId());
-				return response;
+				try {
+					activity.check(orderRequest, 5);
+					OrderResponse response = store.getResourceService(orderRequest.getParams())
+							.getOrderService().create(orderRequest);
+					response.setId(orderRequest.getId());
+					return response;
+				} catch (Exception e) {
+					return new OrderResponse(orderRequest.getId(), e);
+				}
 			});
 		}
 		OrderResponse response = new OrderResponse();
@@ -57,6 +61,24 @@ public class OrderController {
 			orderResponse.setCustomers(null);
 		}
 		return response;
+	}
+	
+	public List<OrderResponse> pay(List<OrderRequest> requests) {
+		List<Callable<OrderResponse>> callables = new ArrayList<>();
+		for (final OrderRequest orderRequest : requests) {
+			callables.add(() -> {
+				try {
+					activity.check(orderRequest, 5);
+					OrderResponse response = store.getResourceService(orderRequest.getParams())
+							.getOrderService().confirm(orderRequest.getOrderId());
+					response.setId(orderRequest.getId());
+					return response;
+				} catch (Exception e) {
+					return new OrderResponse(orderRequest.getId(), e);
+				}
+			});
+		}
+		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
 	}
 
 }

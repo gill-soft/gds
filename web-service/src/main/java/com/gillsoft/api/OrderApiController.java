@@ -1,5 +1,7 @@
 package com.gillsoft.api;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +29,13 @@ public class OrderApiController {
 	@PostMapping
 	public OrderResponse create(@Validated @RequestBody OrderRequest request) {
 		return controller.create(request);
+	}
+	
+	@ApiOperation(value = "Confirm selected orders and return its",
+			response = OrderResponse.class)
+	@PostMapping("/confirm")
+	public List<OrderResponse> confirm(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.pay(request);
 	}
 
 }

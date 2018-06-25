@@ -8,11 +8,21 @@ import com.gillsoft.model.ServiceItem;
 
 public class OrderRequest extends ResourceRequest {
 	
+	private String orderId;
+	
 	private List<ServiceItem> services;
 	
 	private Map<String, Customer> customers;
 	
 	private List<OrderRequest> resources;
+
+	public String getOrderId() {
+		return orderId;
+	}
+
+	public void setOrderId(String orderId) {
+		this.orderId = orderId;
+	}
 
 	public List<ServiceItem> getServices() {
 		return services;

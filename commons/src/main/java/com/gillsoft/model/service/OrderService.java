@@ -7,24 +7,26 @@ public interface OrderService {
 	
 	public OrderResponse create(OrderRequest request);
 	
-	public OrderResponse addTickets(OrderRequest request);
+	public OrderResponse addServices(OrderRequest request);
 	
-	public OrderResponse removeTickets(OrderRequest request);
+	public OrderResponse removeServices(OrderRequest request);
 	
-	public OrderResponse updatePassengers(OrderRequest request);
+	public OrderResponse updateCustomers(OrderRequest request);
 	
-	public OrderResponse get(String id);
+	public OrderResponse get(String orderId);
 	
-	public OrderResponse getTicket(String ticketId);
+	public OrderResponse getService(String ticketId);
 	
-	public OrderResponse book(String id);
+	public OrderResponse booking(String orderId);
 	
-	public OrderResponse pay(String id);
+	public OrderResponse confirm(String orderId);
 	
-	public OrderResponse cancel(String id);
+	public OrderResponse cancel(String orderId);
 	
-	public OrderResponse returnTickets(OrderRequest request);
+	public OrderResponse prepareReturnServices(OrderRequest request);
 	
-	public OrderResponse getPdfTickets(OrderRequest request);
+	public OrderResponse returnServices(OrderRequest request);
+	
+	public OrderResponse getPdfDocuments(OrderRequest request);
 
 }
