@@ -32,17 +32,24 @@ public class OrderApiController {
 	}
 	
 	@ApiOperation(value = "Confirm selected orders and return its",
-			response = OrderResponse.class)
+			response = OrderResponse.class, responseContainer="List")
 	@PostMapping("/confirm")
 	public List<OrderResponse> confirm(@Validated @RequestBody List<OrderRequest> request) {
 		return controller.confirm(request);
 	}
 	
-	@ApiOperation(value = "Confirm selected orders and return its",
-			response = OrderResponse.class)
+	@ApiOperation(value = "Prepare selected services to return operation and return its",
+			response = OrderResponse.class, responseContainer="List")
 	@PostMapping("/return/prepare")
 	public List<OrderResponse> prepareReturn(@Validated @RequestBody List<OrderRequest> request) {
-		return controller.confirm(request);
+		return controller.prepareReturn(request);
+	}
+	
+	@ApiOperation(value = "Confirm return operation of selected services and return its",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping("/return/confirm")
+	public List<OrderResponse> confirmReturn(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.confirmReturn(request);
 	}
 
 }

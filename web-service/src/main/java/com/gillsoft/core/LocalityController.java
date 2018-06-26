@@ -26,29 +26,33 @@ public class LocalityController {
 	private ResourceActivity activity;
 	
 	public List<LocalityResponse> getAll(List<LocalityRequest> requests) {
-		List<Callable<LocalityResponse>> callables = new ArrayList<>();
-		for (final LocalityRequest request : requests) {
-			callables.add(() -> {
-				try {
-					activity.check(request);
-					return new LocalityResponse(request.getId(),
-							store.getResourceService(request.getParams()).getLocalityService().getAll(request));
-				} catch (Exception e) {
-					return new LocalityResponse(request.getId(), e);
-				}
-			});
-		}
-		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
+		return getLocalities(requests, (request) -> {
+			return new LocalityResponse(request.getId(),
+					store.getResourceService(request.getParams()).getLocalityService().getAll(request));
+		});
 	}
 	
 	public List<LocalityResponse> getUsed(List<LocalityRequest> requests) {
+		return getLocalities(requests, (request) -> {
+			return new LocalityResponse(request.getId(),
+					store.getResourceService(request.getParams()).getLocalityService().getUsed(request));
+		});
+	}
+	
+	public List<LocalityResponse> getBinding(List<LocalityRequest> requests) {
+		return getLocalities(requests, (request) -> {
+			return new LocalityResponse(request.getId(),
+					store.getResourceService(request.getParams()).getLocalityService().getBinding(request));
+		});
+	}
+	
+	private List<LocalityResponse> getLocalities(List<LocalityRequest> requests, Localities creator) {
 		List<Callable<LocalityResponse>> callables = new ArrayList<>();
 		for (final LocalityRequest request : requests) {
 			callables.add(() -> {
 				try {
 					activity.check(request);
-					return new LocalityResponse(request.getId(),
-							store.getResourceService(request.getParams()).getLocalityService().getUsed(request));
+					return creator.create(request);
 				} catch (Exception e) {
 					return new LocalityResponse(request.getId(), e);
 				}
@@ -57,20 +61,10 @@ public class LocalityController {
 		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
 	}
 	
-	public List<LocalityResponse> getBinding(List<LocalityRequest> requests) {
-		List<Callable<LocalityResponse>> callables = new ArrayList<>();
-		for (final LocalityRequest request : requests) {
-			callables.add(() -> {
-				try {
-					activity.check(request);
-					return new LocalityResponse(request.getId(),
-							store.getResourceService(request.getParams()).getLocalityService().getBinding(request));
-				} catch (Exception e) {
-					return new LocalityResponse(request.getId(), e);
-				}
-			});
-		}
-		return ThreadPoolStore.getResult(PoolType.LOCALITY, callables);
+	private interface Localities {
+		
+		public LocalityResponse create(LocalityRequest request);
+		
 	}
 
 }

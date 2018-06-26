@@ -64,13 +64,33 @@ public class OrderController {
 	}
 	
 	public List<OrderResponse> confirm(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().confirm(orderRequest.getOrderId());
+		});
+	}
+	
+	public List<OrderResponse> prepareReturn(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().prepareReturnServices(orderRequest);
+		});
+	}
+	
+	public List<OrderResponse> confirmReturn(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().returnServices(orderRequest);
+		});
+	}
+	
+	private List<OrderResponse> getResponse(List<OrderRequest> requests, Response creator) {
 		List<Callable<OrderResponse>> callables = new ArrayList<>();
 		for (final OrderRequest orderRequest : requests) {
 			callables.add(() -> {
 				try {
 					activity.check(orderRequest, 5);
-					OrderResponse response = store.getResourceService(orderRequest.getParams())
-							.getOrderService().confirm(orderRequest.getOrderId());
+					OrderResponse response = creator.create(orderRequest);
 					response.setId(orderRequest.getId());
 					return response;
 				} catch (Exception e) {
@@ -81,22 +101,10 @@ public class OrderController {
 		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
 	}
 	
-	public List<OrderResponse> prepareReturn(List<OrderRequest> requests) {
-		List<Callable<OrderResponse>> callables = new ArrayList<>();
-		for (final OrderRequest orderRequest : requests) {
-			callables.add(() -> {
-				try {
-					activity.check(orderRequest, 5);
-					OrderResponse response = store.getResourceService(orderRequest.getParams())
-							.getOrderService().prepareReturnServices(orderRequest);
-					response.setId(orderRequest.getId());
-					return response;
-				} catch (Exception e) {
-					return new OrderResponse(orderRequest.getId(), e);
-				}
-			});
-		}
-		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
+	private interface Response {
+		
+		public OrderResponse create(OrderRequest request);
+		
 	}
 
 }

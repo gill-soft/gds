@@ -43,7 +43,7 @@ public class TripSearchApiController {
 	}
 	
 	@ApiOperation(value = "Return list of trip seats",
-			response = TripSearchResponse.class)
+			response = SeatsResponse.class, responseContainer="List")
 	@PostMapping("/trip/seats")
 	public List<SeatsResponse> getSeats(@Validated @RequestBody List<SeatsRequest> request) {
 		return controller.getSeats(request);
