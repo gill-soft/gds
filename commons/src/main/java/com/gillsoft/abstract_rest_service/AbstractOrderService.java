@@ -86,7 +86,7 @@ public abstract class AbstractOrderService implements OrderService {
 
 	@Override
 	@PostMapping(Method.ORDER_RETURN_PREPARE)
-	public OrderResponse prepareReturnServices(OrderRequest request) {
+	public OrderResponse prepareReturnServices(@RequestBody OrderRequest request) {
 		return prepareReturnServicesResponse(request);
 	}
 	

@@ -35,7 +35,7 @@ public class OrderApiController {
 			response = OrderResponse.class)
 	@PostMapping("/confirm")
 	public List<OrderResponse> confirm(@Validated @RequestBody List<OrderRequest> request) {
-		return controller.pay(request);
+		return controller.confirm(request);
 	}
 
 }

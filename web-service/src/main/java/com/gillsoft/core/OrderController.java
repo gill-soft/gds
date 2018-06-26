@@ -63,7 +63,7 @@ public class OrderController {
 		return response;
 	}
 	
-	public List<OrderResponse> pay(List<OrderRequest> requests) {
+	public List<OrderResponse> confirm(List<OrderRequest> requests) {
 		List<Callable<OrderResponse>> callables = new ArrayList<>();
 		for (final OrderRequest orderRequest : requests) {
 			callables.add(() -> {

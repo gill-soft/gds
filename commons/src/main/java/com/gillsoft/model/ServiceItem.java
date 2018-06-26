@@ -8,6 +8,8 @@ public class ServiceItem {
 	
 	private String id;
 	
+	private String returnConditionId;
+	
 	private Boolean confirmed;
 	
 	private String number;
@@ -28,6 +30,14 @@ public class ServiceItem {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getReturnConditionId() {
+		return returnConditionId;
+	}
+
+	public void setReturnConditionId(String returnConditionId) {
+		this.returnConditionId = returnConditionId;
 	}
 
 	public Boolean getConfirmed() {
