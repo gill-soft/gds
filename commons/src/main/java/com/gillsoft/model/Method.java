@@ -54,6 +54,8 @@ public class Method {
 	
 	public static final String ORDER_RETURN_CONFIRM = "/api/order/return/confirm";
 	
+	public static final String ORDER_DOCUMENTS = "/api/order/document";
+	
 	private String name;
 	
 	private String url;

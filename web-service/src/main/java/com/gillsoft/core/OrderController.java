@@ -80,5 +80,23 @@ public class OrderController {
 		}
 		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
 	}
+	
+	public List<OrderResponse> prepareReturn(List<OrderRequest> requests) {
+		List<Callable<OrderResponse>> callables = new ArrayList<>();
+		for (final OrderRequest orderRequest : requests) {
+			callables.add(() -> {
+				try {
+					activity.check(orderRequest, 5);
+					OrderResponse response = store.getResourceService(orderRequest.getParams())
+							.getOrderService().prepareReturnServices(orderRequest);
+					response.setId(orderRequest.getId());
+					return response;
+				} catch (Exception e) {
+					return new OrderResponse(orderRequest.getId(), e);
+				}
+			});
+		}
+		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
+	}
 
 }

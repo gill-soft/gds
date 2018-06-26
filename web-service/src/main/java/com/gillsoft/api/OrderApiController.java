@@ -37,5 +37,12 @@ public class OrderApiController {
 	public List<OrderResponse> confirm(@Validated @RequestBody List<OrderRequest> request) {
 		return controller.confirm(request);
 	}
+	
+	@ApiOperation(value = "Confirm selected orders and return its",
+			response = OrderResponse.class)
+	@PostMapping("/return/prepare")
+	public List<OrderResponse> prepareReturn(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.confirm(request);
+	}
 
 }

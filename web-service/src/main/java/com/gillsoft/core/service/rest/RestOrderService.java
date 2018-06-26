@@ -3,6 +3,8 @@ package com.gillsoft.core.service.rest;
 import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.model.Method;
@@ -16,11 +18,7 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse create(OrderRequest request) {
-		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.ORDER)
-				.build().toUri();
-		ResponseEntity<OrderResponse> response = resourceService.getTemplate()
-				.postForEntity(uri, request, OrderResponse.class);
-		return response.getBody();
+		return sendPostRequest(Method.ORDER, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
 	}
 
 	@Override
@@ -61,14 +59,11 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse confirm(String orderId) {
-		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + Method.ORDER_CONFIRM)
-				.queryParam("orderId", orderId)
-				.build().toUri();
-		ResponseEntity<OrderResponse> response = resourceService.getTemplate()
-				.postForEntity(uri, null, OrderResponse.class);
-		return response.getBody();
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("orderId", orderId);
+		return sendPostRequest(Method.ORDER_CONFIRM, null, params, OrderResponse.class);
 	}
-
+	
 	@Override
 	public OrderResponse cancel(String orderId) {
 		// TODO Auto-generated method stub
@@ -77,14 +72,12 @@ public class RestOrderService implements OrderService {
 	
 	@Override
 	public OrderResponse prepareReturnServices(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		return sendPostRequest(Method.ORDER_RETURN_PREPARE, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
 	}
 
 	@Override
 	public OrderResponse returnServices(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		return sendPostRequest(Method.ORDER_RETURN_CONFIRM, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
 	}
 
 	@Override
@@ -95,6 +88,16 @@ public class RestOrderService implements OrderService {
 
 	public void setResourceService(RestResourceService resourceService) {
 		this.resourceService = resourceService;
+	}
+	
+	private <T> T sendPostRequest(String method, OrderRequest request, MultiValueMap<String, String> params,
+			Class<T> type) {
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + method)
+				.queryParams(params)
+				.build().toUri();
+		ResponseEntity<T> response = resourceService.getTemplate()
+				.postForEntity(uri, request, type);
+		return response.getBody();
 	}
 	
 }

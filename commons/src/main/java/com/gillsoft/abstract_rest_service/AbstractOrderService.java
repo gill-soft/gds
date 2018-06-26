@@ -101,7 +101,7 @@ public abstract class AbstractOrderService implements OrderService {
 	public abstract OrderResponse returnServicesResponse(OrderRequest request);
 
 	@Override
-	@PostMapping(Method.ORDER_SERVICE)
+	@PostMapping(Method.ORDER_DOCUMENTS)
 	public OrderResponse getPdfDocuments(@RequestBody OrderRequest request) {
 		return getPdfDocumentsResponse(request);
 	}
