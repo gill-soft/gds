@@ -1,8 +1,5 @@
 package com.gillsoft.api;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-
 import java.rmi.AccessException;
 import java.util.List;
 
@@ -14,11 +11,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.core.ResourceController;
-import com.gillsoft.model.Method;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.model.response.ResourceMethodResponse;
 import com.gillsoft.model.response.ResourceResponse;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/resource")
@@ -35,7 +34,7 @@ public class ResourceApiController {
 	}
 
 	@ApiOperation(value = "Information about available API methods of resource",
-			response = Method.class, responseContainer = "List")
+			response = ResourceMethodResponse.class, responseContainer = "List")
 	@PostMapping("/method")
 	public List<ResourceMethodResponse> getMethods(
 			@Validated @RequestBody List<ResourceRequest> request) throws AccessException {

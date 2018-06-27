@@ -31,7 +31,7 @@ public class RestTemplateManager {
 		// создаем пул соединений
 		return new RestTemplate(
 				RestTemplateUtil.createPoolingFactory(params.getHost(), 50,
-						params.getRequestTimeout() > 0 ? params.getRequestTimeout() : 5000));
+						params.getRequestTimeout() != null ? params.getRequestTimeout() : 5000));
 	}
 
 }

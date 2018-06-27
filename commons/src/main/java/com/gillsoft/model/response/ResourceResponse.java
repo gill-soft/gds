@@ -2,6 +2,9 @@ package com.gillsoft.model.response;
 
 import com.gillsoft.model.Resource;
 
+import io.swagger.annotations.ApiModel;
+
+@ApiModel(description = "Response contains information about resource")
 public class ResourceResponse extends Response {
 	
 	private Resource resource;

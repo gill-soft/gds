@@ -17,7 +17,6 @@ public class RestControllerAdvice {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public RestError allExceptions(Exception e) {
-		e.printStackTrace();
 		return new RestError(e.getClass().getName(), e.getMessage());
 	}
 

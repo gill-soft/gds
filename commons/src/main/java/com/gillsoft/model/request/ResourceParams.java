@@ -2,10 +2,17 @@ package com.gillsoft.model.request;
 
 import java.util.Objects;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "The params for resource connection")
 public class ResourceParams {
 
+	@ApiModelProperty(value = "Host on which the resource is available", required = true)
 	private String host;
-	private int requestTimeout;
+	
+	@ApiModelProperty(value = "Request timeout in milliseconds", required = false, allowEmptyValue = true)
+	private Integer requestTimeout;
 
 	public String getHost() {
 		return host;
@@ -15,7 +22,7 @@ public class ResourceParams {
 		this.host = host;
 	}
 
-	public int getRequestTimeout() {
+	public Integer getRequestTimeout() {
 		return requestTimeout;
 	}
 

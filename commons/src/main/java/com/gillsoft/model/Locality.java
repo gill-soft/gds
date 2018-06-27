@@ -9,25 +9,41 @@ import java.util.concurrent.ConcurrentMap;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "Locality object")
 public class Locality implements Cloneable {
 	
+	@ApiModelProperty(value = "Locality uniq id", allowEmptyValue = false)
 	private String id;
 
+	@ApiModelProperty(value = "Locality code", allowEmptyValue = true)
     private String code;
 
+	@ApiModelProperty(value = "Locality timezone", allowEmptyValue = true)
     private String timezone;
 
+	@ApiModelProperty(value = "Locality names on different language",
+			allowEmptyValue = false, dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> name;
 
+	@ApiModelProperty(value = "Locality addresses on different language",
+			allowEmptyValue = false, dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> address;
 
+	@ApiModelProperty(value = "Locality latitude", allowEmptyValue = true)
     private BigDecimal latitude;
 
+	@ApiModelProperty(value = "Locality longitude", allowEmptyValue = true)
     private BigDecimal longitude;
 
+	@ApiModelProperty(value = "Parent locality for current locality",
+			allowEmptyValue = true, dataType = "com.gillsoft.model.Locality")
     private Locality parent;
     
+	@ApiModelProperty(value = "Locality details", allowEmptyValue = true)
     private String details;
 
 	public Locality() {

@@ -5,10 +5,17 @@ import java.util.Map;
 
 import com.gillsoft.model.Locality;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "Response with localities containers")
 public class LocalityResponse extends Response {
 	
+	@ApiModelProperty(value = "The list of localities", allowEmptyValue = true)
 	private List<Locality> localities;
 	
+	@ApiModelProperty(value = "The map with from/to bindings. Contains only locality's ids.",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.util.List[java.lang.String]]")
 	private Map<String, List<String>> binding;
 	
 	public LocalityResponse(String id, List<Locality> localities) {

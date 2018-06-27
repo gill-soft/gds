@@ -3,7 +3,11 @@ package com.gillsoft.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "Information about api method")
 public class Method {
 
 	public static final String PING = "/api/ping";
@@ -56,10 +60,13 @@ public class Method {
 	
 	public static final String ORDER_DOCUMENTS = "/api/order/document";
 	
+	@ApiModelProperty("Method name")
 	private String name;
 	
+	@ApiModelProperty("Method request url")
 	private String url;
 	
+	@ApiModelProperty("Method type")
 	private MethodType type;
 
 	public String getName() {

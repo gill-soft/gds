@@ -2,6 +2,9 @@ package com.gillsoft.model.request;
 
 import java.util.Objects;
 
+import io.swagger.annotations.ApiModel;
+
+@ApiModel(description = "The request with resource parameters")
 public class ResourceRequest extends Request {
 	
 	private ResourceParams params;
