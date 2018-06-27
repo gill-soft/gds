@@ -14,7 +14,6 @@
 	<name>GDS web service</name>
 
 	<properties>
-		<log4j.version>2.11.0</log4j.version>
 		<swagger.version>2.8.0</swagger.version>
 	</properties>
 
@@ -38,18 +37,6 @@
 			<artifactId>gds-commons</artifactId>
 			<version>0.0.1</version>
 			<scope>compile</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>${log4j.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>${log4j.version}</version>
 		</dependency>
 
 		<dependency>

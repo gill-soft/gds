@@ -20,7 +20,7 @@ public abstract class Response extends Request {
 
 	public void setException(java.lang.Exception exception) {
 		this.error = new RestError();
-		this.error.setError(exception.getMessage());
+		this.error.setName(exception.getMessage());
 		if (exception.getCause() != null) {
 			this.error.setMessage(exception.getCause().getMessage());
 		}

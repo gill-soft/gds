@@ -12,7 +12,7 @@ public class RestError {
 
 	@JsonFormat(shape=Shape.STRING)
 	private Date time = new Date();
-	private String error;
+	private String name;
 	private String message;
 	
 	public RestError() {
@@ -23,8 +23,8 @@ public class RestError {
 		this.message = message;
 	}
 
-	public RestError(String error, String message) {
-		this.error = error;
+	public RestError(String name, String message) {
+		this.name = name;
 		this.message = message;
 	}
 
@@ -36,12 +36,12 @@ public class RestError {
 		this.time = time;
 	}
 
-	public String getError() {
-		return error;
+	public String getName() {
+		return name;
 	}
 
-	public void setError(String error) {
-		this.error = error;
+	public void setName(String error) {
+		this.name = error;
 	}
 
 	public String getMessage() {
