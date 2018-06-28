@@ -4,8 +4,13 @@ import java.util.List;
 
 import com.gillsoft.model.Seat;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "The response which contains the list of trips seats")
 public class SeatsResponse extends Response {
 
+	@ApiModelProperty(value = "The list of trips seats", allowEmptyValue = true)
 	private List<Seat> seats;
 	
 	public SeatsResponse(String id, List<Seat> seats) {

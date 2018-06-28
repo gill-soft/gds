@@ -1,18 +1,35 @@
 package com.gillsoft.model;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The organisation object such as carrier, agent, insurance and etc.")
 public class Organisation {
 
+	@ApiModelProperty("Organisation id")
 	private String id;
-	private String name;
+	
+	@ApiModelProperty("Organisation trade mark")
 	private String tradeMark;
+	
+	@ApiModelProperty("The list of organisation phones")
 	private List<String> phones;
-	private String address;
+	
+	@ApiModelProperty(value = "Organisation names on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+    private ConcurrentMap<Lang, String> name;
+
+	@ApiModelProperty(value = "Organisation addresses on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+    private ConcurrentMap<Lang, String> address;
 
 	public Organisation() {
 		
@@ -28,14 +45,6 @@ public class Organisation {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public String getTradeMark() {
@@ -54,11 +63,69 @@ public class Organisation {
 		this.phones = phones;
 	}
 
-	public String getAddress() {
+	public String getName(String lang) {
+        if (this.name == null) {
+            return null;
+        }
+        String name = this.name.get(lang);
+        if (name == null) {
+            for (String pointName : this.name.values()) {
+                if (pointName != null) {
+                    return pointName;
+                }
+            }
+        }
+        return name;
+    }
+
+    public void setName(Lang lang, String name) {
+        if (name == null) {
+            return;
+        }
+        if (this.name == null) {
+        	this.name = new ConcurrentHashMap<>();
+        }
+        this.name.put(lang, name);
+    }
+
+    public String getAddress(Lang lang) {
+        if (this.address == null) {
+            return null;
+        }
+        String address = this.address.get(lang);
+        if (address == null) {
+            for (String pointAddress : this.address.values()) {
+                if (pointAddress != null) {
+                    return pointAddress;
+                }
+            }
+        }
+        return address;
+    }
+
+    public void setAddress(Lang lang, String address) {
+        if (address == null) {
+            return;
+        }
+        if (this.address == null) {
+        	this.address = new ConcurrentHashMap<>();
+        }
+        this.address.put(lang, address);
+    }
+
+	public ConcurrentMap<Lang, String> getName() {
+		return name;
+	}
+
+	public void setName(ConcurrentMap<Lang, String> name) {
+		this.name = name;
+	}
+
+	public ConcurrentMap<Lang, String> getAddress() {
 		return address;
 	}
 
-	public void setAddress(String address) {
+	public void setAddress(ConcurrentMap<Lang, String> address) {
 		this.address = address;
 	}
 

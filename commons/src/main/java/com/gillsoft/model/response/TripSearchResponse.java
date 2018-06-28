@@ -10,22 +10,39 @@ import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.TripSearchRequest;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "The response to the trips search.")
 public class TripSearchResponse extends Response {
 	
+	@ApiModelProperty(value = "The search id. It will be used for receiving the next search result. If id is empty, than the current search is completed.",
+			allowEmptyValue = true)
 	private String searchId;
 	
+	@ApiModelProperty(hidden = true)
 	private TripSearchRequest request;
 	
+	@ApiModelProperty(value = "The map of used organisations in this search result part.",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, com.gillsoft.model.Organisation]")
 	private Map<String, Organisation> organisations;
 	
+	@ApiModelProperty(value = "The map of used localities in this search result part.",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, com.gillsoft.model.Locality]")
 	private Map<String, Locality> localities;
 	
+	@ApiModelProperty(value = "The map of used vehicles in this search result part.",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, com.gillsoft.model.Vehicle]")
 	private Map<String, Vehicle> vehicles;
 	
+	@ApiModelProperty(value = "The map of used trip segments in this search result part.",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, com.gillsoft.model.Segment]")
 	private Map<String, Segment> segments;
 	
+	@ApiModelProperty("The list of container of trips result which contains request and received result by this request.")
 	private List<TripContainer> tripContainers;
 	
+	@ApiModelProperty("The list of responses to the each trips search by resources.")
 	private List<TripSearchResponse> result;
 	
 	public TripSearchResponse() {

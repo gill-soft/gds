@@ -3,12 +3,23 @@ package com.gillsoft.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "Seat object")
 public class Seat {
 
+	@ApiModelProperty("Seat id")
 	private String id;
+	
+	@ApiModelProperty("Seat type")
 	private SeatType type;
+	
+	@ApiModelProperty("Seat number")
 	private String number;
+	
+	@ApiModelProperty("Seat status")
 	private SeatStatus status;
 
 	public String getId() {

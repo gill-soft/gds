@@ -3,13 +3,27 @@ package com.gillsoft.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The vehicle object.")
 public class Vehicle {
 
+	@ApiModelProperty("Vehicle id")
 	private String id;
+	
+	@ApiModelProperty("Vehicle model")
 	private String model;
+	
+	@ApiModelProperty("Vehicle state number")
 	private String number;
-	private int capacity;
+	
+	@ApiModelProperty("Vehicle capacity")
+	private Integer capacity;
+	
+	@ApiModelProperty("The scheme of seats in this vehicle")
+	private SeatsScheme seatsScheme;
 
 	public Vehicle() {
 		
@@ -43,12 +57,20 @@ public class Vehicle {
 		this.number = number;
 	}
 
-	public int getCapacity() {
+	public Integer getCapacity() {
 		return capacity;
 	}
 
-	public void setCapacity(int capacity) {
+	public void setCapacity(Integer capacity) {
 		this.capacity = capacity;
+	}
+
+	public SeatsScheme getSeatsScheme() {
+		return seatsScheme;
+	}
+
+	public void setSeatsScheme(SeatsScheme seatsScheme) {
+		this.seatsScheme = seatsScheme;
 	}
 
 }

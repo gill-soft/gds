@@ -19,10 +19,11 @@ import com.gillsoft.model.response.TripSearchResponse;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 @RestController
 @RequestMapping("/search")
-@Api(tags = { "Trip search" }, produces = "application/json")
+@Api(tags = { "Trip search" }, produces = "application/json", consumes = "application/json")
 public class TripSearchApiController {
 	
 	@Autowired
@@ -38,7 +39,8 @@ public class TripSearchApiController {
 	@ApiOperation(value = "Return part of founded trips and link id to next result",
 			response = TripSearchResponse.class)
 	@GetMapping
-	public TripSearchResponse getSearchResult(@Validated @RequestParam("searchId") String searchId) {
+	public TripSearchResponse getSearchResult(@ApiParam(value = "The search id from init search request", required = true)
+			@Validated @RequestParam("searchId") String searchId) {
 		return controller.getSearchResult(searchId);
 	}
 	

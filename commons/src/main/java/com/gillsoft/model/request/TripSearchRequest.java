@@ -6,21 +6,20 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel(description = "The request which init search process by selected params")
 public class TripSearchRequest extends ResourceRequest {
 	
-	private String searchId;
+	@ApiModelProperty(value = "The from/to pairs of selected localities for search",
+			required = true, dataType = "java.util.List[java.lang.String]")
 	private List<String[]> localityPairs;
 	
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
+	@ApiModelProperty(value = "The of searches dates in format yyyy-MM-dd. Its will be used for each pair of localities",
+			required = true)
 	private List<Date> dates;
-
-	public String getSearchId() {
-		return searchId;
-	}
-
-	public void setSearchId(String searchId) {
-		this.searchId = searchId;
-	}
 
 	public List<String[]> getLocalityPairs() {
 		return localityPairs;

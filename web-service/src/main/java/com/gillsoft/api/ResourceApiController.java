@@ -21,7 +21,7 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/resource")
-@Api(tags = { "Resources" }, produces = "application/json")
+@Api(tags = { "Resources" }, produces = "application/json", consumes = "application/json")
 public class ResourceApiController {
 	
 	@Autowired

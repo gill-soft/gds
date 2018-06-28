@@ -18,7 +18,7 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/locality")
-@Api(tags = { "Localities" }, produces = "application/json")
+@Api(tags = { "Localities" }, produces = "application/json", consumes = "application/json")
 public class LocalityApiController {
 	
 	@Autowired

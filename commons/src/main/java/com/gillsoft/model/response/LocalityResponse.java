@@ -8,7 +8,7 @@ import com.gillsoft.model.Locality;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-@ApiModel(description = "Response with localities containers")
+@ApiModel(description = "The response with localities containers")
 public class LocalityResponse extends Response {
 	
 	@ApiModelProperty(value = "The list of localities", allowEmptyValue = true)

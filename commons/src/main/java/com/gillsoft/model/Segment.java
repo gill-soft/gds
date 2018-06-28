@@ -9,30 +9,65 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "This object describes the trip's segment part.")
 public class Segment {
 
+	@ApiModelProperty("Segment id")
 	private String id;
+	
+	@ApiModelProperty(value = "Segment number", allowEmptyValue = true)
 	private String number;
+	
+	@ApiModelProperty(value = "Trip type", allowEmptyValue = true)
 	private TripType type;
+	
+	
 	private Route route;
+	
+	@ApiModelProperty(value = "The vehicle which is used on this segment", allowEmptyValue = true)
 	private Vehicle vehicle;
+	
+	@ApiModelProperty(value = "The insurence company", allowEmptyValue = true)
 	private Organisation insurance;
+	
+	@ApiModelProperty(value = "The carrier company", allowEmptyValue = true)
 	private Organisation carrier;
 
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+	@ApiModelProperty("The departure datetime in format yyyy-MM-dd HH:mm")
 	private Date departureDate;
 
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+	@ApiModelProperty(value = "The arrival datetime in format yyyy-MM-dd HH:mm", allowEmptyValue = true)
 	private Date arrivalDate;
 
+	@ApiModelProperty("Departure point")
 	private Locality departure;
+	
+	@ApiModelProperty("Arrival point")
 	private Locality arrival;
+	
+	@ApiModelProperty(value = "Time in way", allowEmptyValue = true)
 	private String timeInWay;
+	
+	
 	private Required required;
-	private int freeSeatsCount;
+	
+	@ApiModelProperty(value = "The count of free seats", allowEmptyValue = true)
+	private Integer freeSeatsCount;
+	
+	@ApiModelProperty("The list of all seats in used vehicle")
 	private List<Seat> seats;
+	
+	
 	private Price price;
+	
+	@ApiModelProperty(value = "The map with additional params",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
 	private Map<String, String> additionals;
 
 	public String getId() {
@@ -139,11 +174,11 @@ public class Segment {
 		this.required = required;
 	}
 
-	public int getFreeSeatsCount() {
+	public Integer getFreeSeatsCount() {
 		return freeSeatsCount;
 	}
 
-	public void setFreeSeatsCount(int freeSeatsCount) {
+	public void setFreeSeatsCount(Integer freeSeatsCount) {
 		this.freeSeatsCount = freeSeatsCount;
 	}
 

@@ -16,7 +16,7 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "Locality object")
 public class Locality implements Cloneable {
 	
-	@ApiModelProperty(value = "Locality uniq id", allowEmptyValue = false)
+	@ApiModelProperty("Locality uniq id")
 	private String id;
 
 	@ApiModelProperty(value = "Locality code", allowEmptyValue = true)
@@ -25,12 +25,12 @@ public class Locality implements Cloneable {
 	@ApiModelProperty(value = "Locality timezone", allowEmptyValue = true)
     private String timezone;
 
-	@ApiModelProperty(value = "Locality names on different language",
-			allowEmptyValue = false, dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	@ApiModelProperty(value = "Locality names on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> name;
 
-	@ApiModelProperty(value = "Locality addresses on different language",
-			allowEmptyValue = false, dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	@ApiModelProperty(value = "Locality addresses on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> address;
 
 	@ApiModelProperty(value = "Locality latitude", allowEmptyValue = true)
