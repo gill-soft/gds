@@ -5,17 +5,38 @@ import java.math.BigDecimal;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The commission object")
 public class Commission {
 
+	@ApiModelProperty(value = "Commission id", allowEmptyValue = true)
 	private String id;
+	
+	@ApiModelProperty(value = "Commission code", allowEmptyValue = true)
 	private String code;
+	
+	@ApiModelProperty(value = "Commission name", allowEmptyValue = true)
 	private String name;
+	
+	@ApiModelProperty(value = "Commission description", allowEmptyValue = true)
 	private String description;
+	
+	@ApiModelProperty("Commission value")
 	private BigDecimal value;
+	
+	@ApiModelProperty(value = "Commission vat", allowEmptyValue = true)
 	private BigDecimal vat;
+	
+	@ApiModelProperty("Commission value calc type")
 	private CalcType valueCalcType; // тип начисления комиссии
+	
+	@ApiModelProperty("Commission vat calc type")
 	private CalcType vatCalcType; // тип начисления НДС комиссии
+	
+	@ApiModelProperty("Commission value type")
 	private ValueType type; // тип измерения значения комиссии (расчитанное значение или процент)
 
 	public String getId() {

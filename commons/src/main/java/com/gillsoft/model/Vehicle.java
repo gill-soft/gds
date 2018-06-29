@@ -10,19 +10,19 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The vehicle object.")
 public class Vehicle {
 
-	@ApiModelProperty("Vehicle id")
+	@ApiModelProperty(value = "Vehicle id", allowEmptyValue = true)
 	private String id;
 	
-	@ApiModelProperty("Vehicle model")
+	@ApiModelProperty(value = "Vehicle model", allowEmptyValue = true)
 	private String model;
 	
-	@ApiModelProperty("Vehicle state number")
+	@ApiModelProperty(value = "Vehicle state number", allowEmptyValue = true)
 	private String number;
 	
-	@ApiModelProperty("Vehicle capacity")
+	@ApiModelProperty(value = "Vehicle capacity", allowEmptyValue = true)
 	private Integer capacity;
 	
-	@ApiModelProperty("The scheme of seats in this vehicle")
+	@ApiModelProperty(value = "The scheme of seats in this vehicle", allowEmptyValue = true)
 	private SeatsScheme seatsScheme;
 
 	public Vehicle() {

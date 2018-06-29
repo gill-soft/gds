@@ -14,20 +14,20 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The organisation object such as carrier, agent, insurance and etc.")
 public class Organisation {
 
-	@ApiModelProperty("Organisation id")
+	@ApiModelProperty(value = "Organisation id", allowEmptyValue = true)
 	private String id;
 	
-	@ApiModelProperty("Organisation trade mark")
+	@ApiModelProperty(value = "Organisation trade mark", allowEmptyValue = true)
 	private String tradeMark;
 	
-	@ApiModelProperty("The list of organisation phones")
+	@ApiModelProperty(value = "The list of organisation phones", allowEmptyValue = true)
 	private List<String> phones;
 	
-	@ApiModelProperty(value = "Organisation names on a different language",
+	@ApiModelProperty(value = "Organisation names on a different language", allowEmptyValue = true,
 			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> name;
 
-	@ApiModelProperty(value = "Organisation addresses on a different language",
+	@ApiModelProperty(value = "Organisation addresses on a different language", allowEmptyValue = true,
 			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> address;
 

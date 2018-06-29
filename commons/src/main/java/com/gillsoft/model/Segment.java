@@ -25,7 +25,7 @@ public class Segment {
 	@ApiModelProperty(value = "Trip type", allowEmptyValue = true)
 	private TripType type;
 	
-	
+	@ApiModelProperty(value = "Trip route", allowEmptyValue = true)
 	private Route route;
 	
 	@ApiModelProperty(value = "The vehicle which is used on this segment", allowEmptyValue = true)
@@ -54,16 +54,16 @@ public class Segment {
 	@ApiModelProperty(value = "Time in way", allowEmptyValue = true)
 	private String timeInWay;
 	
-	
+	@ApiModelProperty(value = "The list of required fields to create order on this segment", allowEmptyValue = true)
 	private Required required;
 	
 	@ApiModelProperty(value = "The count of free seats", allowEmptyValue = true)
 	private Integer freeSeatsCount;
 	
-	@ApiModelProperty("The list of all seats in used vehicle")
+	@ApiModelProperty(value = "The list of all seats in used vehicle", allowEmptyValue = true)
 	private List<Seat> seats;
 	
-	
+	@ApiModelProperty("The price with tariff description")
 	private Price price;
 	
 	@ApiModelProperty(value = "The map with additional params",

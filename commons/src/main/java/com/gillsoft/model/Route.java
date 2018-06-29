@@ -5,13 +5,26 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The object of trip route")
 public class Route {
 
+	@ApiModelProperty(value = "Route id", allowEmptyValue = true)
 	private String id;
+	
+	@ApiModelProperty(value = "Route number", allowEmptyValue = true)
 	private String number;
+	
+	@ApiModelProperty(value = "Route name", allowEmptyValue = true)
 	private String name;
+	
+	@ApiModelProperty(value = "Route path", allowEmptyValue = true)
 	private List<RoutePoint> path;
+	
+	@ApiModelProperty("Route type")
 	private RouteType type;
 
 	public String getId() {

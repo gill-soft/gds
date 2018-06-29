@@ -6,14 +6,29 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The tariff object")
 public class Tariff {
 
+	@ApiModelProperty(value = "Tariff id", allowEmptyValue = true)
 	private String id;
+	
+	@ApiModelProperty(value = "Tariff code", allowEmptyValue = true)
 	private String code;
+	
+	@ApiModelProperty(value = "Tariff name", allowEmptyValue = true)
 	private String name;
+	
+	@ApiModelProperty(value = "Tariff description", allowEmptyValue = true)
 	private String description;
+	
+	@ApiModelProperty(value = "Tariff value", allowEmptyValue = true)
 	private BigDecimal value;
+	
+	@ApiModelProperty(value = "The list of applied return conditions to this tariff", allowEmptyValue = true)
 	private List<ReturnCondition> returnConditions;
 
 	public String getId() {

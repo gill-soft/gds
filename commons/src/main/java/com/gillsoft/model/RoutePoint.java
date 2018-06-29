@@ -3,15 +3,32 @@ package com.gillsoft.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 @JsonInclude(Include.NON_NULL)
+@ApiModel(description = "The point of route")
 public class RoutePoint {
 
+	@ApiModelProperty(value = "Point id", allowEmptyValue = true)
 	private String id;
+	
+	@ApiModelProperty(value = "The departure time from this point", allowEmptyValue = true)
 	private String departureTime;
+	
+	@ApiModelProperty(value = "The arrival time to this point", allowEmptyValue = true)
 	private String arrivalTime;
+	
+	@ApiModelProperty(value = "Platform number", allowEmptyValue = true)
 	private String platform;
-	private int distance;
-	private int arrivalDay;
+	
+	@ApiModelProperty(value = "The distance from the first point of route", allowEmptyValue = true)
+	private Integer distance;
+	
+	@ApiModelProperty(value = "The number of days from the first point of route", allowEmptyValue = true)
+	private Integer arrivalDay;
+	
+	@ApiModelProperty(value = "The parent locality of this point", allowEmptyValue = true)
 	private Locality locality;
 	
 	public RoutePoint() {
@@ -54,19 +71,19 @@ public class RoutePoint {
 		this.platform = platform;
 	}
 
-	public int getDistance() {
+	public Integer getDistance() {
 		return distance;
 	}
 
-	public void setDistance(int distance) {
+	public void setDistance(Integer distance) {
 		this.distance = distance;
 	}
 
-	public int getArrivalDay() {
+	public Integer getArrivalDay() {
 		return arrivalDay;
 	}
 
-	public void setArrivalDay(int arrivalDay) {
+	public void setArrivalDay(Integer arrivalDay) {
 		this.arrivalDay = arrivalDay;
 	}
 
