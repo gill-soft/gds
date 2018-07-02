@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("MemoryCacheHandler")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class MemoryCacheHandler implements CacheHandler, Runnable {
 	
@@ -22,19 +22,18 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 	public static final String IGNORE_IS_READED = "ignoreIsReaded"; // обновлять объект независимо от чтения
 	public static final String IGNORE_AGE = "ignoreAge"; // не удалять объект с кэша
 	
-	private ConcurrentMap<Object, CacheObject> cache = new ConcurrentHashMap<>();
-	private ExecutorService executor = Executors.newFixedThreadPool(100);
+	protected ConcurrentMap<Object, CacheObject> cache = new ConcurrentHashMap<>();
+	protected ExecutorService executor = Executors.newFixedThreadPool(100);
 	
 	public MemoryCacheHandler() {
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
-		scheduler.scheduleWithFixedDelay(this, 1000);
+		scheduler.scheduleWithFixedDelay(this, 10000);
 	}
-
-	@Override
-	public void write(Object storedObject, Map<String, Object> params)
-			throws IOCacheException {
+	
+	public CacheObject createObject(Object storedObject, Map<String, Object> params) {
 		CacheObject cacheObject = new CacheObject();
+		cacheObject.setName(params.get(OBJECT_NAME).toString());
 		cacheObject.setCachedObject(storedObject);
 		Object updateTask = params.get(UPDATE_TASK);
 		if (updateTask != null) {
@@ -46,7 +45,7 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 		}
 		Object timeToLive = params.get(TIME_TO_LIVE);
 		if (timeToLive != null) {
-			cacheObject.setCreatedTime(System.currentTimeMillis() + (Long) timeToLive);
+			cacheObject.setTimeToLive((Long) timeToLive);
 		}
 		if (params.containsKey(IGNORE_IS_READED)) {
 			cacheObject.setReaded(true);
@@ -54,7 +53,13 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 		if (params.containsKey(IGNORE_AGE)) {
 			cacheObject.setEternal(true);
 		}
-		cache.put(params.get(OBJECT_NAME), cacheObject);
+		return cacheObject;
+	}
+
+	@Override
+	public void write(Object storedObject, Map<String, Object> params)
+			throws IOCacheException {
+		cache.put(params.get(OBJECT_NAME), createObject(storedObject, params));
 	}
 
 	@Override
@@ -73,77 +78,17 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 		
 		// удаляем кэш, который старше TIME_TO_LIVE
 		long curr = System.currentTimeMillis();
-		long age = curr;
 		for (Entry<Object, CacheObject> cacheEntry : cache.entrySet()) {
 			CacheObject cacheObject = cacheEntry.getValue();
-			if (cacheObject.getCreatedTime() <= age
+			if (cacheObject.getTimeToLive() <= curr
 					&& !cacheObject.isEternal()) {
 				cache.remove(cacheEntry.getKey());
 			} else if (cacheObject.isReaded()
-					&& cacheObject.getCreatedTime() <= curr - cacheObject.getUpdateDelay()
-					&& cacheObject.getUpdateTask() != null) {
+					&& cacheObject.getUpdateTask() != null
+					&& cacheObject.getCreated() <= curr - cacheObject.getUpdateDelay()) {
 				executor.execute(cacheObject.getUpdateTask());
 			}
 		}
-	}
-	
-	private class CacheObject {
-		
-		private Object cachedObject;
-		private boolean readed = false;
-		private boolean eternal = false;
-		private long createdTime = System.currentTimeMillis();
-		private Runnable updateTask;
-		private long updateDelay;
-		
-		public Object getCachedObject() {
-			return cachedObject;
-		}
-		
-		public void setCachedObject(Object cachedObject) {
-			this.cachedObject = cachedObject;
-		}
-		
-		public boolean isReaded() {
-			return readed;
-		}
-
-		public void setReaded(boolean readed) {
-			this.readed = readed;
-		}
-
-		public boolean isEternal() {
-			return eternal;
-		}
-
-		public void setEternal(boolean eternal) {
-			this.eternal = eternal;
-		}
-
-		public long getCreatedTime() {
-			return createdTime;
-		}
-		
-		public void setCreatedTime(long createdTime) {
-			this.createdTime = createdTime;
-		}
-
-		public Runnable getUpdateTask() {
-			return updateTask;
-		}
-
-		public void setUpdateTask(Runnable updateTask) {
-			this.updateTask = updateTask;
-		}
-
-		public long getUpdateDelay() {
-			return updateDelay;
-		}
-
-		public void setUpdateDelay(long updateDelay) {
-			this.updateDelay = updateDelay;
-		}
-		
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,7 @@ public class TripSearchController {
 	private ResourceActivity activity;
 	
 	@Autowired
+	@Qualifier("MemoryCacheHandler")
 	private CacheHandler cache;
 	
 	public TripSearchResponse initSearch(List<TripSearchRequest> requests) {
