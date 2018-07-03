@@ -71,7 +71,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try {
 			Jedis jedis = jedisPool.getResource();
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
-					StringUtil.objectToString(cacheObject));
+					StringUtil.objectToBase64String(cacheObject));
 			jedis.close();
 		} catch (JedisConnectionException | IOException e) {
 		}
@@ -80,7 +80,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	private void set(CacheObject cacheObject) {
 		try {
 			Jedis jedis = jedisPool.getResource();
-			jedis.set(cacheObject.getName(), StringUtil.objectToString(cacheObject));
+			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
 			jedis.close();
 		} catch (JedisConnectionException | IOException e) {
 		}
@@ -102,7 +102,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			jedis.close();
 			
 			// обновляем объект в кэше с пометкой readed = true
-			CacheObject cacheObject = (CacheObject) StringUtil.stringToObject(value);
+			CacheObject cacheObject = (CacheObject) StringUtil.base64StringToObject(value);
 			if (cacheObject != null
 					&& !cacheObject.isReaded()) {
 				cacheObject.setReaded(true);

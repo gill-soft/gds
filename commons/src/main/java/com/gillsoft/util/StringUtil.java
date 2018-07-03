@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -46,11 +45,19 @@ public abstract class StringUtil {
 	}
 	
 	public static String toBase64(String value) {
-		return Base64.getEncoder().encodeToString(value.getBytes());
+		return toBase64(value.getBytes());
 	}
 	
-	public static String fromBase64(String value) {
-		return new String(Base64.getDecoder().decode(value));
+	public static String toBase64(byte[] bytes) {
+		return Base64.getEncoder().encodeToString(bytes);
+	}
+	
+	public static String fromBase64AsString(String value) {
+		return new String(fromBase64(value));
+	}
+	
+	public static byte[] fromBase64(String value) {
+		return Base64.getDecoder().decode(value);
 	}
 	
 	public static String objectToJsonString(Object value) throws JsonProcessingException {
@@ -66,24 +73,24 @@ public abstract class StringUtil {
 	}
 	
 	public static <T> T jsonBase64StringToObject(Class<?> type, String value) throws IOException {
-		return jsonStringToObject(type, fromBase64(value));
+		return jsonStringToObject(type, fromBase64AsString(value));
 	}
 	
-	public static String objectToString(Object object) throws IOException {
+	public static String objectToBase64String(Object object) throws IOException {
 		if (object == null) {
 			return null;
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ObjectOutputStream stream = new ObjectOutputStream(out);
 		stream.writeObject(object);
-		return out.toString(StandardCharsets.UTF_8.name());
+		return toBase64(out.toByteArray());
 	}
 	
-	public static Object stringToObject(String value) throws IOException, ClassNotFoundException {
+	public static Object base64StringToObject(String value) throws IOException, ClassNotFoundException {
 		if (value == null) {
 			return null;
 		}
-		ByteArrayInputStream in = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()));
+		ByteArrayInputStream in = new ByteArrayInputStream(fromBase64(value));
 		ObjectInputStream stream = new ObjectInputStream(in);
 		return stream.readObject();
 	}
