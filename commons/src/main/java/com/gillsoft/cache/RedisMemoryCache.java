@@ -211,30 +211,33 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	public void run() {
 		super.run();
 		long curr = System.currentTimeMillis();
-		for (String key : members()) {
-			CacheObject cacheObject = get(key);
-			if (cacheObject != null) {
-				
-				// проверяем нужно ли обновить запись
-				if (cacheObject.getUpdateTask() != null
-						&& cacheObject.isReaded()
-						&& cacheObject.getCreated() <= curr - cacheObject.getUpdateDelay()) {
-					executor.submit(cacheObject.getUpdateTask());
+		Set<String> keys = members();
+		if (keys != null) {
+			for (String key : keys) {
+				CacheObject cacheObject = get(key);
+				if (cacheObject != null) {
 					
-					// удаляем таксу с кэша и перезаписываем, чтобы не обновлять по несколько раз
-					cacheObject.setUpdateTask(null);
-					write(cacheObject);
-				}
-			} else {
-				
-				// удаляем неиспользуемые ключи
-				Map<String, Object> params = new HashMap<>();
-				params.put(OBJECT_NAME, key);
-				try {
-					if (getKeyFromMemoryCache(params) == null) {
-						rem(key);
+					// проверяем нужно ли обновить запись
+					if (cacheObject.getUpdateTask() != null
+							&& cacheObject.isReaded()
+							&& cacheObject.getCreated() <= curr - cacheObject.getUpdateDelay()) {
+						executor.submit(cacheObject.getUpdateTask());
+						
+						// удаляем таксу с кэша и перезаписываем, чтобы не обновлять по несколько раз
+						cacheObject.setUpdateTask(null);
+						write(cacheObject);
 					}
-				} catch (IOCacheException e) {
+				} else {
+					
+					// удаляем неиспользуемые ключи
+					Map<String, Object> params = new HashMap<>();
+					params.put(OBJECT_NAME, key);
+					try {
+						if (getKeyFromMemoryCache(params) == null) {
+							rem(key);
+						}
+					} catch (IOCacheException e) {
+					}
 				}
 			}
 		}

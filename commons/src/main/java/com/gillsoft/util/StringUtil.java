@@ -70,6 +70,9 @@ public abstract class StringUtil {
 	}
 	
 	public static String objectToString(Object object) throws IOException {
+		if (object == null) {
+			return null;
+		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ObjectOutputStream stream = new ObjectOutputStream(out);
 		stream.writeObject(object);
@@ -77,6 +80,9 @@ public abstract class StringUtil {
 	}
 	
 	public static Object stringToObject(String value) throws IOException, ClassNotFoundException {
+		if (value == null) {
+			return null;
+		}
 		ByteArrayInputStream in = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()));
 		ObjectInputStream stream = new ObjectInputStream(in);
 		return stream.readObject();
