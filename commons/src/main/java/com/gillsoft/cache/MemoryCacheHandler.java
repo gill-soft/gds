@@ -7,14 +7,16 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component("MemoryCacheHandler")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-public class MemoryCacheHandler implements CacheHandler, Runnable {
+public class MemoryCacheHandler implements CacheHandler {
 	
 	/**
 	 * Задание обновления объекта в кэше.
@@ -45,9 +47,7 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 	protected ExecutorService executor = Executors.newFixedThreadPool(100);
 	
 	public MemoryCacheHandler() {
-		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-		scheduler.initialize();
-		scheduler.scheduleWithFixedDelay(this, 10000);
+		
 	}
 	
 	public CacheObject createObject(Object storedObject, Map<String, Object> params) {
@@ -92,8 +92,9 @@ public class MemoryCacheHandler implements CacheHandler, Runnable {
 		}
 	}
 	
-	@Override
-	public void run() {
+	@PostConstruct
+	@Scheduled(initialDelay = 10000, fixedDelay = 10000)
+	public void updateCached() {
 		
 		// удаляем кэш, который старше TIME_TO_LIVE
 		long curr = System.currentTimeMillis();

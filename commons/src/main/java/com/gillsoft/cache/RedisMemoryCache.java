@@ -6,11 +6,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.gillsoft.util.StringUtil;
@@ -207,9 +210,11 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		super.write(null, copy);
 	}
 	
+	@PostConstruct
+	@Scheduled(initialDelay = 10000, fixedDelay = 10000)
 	@Override
-	public void run() {
-		super.run();
+	public void updateCached() {
+		super.updateCached();
 		long curr = System.currentTimeMillis();
 		Set<String> keys = members();
 		if (keys != null) {
