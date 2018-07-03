@@ -1,12 +1,15 @@
 package com.gillsoft.model.request;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(description = "The params for resource connection")
-public class ResourceParams {
+public class ResourceParams implements Serializable {
+
+	private static final long serialVersionUID = 651193866585508046L;
 
 	@ApiModelProperty(value = "Host on which the resource is available", required = true)
 	private String host;

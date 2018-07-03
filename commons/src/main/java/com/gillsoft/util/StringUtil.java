@@ -1,6 +1,11 @@
 package com.gillsoft.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
@@ -62,6 +67,19 @@ public abstract class StringUtil {
 	
 	public static <T> T jsonBase64StringToObject(Class<?> type, String value) throws IOException {
 		return jsonStringToObject(type, fromBase64(value));
+	}
+	
+	public static String objectToString(Object object) throws IOException {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ObjectOutputStream stream = new ObjectOutputStream(out);
+		stream.writeObject(object);
+		return out.toString(StandardCharsets.UTF_8.name());
+	}
+	
+	public static Object stringToObject(String value) throws IOException, ClassNotFoundException {
+		ByteArrayInputStream in = new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8.name()));
+		ObjectInputStream stream = new ObjectInputStream(in);
+		return stream.readObject();
 	}
 
 }

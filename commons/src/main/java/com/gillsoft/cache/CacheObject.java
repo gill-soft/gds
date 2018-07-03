@@ -1,7 +1,11 @@
 package com.gillsoft.cache;
 
-public class CacheObject {
+import java.io.Serializable;
 
+public class CacheObject implements Serializable {
+
+	private static final long serialVersionUID = -6596207226068125817L;
+	
 	private String name;
 	private Object cachedObject;
 	private boolean readed = false;

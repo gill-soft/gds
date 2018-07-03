@@ -13,7 +13,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gillsoft.util.StringUtil;
 
 import redis.clients.jedis.Jedis;
@@ -69,18 +68,18 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try {
 			Jedis jedis = jedisPool.getResource();
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
-					StringUtil.objectToJsonString(cacheObject));
+					StringUtil.objectToString(cacheObject));
 			jedis.close();
-		} catch (JedisConnectionException | JsonProcessingException e) {
+		} catch (JedisConnectionException | IOException e) {
 		}
 	}
 	
 	private void set(CacheObject cacheObject) {
 		try {
 			Jedis jedis = jedisPool.getResource();
-			jedis.set(cacheObject.getName(), StringUtil.objectToJsonString(cacheObject));
+			jedis.set(cacheObject.getName(), StringUtil.objectToString(cacheObject));
 			jedis.close();
-		} catch (JedisConnectionException | JsonProcessingException e) {
+		} catch (JedisConnectionException | IOException e) {
 		}
 	}
 	
@@ -100,13 +99,13 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			jedis.close();
 			
 			// обновляем объект в кэше с пометкой readed = true
-			CacheObject cacheObject = StringUtil.jsonStringToObject(CacheObject.class, value);
-			if (cacheObject.getCreated() <= System.currentTimeMillis() - cacheObject.getUpdateDelay() * 0.8) {
+			CacheObject cacheObject = (CacheObject) StringUtil.stringToObject(value);
+			if (!cacheObject.isReaded()) {
 				cacheObject.setReaded(true);
 				setex(cacheObject);
 			}
 			return cacheObject;
-		} catch (JedisConnectionException | IOException e) {
+		} catch (JedisConnectionException | IOException | ClassNotFoundException e) {
 			return null;
 		}
 	}
@@ -114,7 +113,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	private Set<String> members() {
 		try {
 			Jedis jedis = jedisPool.getResource();
-			 Set<String> value = jedis.smembers(ALL_KEYS);
+			Set<String> value = jedis.smembers(ALL_KEYS);
 			jedis.close();
 			return value;
 		} catch (JedisConnectionException e) {
@@ -153,6 +152,11 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		}
 	}
 
+	/**
+	 * Возвращает объект с кэша. Если объекта нет, то запускает задание UPDATE_TASK
+	 * для создания кэша. При этом, если задание уже запущено или еще не выполнено,
+	 * то будет брошена ошибка IOCacheException.
+	 */
 	@Override
 	public Object read(Map<String, Object> params) throws IOCacheException {
 		String key = params.get(OBJECT_NAME).toString();
@@ -168,15 +172,20 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 				if (cacheObject == null
 						&& getKeyFromMemoryCache(params) == null) {
 					
+					executor.submit((Runnable) params.get(UPDATE_TASK));
+					
 					// метка, что таск на обновление запущен, чтобы другие потоки не запускали то же самое
 					putKeyToMemoryCache(params);
-					executor.submit((Runnable) params.get(UPDATE_TASK));
+					
+					// создаем сэт ключей, чтобы потом по ним запускать таски обновления
+					add(key);
 				}
 			}
 		}
-		// создаем сэт ключей, чтобы потом по ним запускать таски обновления
-		add(key);
-		return cacheObject != null ? cacheObject.getCachedObject() : null;
+		if (cacheObject == null) {
+			throw new IOCacheException();
+		}
+		return cacheObject.getCachedObject();
 	}
 	
 	/*

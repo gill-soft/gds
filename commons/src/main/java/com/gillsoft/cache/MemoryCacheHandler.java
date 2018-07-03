@@ -16,11 +16,30 @@ import org.springframework.stereotype.Component;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class MemoryCacheHandler implements CacheHandler, Runnable {
 	
-	public static final String UPDATE_TASK = "updateTask"; // задание обновления объекта в кэше
-	public static final String TIME_TO_LIVE = "timeToLive"; // сколько будет жить объект в кэше
-	public static final String UPDATE_DELAY = "updateDelay"; // как часто обновлять объект в кэше
-	public static final String IGNORE_IS_READED = "ignoreIsReaded"; // обновлять объект независимо от чтения
-	public static final String IGNORE_AGE = "ignoreAge"; // не удалять объект с кэша
+	/**
+	 * Задание обновления объекта в кэше.
+	 */
+	public static final String UPDATE_TASK = "updateTask";
+	
+	/**
+	 * Сколько будет жить объект в кэше. Миллисекунды.
+	 */
+	public static final String TIME_TO_LIVE = "timeToLive";
+	
+	/**
+	 * Как часто обновлять объект в кэше. Миллисекунды.
+	 */
+	public static final String UPDATE_DELAY = "updateDelay";
+	
+	/**
+	 * Обновлять объект независимо от чтения.
+	 */
+	public static final String IGNORE_IS_READED = "ignoreIsReaded";
+	
+	/**
+	 * Не удалять объект с кэша.
+	 */
+	public static final String IGNORE_AGE = "ignoreAge";
 	
 	protected ConcurrentMap<Object, CacheObject> cache = new ConcurrentHashMap<>();
 	protected ExecutorService executor = Executors.newFixedThreadPool(100);

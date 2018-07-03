@@ -1,5 +1,6 @@
 package com.gillsoft.model.request;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -10,8 +11,10 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(description = "The request which init search process by selected params")
-public class TripSearchRequest extends ResourceRequest {
+public class TripSearchRequest extends ResourceRequest implements Serializable {
 	
+	private static final long serialVersionUID = -2642355880338998510L;
+
 	@ApiModelProperty(value = "The from/to pairs of selected localities for search",
 			required = true, dataType = "java.util.List[java.lang.String]")
 	private List<String[]> localityPairs;
