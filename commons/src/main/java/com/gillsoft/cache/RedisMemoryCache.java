@@ -201,7 +201,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	private void putKeyToMemoryCache(Map<String, Object> params) throws IOCacheException {
 		Map<String, Object> copy = new HashMap<>();
 		copy.putAll(params);
-		copy.put(TIME_TO_LIVE, 300000);
+		copy.put(TIME_TO_LIVE, 300000l);
 		copy.put(UPDATE_DELAY, null);
 		copy.put(UPDATE_TASK, null);
 		super.write(null, copy);
