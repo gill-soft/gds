@@ -103,7 +103,8 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			
 			// обновляем объект в кэше с пометкой readed = true
 			CacheObject cacheObject = (CacheObject) StringUtil.stringToObject(value);
-			if (!cacheObject.isReaded()) {
+			if (cacheObject != null
+					&& !cacheObject.isReaded()) {
 				cacheObject.setReaded(true);
 				setex(cacheObject);
 			}
@@ -140,11 +141,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	@Override
 	public void write(Object storedObject, Map<String, Object> params) throws IOCacheException {
 		CacheObject cacheObject = createObject(storedObject, params);
-		if (cacheObject.isEternal()) {
-			set(cacheObject);
-		} else {
-			setex(cacheObject);
-		}
+		write(cacheObject);
 	}
 	
 	private void write(CacheObject cacheObject) {
