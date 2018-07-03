@@ -20,13 +20,12 @@ import com.gillsoft.util.StringUtil;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 
 @Component("RedisMemoryCache")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class RedisMemoryCache extends MemoryCacheHandler {
 	
-	private static final String ALL_KEYS = "RedisMemoryCache.keys";
+private static final String ALL_KEYS = "RedisMemoryCache.keys";
 	
 	private JedisPool jedisPool;
 	
@@ -73,7 +72,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
 					StringUtil.objectToBase64String(cacheObject));
 			jedis.close();
-		} catch (JedisConnectionException | IOException e) {
+		} catch (Exception e) {
 		}
 	}
 	
@@ -82,7 +81,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			Jedis jedis = jedisPool.getResource();
 			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
 			jedis.close();
-		} catch (JedisConnectionException | IOException e) {
+		} catch (Exception e) {
 		}
 	}
 	
@@ -91,7 +90,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			Jedis jedis = jedisPool.getResource();
 			jedis.sadd(ALL_KEYS, key);
 			jedis.close();
-		} catch (JedisConnectionException e) {
+		} catch (Exception e) {
 		}
 	}
 	
@@ -100,16 +99,9 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			Jedis jedis = jedisPool.getResource();
 			String value = jedis.get(key);
 			jedis.close();
-			
-			// обновляем объект в кэше с пометкой readed = true
-			CacheObject cacheObject = (CacheObject) StringUtil.base64StringToObject(value);
-			if (cacheObject != null
-					&& !cacheObject.isReaded()) {
-				cacheObject.setReaded(true);
-				setex(cacheObject);
-			}
-			return cacheObject;
-		} catch (JedisConnectionException | IOException | ClassNotFoundException e) {
+			CacheObject object = (CacheObject) StringUtil.base64StringToObject(value);
+			return object;
+		} catch (Exception e) {
 			return null;
 		}
 	}
@@ -120,7 +112,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			Set<String> value = jedis.smembers(ALL_KEYS);
 			jedis.close();
 			return value;
-		} catch (JedisConnectionException e) {
+		} catch (Exception e) {
 			return null;
 		}
 	}
@@ -130,7 +122,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			Jedis jedis = jedisPool.getResource();
 			jedis.srem(ALL_KEYS, key);
 			jedis.close();
-		} catch (JedisConnectionException e) {
+		} catch (Exception e) {
 		}
 	}
 	
@@ -185,6 +177,11 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		if (cacheObject == null) {
 			throw new IOCacheException();
 		}
+		// обновляем объект в кэше с пометкой readed = true
+		if (!cacheObject.isReaded()) {
+			cacheObject.setReaded(true);
+			setex(cacheObject);
+		}
 		return cacheObject.getCachedObject();
 	}
 	
@@ -223,11 +220,12 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 					if (cacheObject.getUpdateTask() != null
 							&& cacheObject.isReaded()
 							&& cacheObject.getCreated() <= curr - cacheObject.getUpdateDelay()) {
-						executor.submit(cacheObject.getUpdateTask());
 						
 						// удаляем таксу с кэша и перезаписываем, чтобы не обновлять по несколько раз
+						Runnable runnable = cacheObject.getUpdateTask();
 						cacheObject.setUpdateTask(null);
 						write(cacheObject);
+						executor.submit(runnable);
 					}
 				} else {
 					
