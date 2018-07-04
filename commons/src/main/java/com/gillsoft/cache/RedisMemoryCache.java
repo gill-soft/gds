@@ -6,8 +6,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
-
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
@@ -25,7 +23,12 @@ import redis.clients.jedis.JedisPool;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class RedisMemoryCache extends MemoryCacheHandler {
 	
-private static final String ALL_KEYS = "RedisMemoryCache.keys";
+	private static final String ALL_KEYS = "RedisMemoryCache.keys";
+	
+	/**
+	 * Признак игнорирования наличия кэша и запускать сразу таску на обновление.
+	 */
+	public static final String IGNORE_CACHE = "ignoreCache";
 	
 	private JedisPool jedisPool;
 	
@@ -41,7 +44,6 @@ private static final String ALL_KEYS = "RedisMemoryCache.keys";
 			Resource resource = new ClassPathResource("redis-pool.properties");
 			properties = PropertiesLoaderUtils.loadProperties(resource);
 		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		// настройка пула редиса
 		CustomJedisPoolConfig poolConfig = new CustomJedisPoolConfig();
@@ -152,15 +154,21 @@ private static final String ALL_KEYS = "RedisMemoryCache.keys";
 	@Override
 	public Object read(Map<String, Object> params) throws IOCacheException {
 		String key = params.get(OBJECT_NAME).toString();
-		CacheObject cacheObject = get(key);
 		
+		// проверка игнорирования кэша
+		CacheObject cacheObject = null;
+		if (!params.containsKey(IGNORE_CACHE)) {
+			cacheObject = get(key);
+		}
 		// если в кэше нет объекта и есть задание на добавление объекта в кэш
 		if (cacheObject == null
 				&& params.get(UPDATE_TASK) != null) {
 			
 			// синхронизация по ключу, чтобы не выполнять два раза один и тот же поиск
 			synchronized (key.intern()) {
-				cacheObject = get(key);
+				if (!params.containsKey(IGNORE_CACHE)) {
+					cacheObject = get(key);
+				}
 				if (cacheObject == null
 						&& getKeyFromMemoryCache(params) == null) {
 					
@@ -204,7 +212,6 @@ private static final String ALL_KEYS = "RedisMemoryCache.keys";
 		super.write(null, copy);
 	}
 	
-	@PostConstruct
 	@Scheduled(initialDelay = 10000, fixedDelay = 10000)
 	@Override
 	public void updateCached() {
