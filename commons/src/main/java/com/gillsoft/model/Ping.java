@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -8,7 +9,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(Include.NON_NULL)
-public class Ping {
+public class Ping implements Serializable {
+
+	private static final long serialVersionUID = 105432422933753304L;
 
 	private String id;
 	

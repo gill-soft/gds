@@ -7,6 +7,8 @@ import io.swagger.annotations.ApiModel;
 @ApiModel(description = "Response contains information about resource")
 public class ResourceResponse extends Response {
 	
+	private static final long serialVersionUID = -2874846502816116180L;
+	
 	private Resource resource;
 	
 	public ResourceResponse(String id, Resource resource) {

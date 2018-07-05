@@ -17,8 +17,14 @@ public abstract class RequestResponseLoggingInterceptor implements ClientHttpReq
 
 	private static final Logger LOGGER = LogManager.getLogger();
 	
+	private static final String UTF8 = "UTF-8";
+	
 	private Charset charset;
 	
+	public RequestResponseLoggingInterceptor() {
+		this.charset = Charset.forName(UTF8);
+	}
+
 	public RequestResponseLoggingInterceptor(Charset charset) {
 		this.charset = charset;
 	}

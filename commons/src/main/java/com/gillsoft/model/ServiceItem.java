@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,8 +10,10 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The service object")
-public class ServiceItem {
+public class ServiceItem implements Serializable {
 	
+	private static final long serialVersionUID = -978072913114584020L;
+
 	@ApiModelProperty("The id of created service")
 	private String id;
 	

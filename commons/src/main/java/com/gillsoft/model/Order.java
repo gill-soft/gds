@@ -1,6 +1,10 @@
 package com.gillsoft.model;
 
-public class Order {
+import java.io.Serializable;
+
+public class Order implements Serializable {
+	
+	private static final long serialVersionUID = -7346969359433791671L;
 	
 	private String id;
 

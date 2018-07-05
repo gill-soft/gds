@@ -16,6 +16,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The response to the trips search.")
 public class TripSearchResponse extends Response {
 	
+	private static final long serialVersionUID = 9107631679803036541L;
+
 	@ApiModelProperty(value = "The search id. It will be used for receiving the next search result. If id is empty, than the current search is completed.",
 			allowEmptyValue = true)
 	private String searchId;

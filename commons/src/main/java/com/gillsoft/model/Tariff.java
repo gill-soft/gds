@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -11,7 +12,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The tariff object")
-public class Tariff {
+public class Tariff implements Serializable {
+
+	private static final long serialVersionUID = -2964608164425056900L;
 
 	@ApiModelProperty(value = "Tariff id", allowEmptyValue = true)
 	private String id;

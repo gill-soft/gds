@@ -11,6 +11,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The response with localities containers")
 public class LocalityResponse extends Response {
 	
+	private static final long serialVersionUID = 5642422737547171054L;
+
 	@ApiModelProperty(value = "The list of localities", allowEmptyValue = true)
 	private List<Locality> localities;
 	

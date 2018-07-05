@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,7 +10,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The vehicle object.")
-public class Vehicle {
+public class Vehicle implements Serializable {
+
+	private static final long serialVersionUID = -7398284692999348930L;
 
 	@ApiModelProperty(value = "Vehicle id", allowEmptyValue = true)
 	private String id;

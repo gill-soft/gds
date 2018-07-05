@@ -8,6 +8,8 @@ import com.gillsoft.util.StringUtil;
 
 public abstract class AbstractJsonModel extends ResourceRequest {
 	
+	private static final long serialVersionUID = -5503268023841469407L;
+
 	public String asString() {
 		try {
 			return StringUtil.objectToJsonBase64String(this);

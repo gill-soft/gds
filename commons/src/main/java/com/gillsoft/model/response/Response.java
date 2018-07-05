@@ -8,6 +8,8 @@ import com.gillsoft.model.RestError;
 @JsonInclude(Include.NON_NULL)
 public abstract class Response extends Request {
 	
+	private static final long serialVersionUID = -708851882927604045L;
+	
 	private RestError error;
 
 	public RestError getError() {

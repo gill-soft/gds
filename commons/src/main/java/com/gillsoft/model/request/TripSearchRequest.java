@@ -1,6 +1,5 @@
 package com.gillsoft.model.request;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -11,7 +10,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(description = "The request which init search process by selected params")
-public class TripSearchRequest extends ResourceRequest implements Serializable {
+public class TripSearchRequest extends ResourceRequest {
 	
 	private static final long serialVersionUID = -2642355880338998510L;
 

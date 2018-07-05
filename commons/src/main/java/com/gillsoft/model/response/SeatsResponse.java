@@ -10,6 +10,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The response which contains the list of trips seats")
 public class SeatsResponse extends Response {
 
+	private static final long serialVersionUID = 1952714650062579123L;
+	
 	@ApiModelProperty(value = "The list of trips seats", allowEmptyValue = true)
 	private List<Seat> seats;
 	

@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,7 +11,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The commission object")
-public class Commission {
+public class Commission implements Serializable {
+
+	private static final long serialVersionUID = 8422329504720144298L;
 
 	@ApiModelProperty(value = "Commission id", allowEmptyValue = true)
 	private String id;

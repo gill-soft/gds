@@ -7,6 +7,8 @@ import io.swagger.annotations.ApiModel;
 @ApiModel(description = "The request with resource parameters")
 public class ResourceRequest extends Request {
 	
+	private static final long serialVersionUID = -6941566879593289537L;
+	
 	private ResourceParams params;
 	
 	public ResourceParams getParams() {

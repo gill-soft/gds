@@ -12,6 +12,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The request to create order")
 public class OrderRequest extends ResourceRequest {
 	
+	private static final long serialVersionUID = -6474441309347766267L;
+
 	@ApiModelProperty(value = "Request order id", required = true)
 	private String orderId;
 	

@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -11,7 +12,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The price object")
-public class Price {
+public class Price implements Serializable {
+
+	private static final long serialVersionUID = -3701057976072576893L;
 
 	@ApiModelProperty("The currency of present amounts")
 	private Currency currency;

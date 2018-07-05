@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,7 +11,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The object of trip route")
-public class Route {
+public class Route implements Serializable {
+
+	private static final long serialVersionUID = -1055185265830128083L;
 
 	@ApiModelProperty(value = "Route id", allowEmptyValue = true)
 	private String id;

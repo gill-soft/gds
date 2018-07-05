@@ -16,6 +16,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "The response that describes the order")
 public class OrderResponse extends Response {
 	
+	private static final long serialVersionUID = -1166178114134098429L;
+
 	@ApiModelProperty(value = "Order id", required = true)
 	private String orderId;
 

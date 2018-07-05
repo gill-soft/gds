@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -12,7 +13,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The organisation object such as carrier, agent, insurance and etc.")
-public class Organisation {
+public class Organisation implements Serializable {
+
+	private static final long serialVersionUID = -2219422407233195486L;
 
 	@ApiModelProperty(value = "Organisation id", allowEmptyValue = true)
 	private String id;

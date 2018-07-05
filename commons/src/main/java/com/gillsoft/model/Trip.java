@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,7 +11,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Generated from a link to id a trip or a round trip or a connecting trip.")
-public class Trip {
+public class Trip implements Serializable {
+
+	private static final long serialVersionUID = 8019162983303606546L;
 
 	@ApiModelProperty(value = "Direct trip segment id", allowEmptyValue = true)
 	private String id;

@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -10,7 +11,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The list of required fields")
-public class Required {
+public class Required implements Serializable {
+	
+	private static final long serialVersionUID = 3054597034409721546L;
 	
 	@ApiModelProperty(value = "The map contains order field and boolean property",
 			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.Boolean]")

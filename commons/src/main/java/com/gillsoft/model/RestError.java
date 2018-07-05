@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -12,7 +13,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The error which thrown during execute request")
-public class RestError {
+public class RestError implements Serializable {
+
+	private static final long serialVersionUID = -8593702101013641125L;
 
 	@JsonFormat(shape=Shape.STRING)
 	@ApiModelProperty("The time when error was generated")

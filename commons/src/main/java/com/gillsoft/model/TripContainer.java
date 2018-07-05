@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -11,8 +12,10 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The container of trips result for single pair of localities and date.")
-public class TripContainer {
+public class TripContainer implements Serializable {
 	
+	private static final long serialVersionUID = -1852587707726086196L;
+
 	@ApiModelProperty("The single pair of localities and date on which the trips result was created.")
 	private TripSearchRequest request;
 	

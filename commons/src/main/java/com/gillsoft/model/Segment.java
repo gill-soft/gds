@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +15,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "This object describes the trip's segment part.")
-public class Segment {
+public class Segment implements Serializable {
+
+	private static final long serialVersionUID = -6523720730694351564L;
 
 	@ApiModelProperty("Segment id")
 	private String id;

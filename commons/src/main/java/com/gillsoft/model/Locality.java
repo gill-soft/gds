@@ -1,5 +1,6 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -14,8 +15,10 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Locality object")
-public class Locality implements Cloneable {
+public class Locality implements Cloneable, Serializable {
 	
+	private static final long serialVersionUID = 3772231704341458352L;
+
 	@ApiModelProperty("Locality uniq id")
 	private String id;
 

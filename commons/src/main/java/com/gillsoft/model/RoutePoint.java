@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,7 +10,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The point of route")
-public class RoutePoint {
+public class RoutePoint implements Serializable {
+
+	private static final long serialVersionUID = -6317738337209389045L;
 
 	@ApiModelProperty(value = "Point id", allowEmptyValue = true)
 	private String id;

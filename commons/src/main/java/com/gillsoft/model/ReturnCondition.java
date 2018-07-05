@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,7 +10,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The return condition object")
-public class ReturnCondition {
+public class ReturnCondition implements Serializable {
+
+	private static final long serialVersionUID = 6327702254544275676L;
 
 	@ApiModelProperty(value = "Condition id", allowEmptyValue = true)
 	private String id;

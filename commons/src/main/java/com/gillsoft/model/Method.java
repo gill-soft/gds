@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,7 +10,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Information about api method")
-public class Method {
+public class Method implements Serializable {
+
+	private static final long serialVersionUID = -3077978935800118750L;
 
 	public static final String PING = "/api/ping";
 	

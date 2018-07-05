@@ -10,6 +10,8 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel(description = "Response contaions information about available api methods of resource")
 public class ResourceMethodResponse extends Response {
 	
+	private static final long serialVersionUID = 2657952148719526272L;
+	
 	@ApiModelProperty("Available api methods")
 	private List<Method> methods;
 	

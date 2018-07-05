@@ -1,5 +1,7 @@
 package com.gillsoft.model;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -8,7 +10,9 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Resource information")
-public class Resource {
+public class Resource implements Serializable {
+
+	private static final long serialVersionUID = -8794588643510471510L;
 
 	@ApiModelProperty("Uniq resource code")
 	private String code;
