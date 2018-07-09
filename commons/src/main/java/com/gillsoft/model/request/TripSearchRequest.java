@@ -1,5 +1,6 @@
 package com.gillsoft.model.request;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -37,6 +38,17 @@ public class TripSearchRequest extends ResourceRequest {
 
 	public void setDates(List<Date> dates) {
 		this.dates = dates;
+	}
+	
+	public static TripSearchRequest createRequest(String[] pair, Date date) {
+		TripSearchRequest request = new TripSearchRequest();
+		List<String[]> pairs = new ArrayList<>(1);
+		pairs.add(pair);
+		request.setLocalityPairs(pairs);
+		List<Date> dates = new ArrayList<>(1);
+		dates.add(date);
+		request.setDates(dates);
+		return request;
 	}
 	
 }

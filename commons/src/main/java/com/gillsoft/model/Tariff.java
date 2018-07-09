@@ -31,6 +31,9 @@ public class Tariff implements Serializable {
 	@ApiModelProperty(value = "Tariff value", allowEmptyValue = true)
 	private BigDecimal value;
 	
+	@ApiModelProperty(value = "The count of available seats to this tariff", allowEmptyValue = true)
+	private Integer availableCount;
+	
 	@ApiModelProperty(value = "The list of applied return conditions to this tariff", allowEmptyValue = true)
 	private List<ReturnCondition> returnConditions;
 
@@ -72,6 +75,14 @@ public class Tariff implements Serializable {
 
 	public void setValue(BigDecimal value) {
 		this.value = value;
+	}
+
+	public Integer getAvailableCount() {
+		return availableCount;
+	}
+
+	public void setAvailableCount(Integer availableCount) {
+		this.availableCount = availableCount;
 	}
 
 	public List<ReturnCondition> getReturnConditions() {
