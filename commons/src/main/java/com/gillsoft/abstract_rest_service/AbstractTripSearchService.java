@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gillsoft.model.Document;
-import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.Required;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.model.service.TripSearchService;
@@ -28,7 +28,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	}
 	
 	public abstract TripSearchResponse initSearchResponse(TripSearchRequest request);
-
+	
 	@Override
 	@GetMapping(Method.SEARCH)
 	public final TripSearchResponse getSearchResult(@RequestParam("searchId") String searchId) {
@@ -36,7 +36,7 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 	}
 	
 	public abstract TripSearchResponse getSearchResultResponse(String searchId);
-
+	
 	@Override
 	@GetMapping(Method.SEARCH_TRIP_ROUTE)
 	public final Route getRoute(@RequestParam("tripId") String tripId) {
