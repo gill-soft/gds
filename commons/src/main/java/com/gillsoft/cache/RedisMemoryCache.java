@@ -153,7 +153,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	 */
 	@Override
 	public Object read(Map<String, Object> params) throws IOCacheException {
-		String key = params.get(OBJECT_NAME).toString();
+		String key = String.valueOf(params.get(OBJECT_NAME));
 		
 		// проверка игнорирования кэша
 		CacheObject cacheObject = null;
@@ -209,7 +209,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		copy.put(TIME_TO_LIVE, 300000l);
 		copy.put(UPDATE_DELAY, null);
 		copy.put(UPDATE_TASK, null);
-		super.write(null, copy);
+		super.write(new Object(), copy);
 	}
 	
 	@Scheduled(initialDelay = 10000, fixedDelay = 10000)
