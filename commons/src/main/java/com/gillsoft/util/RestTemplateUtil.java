@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.http.client.ClientHttpRequestFactory;
@@ -18,13 +19,24 @@ public abstract class RestTemplateUtil {
 	
  	public static ClientHttpRequestFactory createPoolingFactory(String url, int maxConnections, int requestTimeout) {
 		
+		return createPoolingFactory(url, maxConnections, requestTimeout, false, false);
+ 	}
+ 	
+	public static ClientHttpRequestFactory createPoolingFactory(String url, int maxConnections, int requestTimeout,
+			boolean disableAuthCaching, boolean disableCookieManagement) {
+
 		// создаем пул соединений
 		PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
 		connectionManager.setMaxPerRoute(new HttpRoute(new HttpHost(url)), maxConnections);
 		
-		HttpClient httpClient = HttpClients.custom()
-		        .setConnectionManager(connectionManager)
-		        .build();
+		HttpClientBuilder httpClientBuilder = HttpClients.custom().setConnectionManager(connectionManager);
+		if (disableAuthCaching) {
+			httpClientBuilder.disableAuthCaching();
+		}
+		if (disableCookieManagement) {
+			httpClientBuilder.disableCookieManagement();
+		}
+		HttpClient httpClient = httpClientBuilder.build();
 		
 		// настраиваем таймауты
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
