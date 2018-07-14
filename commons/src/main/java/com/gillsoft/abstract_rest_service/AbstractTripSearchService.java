@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Method;
-import com.gillsoft.model.Required;
+import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
 import com.gillsoft.model.Seat;
@@ -71,11 +71,11 @@ public abstract class AbstractTripSearchService implements TripSearchService {
 
 	@Override
 	@GetMapping(Method.SEARCH_TRIP_REQUIRED)
-	public final Required getRequiredFields(@RequestParam("tripId") String tripId) {
+	public final List<RequiredField> getRequiredFields(@RequestParam("tripId") String tripId) {
 		return getRequiredFieldsResponse(tripId);
 	}
 	
-	public abstract Required getRequiredFieldsResponse(String tripId);
+	public abstract List<RequiredField> getRequiredFieldsResponse(String tripId);
 
 	@Override
 	@PostMapping(Method.SEARCH_TRIP_SEATS)

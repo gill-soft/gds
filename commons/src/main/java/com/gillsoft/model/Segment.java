@@ -58,7 +58,7 @@ public class Segment implements Serializable {
 	private String timeInWay;
 	
 	@ApiModelProperty(value = "The list of required fields to create order on this segment", allowEmptyValue = true)
-	private Required required;
+	private List<RequiredField> required;
 	
 	@ApiModelProperty(value = "The count of free seats", allowEmptyValue = true)
 	private Integer freeSeatsCount;
@@ -169,11 +169,11 @@ public class Segment implements Serializable {
 		this.timeInWay = timeInWay;
 	}
 
-	public Required getRequired() {
+	public List<RequiredField> getRequired() {
 		return required;
 	}
 
-	public void setRequired(Required required) {
+	public void setRequired(List<RequiredField> required) {
 		this.required = required;
 	}
 
