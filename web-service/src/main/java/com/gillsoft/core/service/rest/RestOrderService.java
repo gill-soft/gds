@@ -18,7 +18,7 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse create(OrderRequest request) {
-		return sendPostRequest(Method.ORDER, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
+		return sendPostRequest(Method.ORDER, request, new LinkedMultiValueMap<>(0));
 	}
 
 	@Override
@@ -41,43 +41,47 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse get(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("orderId", orderId);
+		return sendGetRequest(Method.ORDER, params);
 	}
 
 	@Override
 	public OrderResponse getService(String serviceId) {
-		// TODO Auto-generated method stub
-		return null;
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+		params.add("serviceId", serviceId);
+		return sendGetRequest(Method.ORDER_SERVICE, params);
 	}
 
 	@Override
 	public OrderResponse booking(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+		return confirmMethod(orderId, Method.ORDER_BOOKING);
 	}
 
 	@Override
 	public OrderResponse confirm(String orderId) {
-		MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-		params.add("orderId", orderId);
-		return sendPostRequest(Method.ORDER_CONFIRM, null, params, OrderResponse.class);
+		return confirmMethod(orderId, Method.ORDER_CONFIRM);
 	}
 	
 	@Override
 	public OrderResponse cancel(String orderId) {
-		// TODO Auto-generated method stub
-		return null;
+		return confirmMethod(orderId, Method.ORDER_CANCEL);
+	}
+	
+	private OrderResponse confirmMethod(String orderId, String method) {
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+		params.add("orderId", orderId);
+		return sendPostRequest(method, null, params);
 	}
 	
 	@Override
 	public OrderResponse prepareReturnServices(OrderRequest request) {
-		return sendPostRequest(Method.ORDER_RETURN_PREPARE, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
+		return sendPostRequest(Method.ORDER_RETURN_PREPARE, request, new LinkedMultiValueMap<>(0));
 	}
 
 	@Override
 	public OrderResponse returnServices(OrderRequest request) {
-		return sendPostRequest(Method.ORDER_RETURN_CONFIRM, request, new LinkedMultiValueMap<>(0), OrderResponse.class);
+		return sendPostRequest(Method.ORDER_RETURN_CONFIRM, request, new LinkedMultiValueMap<>(0));
 	}
 
 	@Override
@@ -90,13 +94,17 @@ public class RestOrderService implements OrderService {
 		this.resourceService = resourceService;
 	}
 	
-	private <T> T sendPostRequest(String method, OrderRequest request, MultiValueMap<String, String> params,
-			Class<T> type) {
+	private OrderResponse sendPostRequest(String method, OrderRequest request, MultiValueMap<String, String> params) {
 		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + method)
-				.queryParams(params)
-				.build().toUri();
-		ResponseEntity<T> response = resourceService.getTemplate()
-				.postForEntity(uri, request, type);
+				.queryParams(params).build().toUri();
+		ResponseEntity<OrderResponse> response = resourceService.getTemplate().postForEntity(uri, request, OrderResponse.class);
+		return response.getBody();
+	}
+	
+	private OrderResponse sendGetRequest(String method, MultiValueMap<String, String> params) {
+		URI uri = UriComponentsBuilder.fromUriString(resourceService.getHost() + method)
+				.queryParams(params).build().toUri();
+		ResponseEntity<OrderResponse> response = resourceService.getTemplate().getForEntity(uri, OrderResponse.class);
 		return response.getBody();
 	}
 	

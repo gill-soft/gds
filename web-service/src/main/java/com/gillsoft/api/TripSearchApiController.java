@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.core.TripSearchController;
-import com.gillsoft.model.request.SeatsRequest;
+import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.RequiredResponse;
+import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
+import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 
 import io.swagger.annotations.Api;
@@ -36,7 +39,7 @@ public class TripSearchApiController {
 		return controller.initSearch(request);
 	}
 	
-	@ApiOperation(value = "Return part of founded trips and link id to next result",
+	@ApiOperation(value = "Returns part of founded trips and link id to next result",
 			response = TripSearchResponse.class)
 	@GetMapping
 	public TripSearchResponse getSearchResult(@ApiParam(value = "The search id from init search request", required = true)
@@ -44,11 +47,32 @@ public class TripSearchApiController {
 		return controller.getSearchResult(searchId);
 	}
 	
-	@ApiOperation(value = "Return list of trip seats",
+	@ApiOperation(value = "Returns the list of trip seats",
 			response = SeatsResponse.class, responseContainer="List")
 	@PostMapping("/trip/seats")
-	public List<SeatsResponse> getSeats(@Validated @RequestBody List<SeatsRequest> request) {
+	public List<SeatsResponse> getSeats(@Validated @RequestBody List<TripDetailsRequest> request) {
 		return controller.getSeats(request);
+	}
+	
+	@ApiOperation(value = "Returns the list of trip tariffs",
+			response = SeatsResponse.class, responseContainer="List")
+	@PostMapping("/trip/tariffs")
+	public List<TariffsResponse> getTariffs(@Validated @RequestBody List<TripDetailsRequest> request) {
+		return controller.getTariffs(request);
+	}
+	
+	@ApiOperation(value = "Returns the route of trip",
+			response = SeatsResponse.class, responseContainer="List")
+	@PostMapping("/trip/route")
+	public List<RouteResponse> getRoute(@Validated @RequestBody List<TripDetailsRequest> request) {
+		return controller.getRoutes(request);
+	}
+	
+	@ApiOperation(value = "Returns the list of required fields to create order to this trip",
+			response = SeatsResponse.class, responseContainer="List")
+	@PostMapping("/trip/required")
+	public List<RequiredResponse> getRequired(@Validated @RequestBody List<TripDetailsRequest> request) {
+		return controller.getRequired(request);
 	}
 
 }

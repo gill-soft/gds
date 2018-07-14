@@ -15,6 +15,7 @@ import com.gillsoft.concurrent.PoolType;
 import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.core.store.ResourceStore;
 import com.gillsoft.model.Customer;
+import com.gillsoft.model.RestError;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
@@ -70,6 +71,13 @@ public class OrderController {
 		});
 	}
 	
+	public List<OrderResponse> booking(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().booking(orderRequest.getOrderId());
+		});
+	}
+	
 	public List<OrderResponse> prepareReturn(List<OrderRequest> requests) {
 		return getResponse(requests, (orderRequest) -> {
 			return store.getResourceService(orderRequest.getParams())
@@ -84,7 +92,7 @@ public class OrderController {
 		});
 	}
 	
-	private List<OrderResponse> getResponse(List<OrderRequest> requests, Response creator) {
+	private List<OrderResponse> getResponse(List<OrderRequest> requests, ResponseCreator creator) {
 		List<Callable<OrderResponse>> callables = new ArrayList<>();
 		for (final OrderRequest orderRequest : requests) {
 			callables.add(() -> {
@@ -101,7 +109,102 @@ public class OrderController {
 		return ThreadPoolStore.getResult(PoolType.ORDER, callables);
 	}
 	
-	private interface Response {
+	public List<OrderResponse> cancel(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().cancel(orderRequest.getOrderId());
+		});
+	}
+	
+	public List<OrderResponse> get(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().get(orderRequest.getOrderId());
+		});
+	}
+	
+	public List<OrderResponse> getService(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			OrderResponse response = new OrderResponse();
+			response.setId(orderRequest.getId());
+			for (ServiceItem service : orderRequest.getServices()) {
+				try {
+					OrderResponse serviceResponse = store.getResourceService(orderRequest.getParams())
+						.getOrderService().getService(service.getId());
+					
+					// складываем все данные в общий ответ по ресурсу
+					// пункты
+					if (serviceResponse.getLocalities() != null) {
+						if (response.getLocalities() == null) {
+							response.setLocalities(serviceResponse.getLocalities());
+						} else {
+							response.getLocalities().putAll(serviceResponse.getLocalities());
+						}
+					}
+					// транспорт
+					if (serviceResponse.getVehicles() != null) {
+						if (response.getVehicles() == null) {
+							response.setVehicles(serviceResponse.getVehicles());
+						} else {
+							response.getVehicles().putAll(serviceResponse.getVehicles());
+						}
+					}
+					// организации
+					if (serviceResponse.getOrganisations() != null) {
+						if (response.getOrganisations() == null) {
+							response.setOrganisations(serviceResponse.getOrganisations());
+						} else {
+							response.getOrganisations().putAll(serviceResponse.getOrganisations());
+						}
+					}
+					// пассажиры
+					if (serviceResponse.getCustomers() != null) {
+						if (response.getCustomers() == null) {
+							response.setCustomers(serviceResponse.getCustomers());
+						} else {
+							response.getCustomers().putAll(serviceResponse.getCustomers());
+						}
+					}
+					// рейсы
+					if (serviceResponse.getSegments() != null) {
+						if (response.getSegments() == null) {
+							response.setSegments(serviceResponse.getSegments());
+						} else {
+							response.getSegments().putAll(serviceResponse.getSegments());
+						}
+					}
+					// дополнительные данные
+					if (serviceResponse.getAdditionals() != null) {
+						if (response.getAdditionals() == null) {
+							response.setAdditionals(serviceResponse.getAdditionals());
+						} else {
+							response.getAdditionals().putAll(serviceResponse.getAdditionals());
+						}
+					}
+					// билеты/сервисы
+					if (serviceResponse.getServices() != null) {
+						if (response.getServices() == null) {
+							response.setServices(serviceResponse.getServices());
+						} else {
+							response.getServices().addAll(serviceResponse.getServices());
+						}
+					}
+				} catch (Exception e) {
+					
+					// билеты/сервисы c ошибкой
+					if (response.getServices() == null) {
+						response.setServices(new ArrayList<>());
+					}
+					ServiceItem serviceItem = new ServiceItem();
+					serviceItem.setError(new RestError(e.getMessage()));
+					response.getServices().add(serviceItem);
+				}
+			}
+			return response;
+		});
+	}
+	
+	private interface ResponseCreator {
 		
 		public OrderResponse create(OrderRequest request);
 		

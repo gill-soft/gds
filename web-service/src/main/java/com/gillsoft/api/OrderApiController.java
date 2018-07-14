@@ -38,6 +38,13 @@ public class OrderApiController {
 		return controller.confirm(request);
 	}
 	
+	@ApiOperation(value = "Book selected orders and return its",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping("/booking")
+	public List<OrderResponse> booking(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.booking(request);
+	}
+	
 	@ApiOperation(value = "Prepare selected services to return operation and return its",
 			response = OrderResponse.class, responseContainer="List")
 	@PostMapping("/return/prepare")
@@ -50,6 +57,27 @@ public class OrderApiController {
 	@PostMapping("/return/confirm")
 	public List<OrderResponse> confirmReturn(@Validated @RequestBody List<OrderRequest> request) {
 		return controller.confirmReturn(request);
+	}
+	
+	@ApiOperation(value = "Cacnel selected orders and return its",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping("/cancel")
+	public List<OrderResponse> cancel(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.cancel(request);
+	}
+	
+	@ApiOperation(value = "Returns the information about selected orders",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping
+	public List<OrderResponse> getOrder(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.get(request);
+	}
+	
+	@ApiOperation(value = "Returns the information about selected services",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping("/service")
+	public List<OrderResponse> getService(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.getService(request);
 	}
 
 }

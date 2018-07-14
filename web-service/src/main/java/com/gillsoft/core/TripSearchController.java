@@ -18,9 +18,12 @@ import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.concurrent.PoolType;
 import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.core.store.ResourceStore;
-import com.gillsoft.model.request.SeatsRequest;
+import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.RequiredResponse;
+import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
+import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.util.StringUtil;
 
@@ -157,10 +160,8 @@ public class TripSearchController {
 		}
 	}
 	
-	public List<SeatsResponse> getSeats(List<SeatsRequest> requests) {
-		List<Callable<SeatsResponse>> callables = new ArrayList<>();
-		for (final SeatsRequest request : requests) {
-			callables.add(() -> {
+	public List<SeatsResponse> getSeats(List<TripDetailsRequest> requests) {
+		return getResult((request) -> {
 				try {
 					activity.check(request);
 					return new SeatsResponse(request.getId(),
@@ -168,9 +169,59 @@ public class TripSearchController {
 				} catch (Exception e) {
 					return new SeatsResponse(request.getId(), e);
 				}
+			}, requests);
+	}
+	
+	public List<TariffsResponse> getTariffs(List<TripDetailsRequest> requests) {
+		return getResult((request) -> {
+				try {
+					activity.check(request);
+					return new TariffsResponse(request.getId(),
+							store.getResourceService(request.getParams()).getSearchService().getTariffs(request.getTripId()));
+				} catch (Exception e) {
+					return new TariffsResponse(request.getId(), e);
+				}
+			}, requests);
+	}
+	
+	public List<RouteResponse> getRoutes(List<TripDetailsRequest> requests) {
+		return getResult((request) -> {
+				try {
+					activity.check(request);
+					return new RouteResponse(request.getId(),
+							store.getResourceService(request.getParams()).getSearchService().getRoute(request.getTripId()));
+				} catch (Exception e) {
+					return new RouteResponse(request.getId(), e);
+				}
+			}, requests);
+	}
+	
+	public List<RequiredResponse> getRequired(List<TripDetailsRequest> requests) {
+		return getResult((request) -> {
+				try {
+					activity.check(request);
+					return new RequiredResponse(request.getId(),
+							store.getResourceService(request.getParams()).getSearchService().getRequiredFields(request.getTripId()));
+				} catch (Exception e) {
+					return new RequiredResponse(request.getId(), e);
+				}
+			}, requests);
+	}
+	
+	public <T> List<T> getResult(ResponseCreator<T> response, List<TripDetailsRequest> requests) {
+		List<Callable<T>> callables = new ArrayList<>();
+		for (final TripDetailsRequest request : requests) {
+			callables.add(() -> {
+				return response.create(request);
 			});
 		}
 		return ThreadPoolStore.getResult(PoolType.SEARCH, callables);
+	}
+	
+	private interface ResponseCreator<T> {
+		
+		public T create(TripDetailsRequest request);
+		
 	}
 
 }
