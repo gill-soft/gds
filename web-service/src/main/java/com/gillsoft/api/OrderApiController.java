@@ -68,7 +68,7 @@ public class OrderApiController {
 	
 	@ApiOperation(value = "Returns the information about selected orders",
 			response = OrderResponse.class, responseContainer="List")
-	@PostMapping
+	@PostMapping("/info")
 	public List<OrderResponse> getOrder(@Validated @RequestBody List<OrderRequest> request) {
 		return controller.get(request);
 	}
