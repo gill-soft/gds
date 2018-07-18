@@ -69,38 +69,30 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	}
 	
 	private void setex(CacheObject cacheObject) {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
 					StringUtil.objectToBase64String(cacheObject));
-			jedis.close();
 		} catch (Exception e) {
 		}
 	}
 	
 	private void set(CacheObject cacheObject) {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
-			jedis.close();
 		} catch (Exception e) {
 		}
 	}
 	
 	private void add(String key) {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.sadd(ALL_KEYS, key);
-			jedis.close();
 		} catch (Exception e) {
 		}
 	}
 	
 	private CacheObject get(String key) {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			String value = jedis.get(key);
-			jedis.close();
 			CacheObject object = (CacheObject) StringUtil.base64StringToObject(value);
 			return object;
 		} catch (Exception e) {
@@ -109,10 +101,8 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	}
 	
 	private Set<String> members() {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			Set<String> value = jedis.smembers(ALL_KEYS);
-			jedis.close();
 			return value;
 		} catch (Exception e) {
 			return null;
@@ -120,15 +110,14 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	}
 	
 	private void rem(String key) {
-		try {
-			Jedis jedis = jedisPool.getResource();
+		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.srem(ALL_KEYS, key);
-			jedis.close();
 		} catch (Exception e) {
 		}
 	}
 	
 	public void close() {
+		jedisPool.destroy();
 		jedisPool.close();
 	}
 	
@@ -188,7 +177,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		// обновляем объект в кэше с пометкой readed = true
 		if (!cacheObject.isReaded()) {
 			cacheObject.setReaded(true);
-			setex(cacheObject);
+			write(cacheObject);
 		}
 		return cacheObject.getCachedObject();
 	}
