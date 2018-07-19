@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.io.ClassPathResource;
@@ -22,6 +24,8 @@ import redis.clients.jedis.JedisPool;
 @Component("RedisMemoryCache")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class RedisMemoryCache extends MemoryCacheHandler {
+	
+	private static final Logger LOGGER = LogManager.getLogger();
 	
 	private static final String ALL_KEYS = "RedisMemoryCache.keys";
 	
@@ -68,51 +72,63 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		return poolConfig;
 	}
 	
-	private void setex(CacheObject cacheObject) {
+	private void setex(CacheObject cacheObject) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
 					StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
-	private void set(CacheObject cacheObject) {
+	private void set(CacheObject cacheObject) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
-	private void add(String key) {
+	private void add(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.sadd(ALL_KEYS, key);
 		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
-	private CacheObject get(String key) {
+	private CacheObject get(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
 			String value = jedis.get(key);
+			if (value == null) {
+				return null;
+			}
 			CacheObject object = (CacheObject) StringUtil.base64StringToObject(value);
 			return object;
 		} catch (Exception e) {
-			return null;
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
-	private Set<String> members() {
+	private Set<String> members() throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			Set<String> value = jedis.smembers(ALL_KEYS);
-			return value;
+			return jedis.smembers(ALL_KEYS);
 		} catch (Exception e) {
-			return null;
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
-	private void rem(String key) {
+	private void rem(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.srem(ALL_KEYS, key);
 		} catch (Exception e) {
+			LOGGER.error(e.getMessage());
+			throw new IOCacheException(e.getMessage());
 		}
 	}
 	
@@ -127,7 +143,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		write(cacheObject);
 	}
 	
-	private void write(CacheObject cacheObject) {
+	private void write(CacheObject cacheObject) throws IOCacheException {
 		if (cacheObject.isEternal()) {
 			set(cacheObject);
 		} else {
@@ -177,7 +193,10 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		// обновляем объект в кэше с пометкой readed = true
 		if (!cacheObject.isReaded()) {
 			cacheObject.setReaded(true);
-			write(cacheObject);
+			try {
+				write(cacheObject);
+			} catch (IOCacheException e) {
+			}
 		}
 		return cacheObject.getCachedObject();
 	}
@@ -206,10 +225,18 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	public void updateCached() {
 		super.updateCached();
 		long curr = System.currentTimeMillis();
-		Set<String> keys = members();
+		Set<String> keys = null;
+		try {
+			keys = members();
+		} catch (IOCacheException e) {
+		}
 		if (keys != null) {
 			for (String key : keys) {
-				CacheObject cacheObject = get(key);
+				CacheObject cacheObject = null;
+				try {
+					cacheObject = get(key);
+				} catch (IOCacheException e) {
+				}
 				if (cacheObject != null) {
 					
 					// проверяем нужно ли обновить запись
@@ -220,7 +247,10 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 						// удаляем таксу с кэша и перезаписываем, чтобы не обновлять по несколько раз
 						Runnable runnable = cacheObject.getUpdateTask();
 						cacheObject.setUpdateTask(null);
-						write(cacheObject);
+						try {
+							write(cacheObject);
+						} catch (IOCacheException e) {
+						}
 						executor.submit(runnable);
 					}
 				} else {
