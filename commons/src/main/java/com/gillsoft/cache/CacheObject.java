@@ -80,7 +80,7 @@ public class CacheObject implements Serializable {
 	}
 	
 	public int getRemainingTime() {
-		return (int) (timeToLive - System.currentTimeMillis() / 1000);
+		return (int) ((timeToLive - System.currentTimeMillis()) / 1000);
 	}
 	
 }
