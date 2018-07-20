@@ -155,6 +155,8 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	 * Возвращает объект с кэша. Если объекта нет, то запускает задание UPDATE_TASK
 	 * для создания кэша. При этом, если задание уже запущено или еще не выполнено,
 	 * то будет брошена ошибка IOCacheException.
+	 * Если в кэше нет данных по указанному ключу, то тоже будет брошена ошибка
+	 * IOCacheException.
 	 */
 	@Override
 	public Object read(Map<String, Object> params) throws IOCacheException {
