@@ -52,12 +52,28 @@ public abstract class StringUtil {
 		return Base64.getEncoder().encodeToString(bytes);
 	}
 	
+	public static String toUrlBase64(String value) {
+		return toUrlBase64(value.getBytes());
+	}
+	
+	public static String toUrlBase64(byte[] bytes) {
+		return Base64.getUrlEncoder().encodeToString(bytes);
+	}
+	
 	public static String fromBase64AsString(String value) {
 		return new String(fromBase64(value));
 	}
 	
 	public static byte[] fromBase64(String value) {
 		return Base64.getDecoder().decode(value);
+	}
+	
+	public static String fromUrlBase64AsString(String value) {
+		return new String(fromUrlBase64(value));
+	}
+	
+	public static byte[] fromUrlBase64(String value) {
+		return Base64.getUrlDecoder().decode(value);
 	}
 	
 	public static String objectToJsonString(Object value) throws JsonProcessingException {
@@ -69,11 +85,11 @@ public abstract class StringUtil {
 	}
 	
 	public static String objectToJsonBase64String(Object value) throws JsonProcessingException {
-		return toBase64(objectToJsonString(value));
+		return toUrlBase64(objectToJsonString(value));
 	}
 	
 	public static <T> T jsonBase64StringToObject(Class<?> type, String value) throws IOException {
-		return jsonStringToObject(type, fromBase64AsString(value));
+		return jsonStringToObject(type, fromUrlBase64AsString(value));
 	}
 	
 	public static String objectToBase64String(Object object) throws IOException {

@@ -2,6 +2,7 @@ package com.gillsoft.logging;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,12 +18,10 @@ public abstract class RequestResponseLoggingInterceptor implements ClientHttpReq
 
 	private static final Logger LOGGER = LogManager.getLogger();
 	
-	private static final String UTF8 = "UTF-8";
-	
 	private Charset charset;
 	
 	public RequestResponseLoggingInterceptor() {
-		this.charset = Charset.forName(UTF8);
+		this.charset = StandardCharsets.UTF_8;
 	}
 
 	public RequestResponseLoggingInterceptor(Charset charset) {

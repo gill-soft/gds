@@ -14,7 +14,8 @@ public abstract class AbstractJsonModel extends ResourceRequest {
 		try {
 			return StringUtil.objectToJsonBase64String(this);
 		} catch (JsonProcessingException e) {
-			return "";		}
+			return "";
+		}
 	}
 	
 	public AbstractJsonModel create(String json) {
