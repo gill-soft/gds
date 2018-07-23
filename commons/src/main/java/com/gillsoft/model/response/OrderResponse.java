@@ -148,7 +148,7 @@ public class OrderResponse extends Response {
 							organisations.put(service.getSegment().getInsurance().getId(),
 									service.getSegment().getInsurance());
 							service.getSegment()
-									.setCarrier(new Organisation(service.getSegment().getInsurance().getId()));
+									.setInsurance(new Organisation(service.getSegment().getInsurance().getId()));
 						}
 					}
 					if (service.getSegment().getCarrier() != null
