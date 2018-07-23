@@ -187,7 +187,7 @@ public class OrderResponse extends Response {
 							}
 							localities.put(service.getSegment().getArrival().getId(),
 									service.getSegment().getArrival());
-							service.getSegment().setDeparture(new Locality(service.getSegment().getArrival().getId()));
+							service.getSegment().setArrival(new Locality(service.getSegment().getArrival().getId()));
 						}
 					}
 				}
