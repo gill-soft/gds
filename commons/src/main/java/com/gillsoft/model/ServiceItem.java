@@ -1,6 +1,7 @@
 package com.gillsoft.model;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -37,6 +38,10 @@ public class ServiceItem implements Serializable {
 	
 	@ApiModelProperty("Service price")
 	private Price price;
+	
+	@ApiModelProperty(value = "The map with additional params",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
+	private Map<String, String> additionals;
 	
 	@ApiModelProperty(allowEmptyValue = true)
 	private RestError error;
@@ -103,6 +108,14 @@ public class ServiceItem implements Serializable {
 
 	public void setPrice(Price price) {
 		this.price = price;
+	}
+
+	public Map<String, String> getAdditionals() {
+		return additionals;
+	}
+
+	public void setAdditionals(Map<String, String> additionals) {
+		this.additionals = additionals;
 	}
 
 	public RestError getError() {

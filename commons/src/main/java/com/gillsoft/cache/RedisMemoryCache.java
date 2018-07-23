@@ -246,7 +246,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 							&& cacheObject.isReaded()
 							&& cacheObject.getCreated() <= curr - cacheObject.getUpdateDelay()) {
 						
-						// удаляем таксу с кэша и перезаписываем, чтобы не обновлять по несколько раз
+						// удаляем таску с кэша и перезаписываем, чтобы не обновлять по несколько раз
 						Runnable runnable = cacheObject.getUpdateTask();
 						cacheObject.setUpdateTask(null);
 						try {
