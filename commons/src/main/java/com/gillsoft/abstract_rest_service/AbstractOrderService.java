@@ -15,7 +15,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER)
 	public OrderResponse create(@RequestBody OrderRequest request) {
-		return createResponse(request);
+		OrderResponse response = createResponse(request);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse createResponse(OrderRequest request);

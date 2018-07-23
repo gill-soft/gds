@@ -2,6 +2,7 @@ package com.gillsoft.model.response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import com.gillsoft.model.Customer;
 import com.gillsoft.model.Locality;
@@ -130,6 +131,89 @@ public class OrderResponse extends Response {
 
 	public void setAdditionals(Map<String, String> additionals) {
 		this.additionals = additionals;
+	}
+
+	public void fillMaps() {
+		if (services != null) {
+			for (ServiceItem service : services) {
+				if (service.getSegment() != null) {
+					// organisations
+					if (service.getSegment().getInsurance() != null
+							&& service.getSegment().getInsurance().getId() != null) {
+						if (organisations == null || organisations.isEmpty()
+								|| !organisations.containsKey(service.getSegment().getInsurance().getId())) {
+							if (organisations == null) {
+								organisations = new HashMap<>();
+							}
+							organisations.put(service.getSegment().getInsurance().getId(),
+									service.getSegment().getInsurance());
+							service.getSegment()
+									.setCarrier(new Organisation(service.getSegment().getInsurance().getId()));
+						}
+					}
+					if (service.getSegment().getCarrier() != null
+							&& service.getSegment().getCarrier().getId() != null) {
+						if (organisations == null || organisations.isEmpty()
+								|| !organisations.containsKey(service.getSegment().getCarrier().getId())) {
+							if (organisations == null) {
+								organisations = new HashMap<>();
+							}
+							organisations.put(service.getSegment().getCarrier().getId(),
+									service.getSegment().getCarrier());
+							service.getSegment()
+									.setCarrier(new Organisation(service.getSegment().getCarrier().getId()));
+						}
+					}
+					// localities
+					if (service.getSegment().getDeparture() != null
+							&& service.getSegment().getDeparture().getId() != null) {
+						if (localities == null || localities.isEmpty()
+								|| !localities.containsKey(service.getSegment().getDeparture().getId())) {
+							if (localities == null) {
+								localities = new HashMap<>();
+							}
+							localities.put(service.getSegment().getDeparture().getId(),
+									service.getSegment().getDeparture());
+							service.getSegment()
+									.setDeparture(new Locality(service.getSegment().getDeparture().getId()));
+						}
+					}
+					if (service.getSegment().getArrival() != null
+							&& service.getSegment().getArrival().getId() != null) {
+						if (localities == null || localities.isEmpty()
+								|| !localities.containsKey(service.getSegment().getArrival().getId())) {
+							if (localities == null) {
+								localities = new HashMap<>();
+							}
+							localities.put(service.getSegment().getArrival().getId(),
+									service.getSegment().getArrival());
+							service.getSegment().setDeparture(new Locality(service.getSegment().getArrival().getId()));
+						}
+					}
+				}
+				// segments
+				if (service.getSegment() != null && service.getSegment().getId() != null) {
+					if (segments == null || segments.isEmpty() || !segments.containsKey(service.getSegment().getId())) {
+						if (segments == null) {
+							segments = new HashMap<>();
+						}
+						segments.put(service.getSegment().getId(), service.getSegment());
+						service.setSegment(new Segment(service.getSegment().getId()));
+					}
+				}
+				// customers
+				if (service.getCustomer() != null && service.getCustomer().getId() != null) {
+					if (customers == null || customers.isEmpty()
+							|| !customers.containsKey(service.getCustomer().getId())) {
+						if (customers == null) {
+							customers = new HashMap<>();
+						}
+						customers.put(service.getCustomer().getId(), service.getCustomer());
+						service.setCustomer(new Customer(service.getCustomer().getId()));
+					}
+				}
+			}
+		}
 	}
 
 }

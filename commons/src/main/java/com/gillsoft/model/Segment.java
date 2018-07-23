@@ -72,6 +72,12 @@ public class Segment implements Serializable {
 	@ApiModelProperty(value = "The map with additional params",
 			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
 	private Map<String, String> additionals;
+	
+	public Segment() {}
+	
+	public Segment(String id) {
+		this.id = id;
+	}
 
 	public String getId() {
 		return id;
