@@ -1,6 +1,7 @@
 package com.gillsoft.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -25,6 +26,9 @@ public class ReturnCondition implements Serializable {
 	
 	@ApiModelProperty(value = "The minutes before depart when condition is available", allowEmptyValue = true)
 	private Integer minutesBeforeDepart;
+	
+	@ApiModelProperty(value = "The returned percent from tariff value", allowEmptyValue = true)
+	private BigDecimal returnPercent;
 
 	public String getId() {
 		return id;
@@ -56,6 +60,14 @@ public class ReturnCondition implements Serializable {
 
 	public void setMinutesBeforeDepart(Integer minutesBeforeDepart) {
 		this.minutesBeforeDepart = minutesBeforeDepart;
+	}
+
+	public BigDecimal getReturnPercent() {
+		return returnPercent;
+	}
+
+	public void setReturnPercent(BigDecimal returnPercent) {
+		this.returnPercent = returnPercent;
 	}
 
 }
