@@ -10,10 +10,20 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.UUID;
 
+import org.apache.logging.log4j.core.util.datetime.FastDateFormat;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class StringUtil {
+	
+	public static final String TIME_FORMAT = "HH:mm";
+	public static final String DATE_FORMAT = "yyyy-MM-dd";
+	public static final String FULL_DATE_FORMAT = "yyyy-MM-dd HH:mm";
+	
+	public final static FastDateFormat timeFormat = FastDateFormat.getInstance(TIME_FORMAT);
+	public final static FastDateFormat dateFormat = FastDateFormat.getInstance(DATE_FORMAT);
+	public final static FastDateFormat fullDateFormat = FastDateFormat.getInstance(FULL_DATE_FORMAT);
 	
 	public static String md5(String st) {
 	    try {
