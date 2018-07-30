@@ -36,6 +36,15 @@ public class Tariff implements Serializable {
 	
 	@ApiModelProperty(value = "The list of applied return conditions to this tariff", allowEmptyValue = true)
 	private List<ReturnCondition> returnConditions;
+	
+	@ApiModelProperty(value = "The minimum age for apply tariff", allowEmptyValue = true)
+	private Integer minAge;
+	
+	@ApiModelProperty(value = "The maximum age for apply tariff", allowEmptyValue = true)
+	private Integer maxAge;
+	
+	@ApiModelProperty(value = "The property that allows the cancellation of this tariff", allowEmptyValue = true)
+	private Boolean cancellable;
 
 	public String getId() {
 		return id;
@@ -91,6 +100,30 @@ public class Tariff implements Serializable {
 
 	public void setReturnConditions(List<ReturnCondition> returnConditions) {
 		this.returnConditions = returnConditions;
+	}
+
+	public Integer getMinAge() {
+		return minAge;
+	}
+
+	public void setMinAge(Integer minAge) {
+		this.minAge = minAge;
+	}
+
+	public Integer getMaxAge() {
+		return maxAge;
+	}
+
+	public void setMaxAge(Integer maxAge) {
+		this.maxAge = maxAge;
+	}
+
+	public Boolean getCancellable() {
+		return cancellable;
+	}
+
+	public void setCancellable(Boolean cancellable) {
+		this.cancellable = cancellable;
 	}
 
 }
