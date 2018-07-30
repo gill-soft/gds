@@ -14,6 +14,7 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
+import org.springframework.web.client.RestClientException;
 
 public abstract class RestTemplateUtil {
 	
@@ -50,6 +51,18 @@ public abstract class RestTemplateUtil {
 		Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
 		marshaller.setClassesToBeBound(classesToBeBound);
 		return Collections.singletonList(new MarshallingHttpMessageConverter(marshaller, marshaller));
+	}
+	
+	public static RestClientException createUnavailableMethod() {
+		return new RestClientException("Method is unavailable");
+	}
+	
+	public static RestClientException createRestException(String message) {
+		return new RestClientException(message);
+	}
+	
+	public static RestClientException createRestException(String message, Throwable exception) {
+		return new RestClientException(message, exception);
 	}
 
 }
