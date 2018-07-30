@@ -17,6 +17,7 @@ import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.RequiredResponse;
 import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
+import com.gillsoft.model.response.SeatsSchemeResponse;
 import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 
@@ -52,6 +53,13 @@ public class TripSearchApiController {
 	@PostMapping("/trip/seats")
 	public List<SeatsResponse> getSeats(@Validated @RequestBody List<TripDetailsRequest> request) {
 		return controller.getSeats(request);
+	}
+	
+	@ApiOperation(value = "Returns the list of trip seats",
+			response = SeatsResponse.class, responseContainer="List")
+	@PostMapping("/trip/seats/scheme")
+	public List<SeatsSchemeResponse> getScheme(@Validated @RequestBody List<TripDetailsRequest> request) {
+		return controller.getSeatsScheme(request);
 	}
 	
 	@ApiOperation(value = "Returns the list of trip tariffs",

@@ -23,6 +23,7 @@ import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.RequiredResponse;
 import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
+import com.gillsoft.model.response.SeatsSchemeResponse;
 import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.util.StringUtil;
@@ -168,6 +169,18 @@ public class TripSearchController {
 							store.getResourceService(request.getParams()).getSearchService().getSeats(request.getTripId()));
 				} catch (Exception e) {
 					return new SeatsResponse(request.getId(), e);
+				}
+			}, requests);
+	}
+	
+	public List<SeatsSchemeResponse> getSeatsScheme(List<TripDetailsRequest> requests) {
+		return getResult((request) -> {
+				try {
+					activity.check(request);
+					return new SeatsSchemeResponse(request.getId(),
+							store.getResourceService(request.getParams()).getSearchService().getSeatsScheme(request.getTripId()));
+				} catch (Exception e) {
+					return new SeatsSchemeResponse(request.getId(), e);
 				}
 			}, requests);
 	}
