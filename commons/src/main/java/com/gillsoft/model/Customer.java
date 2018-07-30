@@ -35,6 +35,21 @@ public class Customer implements Serializable {
 	
 	@ApiModelProperty(value = "Customer email", allowEmptyValue = true)
 	private String email;
+	
+	@ApiModelProperty(value = "Customer gender", allowEmptyValue = true)
+	private Gender gender;
+	
+	@ApiModelProperty(value = "Customer citizenship", allowEmptyValue = true)
+	private Citizenship citizenship;
+	
+	@ApiModelProperty(value = "Customer identification document type", allowEmptyValue = true)
+	private IdentificationDocumentType documentType;
+	
+	@ApiModelProperty(value = "Customer identification document number", allowEmptyValue = true)
+	private String documentNumber;
+	
+	@ApiModelProperty(value = "Customer identification document series", allowEmptyValue = true)
+	private String documentSeries;
 
 	public Customer() {
 		
@@ -98,6 +113,46 @@ public class Customer implements Serializable {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public Gender getGender() {
+		return gender;
+	}
+
+	public void setGender(Gender gender) {
+		this.gender = gender;
+	}
+
+	public Citizenship getCitizenship() {
+		return citizenship;
+	}
+
+	public void setCitizenship(Citizenship citizenship) {
+		this.citizenship = citizenship;
+	}
+
+	public IdentificationDocumentType getDocumentType() {
+		return documentType;
+	}
+
+	public void setDocumentType(IdentificationDocumentType documentType) {
+		this.documentType = documentType;
+	}
+
+	public String getDocumentNumber() {
+		return documentNumber;
+	}
+
+	public void setDocumentNumber(String documentNumber) {
+		this.documentNumber = documentNumber;
+	}
+
+	public String getDocumentSeries() {
+		return documentSeries;
+	}
+
+	public void setDocumentSeries(String documentSeries) {
+		this.documentSeries = documentSeries;
 	}
 	
 }

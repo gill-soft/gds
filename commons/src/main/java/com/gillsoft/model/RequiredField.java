@@ -6,8 +6,14 @@ import io.swagger.annotations.ApiModel;
 public enum RequiredField {
 	
 	NAME,
+	PATRONYMIC,
 	SURNAME,
 	EMAIL,
-	PHONE
+	PHONE,
+	GENDER,
+	CITIZENSHIP,
+	DOCUMENT_TYPE,
+	DOCUMENT_NUMBER,
+	DOCUMENT_SERIES
 
 }
