@@ -147,9 +147,9 @@ public class OrderResponse extends Response {
 							}
 							organisations.put(service.getSegment().getInsurance().getId(),
 									service.getSegment().getInsurance());
-							service.getSegment()
-									.setInsurance(new Organisation(service.getSegment().getInsurance().getId()));
 						}
+						service.getSegment()
+								.setInsurance(new Organisation(service.getSegment().getInsurance().getId()));
 					}
 					if (service.getSegment().getCarrier() != null
 							&& service.getSegment().getCarrier().getId() != null) {
@@ -160,9 +160,8 @@ public class OrderResponse extends Response {
 							}
 							organisations.put(service.getSegment().getCarrier().getId(),
 									service.getSegment().getCarrier());
-							service.getSegment()
-									.setCarrier(new Organisation(service.getSegment().getCarrier().getId()));
 						}
+						service.getSegment().setCarrier(new Organisation(service.getSegment().getCarrier().getId()));
 					}
 					// localities
 					if (service.getSegment().getDeparture() != null
@@ -174,9 +173,8 @@ public class OrderResponse extends Response {
 							}
 							localities.put(service.getSegment().getDeparture().getId(),
 									service.getSegment().getDeparture());
-							service.getSegment()
-									.setDeparture(new Locality(service.getSegment().getDeparture().getId()));
 						}
+						service.getSegment().setDeparture(new Locality(service.getSegment().getDeparture().getId()));
 					}
 					if (service.getSegment().getArrival() != null
 							&& service.getSegment().getArrival().getId() != null) {
@@ -187,8 +185,8 @@ public class OrderResponse extends Response {
 							}
 							localities.put(service.getSegment().getArrival().getId(),
 									service.getSegment().getArrival());
-							service.getSegment().setArrival(new Locality(service.getSegment().getArrival().getId()));
 						}
+						service.getSegment().setArrival(new Locality(service.getSegment().getArrival().getId()));
 					}
 				}
 				// segments
@@ -198,8 +196,8 @@ public class OrderResponse extends Response {
 							segments = new HashMap<>();
 						}
 						segments.put(service.getSegment().getId(), service.getSegment());
-						service.setSegment(new Segment(service.getSegment().getId()));
 					}
+					service.setSegment(new Segment(service.getSegment().getId()));
 				}
 				// customers
 				if (service.getCustomer() != null && service.getCustomer().getId() != null) {
@@ -209,8 +207,8 @@ public class OrderResponse extends Response {
 							customers = new HashMap<>();
 						}
 						customers.put(service.getCustomer().getId(), service.getCustomer());
-						service.setCustomer(new Customer(service.getCustomer().getId()));
 					}
+					service.setCustomer(new Customer(service.getCustomer().getId()));
 				}
 			}
 		}
