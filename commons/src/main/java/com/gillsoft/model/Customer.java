@@ -3,6 +3,8 @@ package com.gillsoft.model;
 import java.io.Serializable;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -28,6 +30,7 @@ public class Customer implements Serializable {
 	private String surname;
 	
 	@ApiModelProperty(value = "Customer birthday", allowEmptyValue = true)
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
 	private Date birthday;
 	
 	@ApiModelProperty(value = "Customer phone", allowEmptyValue = true)
