@@ -8,6 +8,9 @@ public enum Currency {
 	UAH,
 	USD,
 	PLN,
-	EUR
-	
+	EUR,
+	BYR,
+	RUR,
+	LTL
+
 }
