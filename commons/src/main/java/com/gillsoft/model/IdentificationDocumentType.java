@@ -8,8 +8,6 @@ public enum IdentificationDocumentType {
 	
 	SEAMAN, // Паспорт моряка
 	
-	RUSSIAN_FOREIGN_PASSPORT, // заграничный паспорт гражданина Российской Федерации
-	
 	BIRTH_CERTIFICATE, // Свидетельство о рождении
 	
 	MILITARY_ID, // Удостоверение личности военнослужащего действительной службы

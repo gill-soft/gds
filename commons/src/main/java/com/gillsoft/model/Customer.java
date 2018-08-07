@@ -39,6 +39,9 @@ public class Customer implements Serializable {
 	@ApiModelProperty(value = "Customer email", allowEmptyValue = true)
 	private String email;
 	
+	@ApiModelProperty(value = "Customer note", allowEmptyValue = true)
+	private String note;
+	
 	@ApiModelProperty(value = "Customer gender", allowEmptyValue = true)
 	private Gender gender;
 	
@@ -116,6 +119,14 @@ public class Customer implements Serializable {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public String getNote() {
+		return note;
+	}
+
+	public void setNote(String note) {
+		this.note = note;
 	}
 
 	public Gender getGender() {
