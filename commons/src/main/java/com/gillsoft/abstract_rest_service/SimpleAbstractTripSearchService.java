@@ -36,8 +36,17 @@ public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSea
 		// формируем задания поиска
 		List<Callable<T>> callables = new ArrayList<>();
 		for (final Date date : request.getDates()) {
-			for (final String[] pair : request.getLocalityPairs()) {
-				addInitSearchCallables(callables, pair, date);
+			if (request.getBackDates() != null
+					&& !request.getBackDates().isEmpty()) {
+				for (final Date backDate : request.getBackDates()) {
+					for (final String[] pair : request.getLocalityPairs()) {
+						addInitSearchCallables(callables, pair, date, backDate);
+					}
+				}
+			} else {
+				for (final String[] pair : request.getLocalityPairs()) {
+					addInitSearchCallables(callables, pair, date);
+				}
 			}
 		}
 		// запускаем задания и полученные ссылки кладем в кэш
@@ -51,6 +60,17 @@ public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSea
 	 * @param date
 	 */
 	public void addInitSearchCallables(List<Callable<T>> callables, String[] pair, Date date) {
+		
+	}
+	
+	/**
+	 * 
+	 * @param callables
+	 * @param pair
+	 * @param date
+	 * @param backDate
+	 */
+	public void addInitSearchCallables(List<Callable<T>> callables, String[] pair, Date date, Date backDate) {
 		
 	}
 	

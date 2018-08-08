@@ -1,6 +1,7 @@
 package com.gillsoft.model.request;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -20,9 +21,14 @@ public class TripSearchRequest extends ResourceRequest {
 	private List<String[]> localityPairs;
 	
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
-	@ApiModelProperty(value = "The of searches dates in format yyyy-MM-dd. Its will be used for each pair of localities",
+	@ApiModelProperty(value = "The dates of searches in format yyyy-MM-dd. Its will be used for each pair of localities",
 			required = true)
 	private List<Date> dates;
+	
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
+	@ApiModelProperty(value = "The back dates of searches in format yyyy-MM-dd. Its will be used for each pair of localities",
+			required = true)
+	private List<Date> backDates;
 
 	public List<String[]> getLocalityPairs() {
 		return localityPairs;
@@ -40,14 +46,27 @@ public class TripSearchRequest extends ResourceRequest {
 		this.dates = dates;
 	}
 	
+	public List<Date> getBackDates() {
+		return backDates;
+	}
+
+	public void setBackDates(List<Date> backDates) {
+		this.backDates = backDates;
+	}
+
 	public static TripSearchRequest createRequest(String[] pair, Date date) {
+		return createRequest(pair, date, null);
+	}
+	
+	public static TripSearchRequest createRequest(String[] pair, Date date, Date backDate) {
 		TripSearchRequest request = new TripSearchRequest();
 		List<String[]> pairs = new ArrayList<>(1);
 		pairs.add(pair);
 		request.setLocalityPairs(pairs);
-		List<Date> dates = new ArrayList<>(1);
-		dates.add(date);
-		request.setDates(dates);
+		request.setDates(Collections.singletonList(date));
+		if (backDate != null) {
+			request.setBackDates(Collections.singletonList(backDate));
+		}
 		return request;
 	}
 	
