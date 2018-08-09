@@ -22,26 +22,24 @@ public abstract class AbstractUpdateTask implements Runnable, Serializable {
 
 	protected void writeObject(CacheHandler cache, String key, Object cachedObject, long timeToLive, long updateDelay,
 			boolean ignoreAge, boolean disableUpdate) {
-		if (cachedObject != null) {
-			Map<String, Object> params = new HashMap<>();
-			params.put(RedisMemoryCache.OBJECT_NAME, key);
-			
-			// время жизни кэша
-			params.put(RedisMemoryCache.TIME_TO_LIVE, timeToLive);
-			
-			// как часто обновлять
-			params.put(RedisMemoryCache.UPDATE_DELAY, updateDelay);
-			
-			if (ignoreAge) {
-				params.put(RedisMemoryCache.IGNORE_AGE, Boolean.TRUE);
-			}
-			if (!disableUpdate) {
-				params.put(RedisMemoryCache.UPDATE_TASK, this);
-			}
-			try {
-				cache.write(cachedObject, params);
-			} catch (IOCacheException e) {
-			}
+		Map<String, Object> params = new HashMap<>();
+		params.put(RedisMemoryCache.OBJECT_NAME, key);
+		
+		// время жизни кэша
+		params.put(RedisMemoryCache.TIME_TO_LIVE, timeToLive);
+		
+		// как часто обновлять
+		params.put(RedisMemoryCache.UPDATE_DELAY, updateDelay);
+		
+		if (ignoreAge) {
+			params.put(RedisMemoryCache.IGNORE_AGE, Boolean.TRUE);
+		}
+		if (!disableUpdate) {
+			params.put(RedisMemoryCache.UPDATE_TASK, this);
+		}
+		try {
+			cache.write(cachedObject, params);
+		} catch (IOCacheException e) {
 		}
 	}
 
