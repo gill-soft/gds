@@ -9,7 +9,7 @@ public enum Currency {
 	USD,
 	PLN,
 	EUR,
-	BYR,
+	BYN,
 	RUR,
 	LTL,
 	BGN,
