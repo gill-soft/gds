@@ -11,6 +11,9 @@ public enum Currency {
 	EUR,
 	BYR,
 	RUR,
-	LTL
-
+	LTL,
+	BGN,
+	CZK,
+	GBP
+	
 }

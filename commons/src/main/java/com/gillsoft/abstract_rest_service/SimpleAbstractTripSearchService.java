@@ -25,12 +25,6 @@ import com.gillsoft.util.CacheUtil;
 
 public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSearchService {
 
-	/**
-	 * 
-	 * @param cache
-	 * @param request
-	 * @return
-	 */
 	public TripSearchResponse simpleInitSearchResponse(CacheHandler cache, TripSearchRequest request) {
 		
 		// формируем задания поиска
@@ -40,12 +34,13 @@ public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSea
 					&& !request.getBackDates().isEmpty()) {
 				for (final Date backDate : request.getBackDates()) {
 					for (final String[] pair : request.getLocalityPairs()) {
-						addInitSearchCallables(callables, pair, date, backDate);
+						addInitSearchCallables(callables, TripSearchRequest.createRequest(pair, date, backDate, request.getCurrency()));
 					}
 				}
 			} else {
 				for (final String[] pair : request.getLocalityPairs()) {
 					addInitSearchCallables(callables, pair, date);
+					addInitSearchCallables(callables, TripSearchRequest.createRequest(pair, date, null, request.getCurrency()));
 				}
 			}
 		}
@@ -53,24 +48,11 @@ public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSea
 		return CacheUtil.putToCache(cache, ThreadPoolStore.executeAll(PoolType.SEARCH, callables));
 	}
 	
-	/**
-	 * 
-	 * @param callables
-	 * @param pair
-	 * @param date
-	 */
 	public void addInitSearchCallables(List<Callable<T>> callables, String[] pair, Date date) {
 		
 	}
 	
-	/**
-	 * 
-	 * @param callables
-	 * @param pair
-	 * @param date
-	 * @param backDate
-	 */
-	public void addInitSearchCallables(List<Callable<T>> callables, String[] pair, Date date, Date backDate) {
+	public void addInitSearchCallables(List<Callable<T>> callables, TripSearchRequest request) {
 		
 	}
 	
@@ -136,16 +118,6 @@ public abstract class SimpleAbstractTripSearchService<T> extends AbstractTripSea
 		}
 	}
 	
-	/**
-	 * 
-	 * @param callables
-	 * @param vehicles
-	 * @param localities
-	 * @param organisations
-	 * @param segments
-	 * @param containers
-	 * @param result
-	 */
 	public void addNextGetSearchCallablesAndResult(List<Callable<T>> callables, Map<String, Vehicle> vehicles,
 			Map<String, Locality> localities, Map<String, Organisation> organisations, Map<String, Segment> segments,
 			List<TripContainer> containers, T result) {

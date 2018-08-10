@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
+import com.gillsoft.model.Currency;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -29,6 +30,9 @@ public class TripSearchRequest extends ResourceRequest {
 	@ApiModelProperty(value = "The back dates of searches in format yyyy-MM-dd. Its will be used for each pair of localities",
 			required = true)
 	private List<Date> backDates;
+	
+	@ApiModelProperty("The needed result price currency")
+	private Currency currency;
 
 	public List<String[]> getLocalityPairs() {
 		return localityPairs;
@@ -54,11 +58,19 @@ public class TripSearchRequest extends ResourceRequest {
 		this.backDates = backDates;
 	}
 
+	public Currency getCurrency() {
+		return currency;
+	}
+
+	public void setCurrency(Currency currency) {
+		this.currency = currency;
+	}
+
 	public static TripSearchRequest createRequest(String[] pair, Date date) {
-		return createRequest(pair, date, null);
+		return createRequest(pair, date, null, null);
 	}
 	
-	public static TripSearchRequest createRequest(String[] pair, Date date, Date backDate) {
+	public static TripSearchRequest createRequest(String[] pair, Date date, Date backDate, Currency currency) {
 		TripSearchRequest request = new TripSearchRequest();
 		List<String[]> pairs = new ArrayList<>(1);
 		pairs.add(pair);
@@ -67,6 +79,7 @@ public class TripSearchRequest extends ResourceRequest {
 		if (backDate != null) {
 			request.setBackDates(Collections.singletonList(backDate));
 		}
+		request.setCurrency(currency);
 		return request;
 	}
 	
