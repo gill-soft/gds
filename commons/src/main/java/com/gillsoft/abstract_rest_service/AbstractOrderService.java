@@ -65,7 +65,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER_BOOKING)
 	public OrderResponse booking(@RequestParam("orderId") String orderId) {
-		return bookingResponse(orderId);
+		OrderResponse response = bookingResponse(orderId);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse bookingResponse(String orderId);
@@ -73,7 +75,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER_CONFIRM)
 	public OrderResponse confirm(@RequestParam("orderId") String orderId) {
-		return confirmResponse(orderId);
+		OrderResponse response = confirmResponse(orderId);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse confirmResponse(String orderId);
