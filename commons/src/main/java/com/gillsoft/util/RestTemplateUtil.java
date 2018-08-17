@@ -1,7 +1,11 @@
 package com.gillsoft.util;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.xml.bind.Marshaller;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
@@ -48,8 +52,28 @@ public abstract class RestTemplateUtil {
  	}
 	
 	public static List<HttpMessageConverter<?>> getMarshallingMessageConverters(Class<?>... classesToBeBound) {
+		return getMarshallingMessageConverters(null, classesToBeBound);
+	}
+	
+	public static List<HttpMessageConverter<?>> getMarshallingMessageConverters(String encoding, Class<?>... classesToBeBound) {
+		if (encoding != null) {
+			Map<String, String> properties = new HashMap<>();
+			properties.put(Marshaller.JAXB_ENCODING, encoding);
+			return getMarshallingMessageConverters(properties, properties, classesToBeBound);
+		}
+		return getMarshallingMessageConverters(null, null, classesToBeBound);
+	}
+	
+	public static List<HttpMessageConverter<?>> getMarshallingMessageConverters(
+			Map<String, String> marshProp, Map<String, String> unmarshProp, Class<?>... classesToBeBound) {
 		Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
 		marshaller.setClassesToBeBound(classesToBeBound);
+		if (marshProp != null) {
+			marshaller.setMarshallerProperties(marshProp);
+		}
+		if (unmarshProp != null) {
+			marshaller.setUnmarshallerProperties(unmarshProp);
+		}
 		return Collections.singletonList(new MarshallingHttpMessageConverter(marshaller, marshaller));
 	}
 	
