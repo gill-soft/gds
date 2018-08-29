@@ -34,6 +34,8 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	 */
 	public static final String IGNORE_CACHE = "ignoreCache";
 	
+	private static String appUniqKey;
+	
 	private JedisPool jedisPool;
 	
 	public RedisMemoryCache() {
@@ -49,6 +51,10 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			properties = PropertiesLoaderUtils.loadProperties(resource);
 		} catch (IOException e) {
 		}
+		// ключ префикс ко всем ид кэша
+		String defaultPref = RedisMemoryCache.class.getClassLoader().getResource("").toString();
+		appUniqKey = properties.getProperty("app.uniq.key", defaultPref);
+		
 		// настройка пула редиса
 		CustomJedisPoolConfig poolConfig = new CustomJedisPoolConfig();
 		poolConfig.setMaxIdle(Integer.parseInt(
@@ -74,7 +80,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private void setex(CacheObject cacheObject) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
+			jedis.setex(getUniqKey(cacheObject.getName()), cacheObject.getRemainingTime(),
 					StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
 			LOGGER.error("Cache error", e);
@@ -84,7 +90,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private void set(CacheObject cacheObject) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
+			jedis.set(getUniqKey(cacheObject.getName()), StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
 			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
@@ -93,7 +99,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private void add(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			jedis.sadd(ALL_KEYS, key);
+			jedis.sadd(getUniqKey(ALL_KEYS), key);
 		} catch (Exception e) {
 			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
@@ -102,7 +108,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private CacheObject get(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			String value = jedis.get(key);
+			String value = jedis.get(getUniqKey(key));
 			if (value == null) {
 				return null;
 			}
@@ -116,7 +122,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private Set<String> members() throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			return jedis.smembers(ALL_KEYS);
+			return jedis.smembers(getUniqKey(ALL_KEYS));
 		} catch (Exception e) {
 			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
@@ -125,11 +131,15 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 	
 	private void rem(String key) throws IOCacheException {
 		try (Jedis jedis = jedisPool.getResource()) {
-			jedis.srem(ALL_KEYS, key);
+			jedis.srem(getUniqKey(ALL_KEYS), key);
 		} catch (Exception e) {
 			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
+	}
+	
+	private String getUniqKey(String key) {
+		return String.join(".", key, appUniqKey);
 	}
 	
 	public void close() {
