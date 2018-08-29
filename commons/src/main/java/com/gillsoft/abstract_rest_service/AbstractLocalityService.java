@@ -2,6 +2,7 @@ package com.gillsoft.abstract_rest_service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,5 +37,17 @@ public abstract class AbstractLocalityService implements LocalityService {
 	}
 	
 	public abstract Map<String, List<String>> getBindingResponse(LocalityRequest request);
+	
+	public static Locality getLocality(List<Locality> localities, String id) {
+		if (localities == null) {
+			return null;
+		}
+		for (Locality locality : localities) {
+			if (Objects.equals(id, locality.getId())) {
+				return locality;
+			}
+		}
+		return null;
+	}
 
 }

@@ -77,7 +77,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			jedis.setex(cacheObject.getName(), cacheObject.getRemainingTime(),
 					StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
@@ -86,7 +86,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.set(cacheObject.getName(), StringUtil.objectToBase64String(cacheObject));
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
@@ -95,7 +95,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.sadd(ALL_KEYS, key);
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
@@ -109,7 +109,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 			CacheObject object = (CacheObject) StringUtil.base64StringToObject(value);
 			return object;
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
@@ -118,7 +118,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try (Jedis jedis = jedisPool.getResource()) {
 			return jedis.smembers(ALL_KEYS);
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
@@ -127,7 +127,7 @@ public class RedisMemoryCache extends MemoryCacheHandler {
 		try (Jedis jedis = jedisPool.getResource()) {
 			jedis.srem(ALL_KEYS, key);
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage());
+			LOGGER.error("Cache error", e);
 			throw new IOCacheException(e.getMessage());
 		}
 	}
