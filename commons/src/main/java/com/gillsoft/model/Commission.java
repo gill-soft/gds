@@ -2,6 +2,7 @@ package com.gillsoft.model;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -11,7 +12,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The commission object")
-public class Commission implements Serializable {
+public class Commission implements Serializable, Name, Description {
 
 	private static final long serialVersionUID = 8422329504720144298L;
 
@@ -21,11 +22,13 @@ public class Commission implements Serializable {
 	@ApiModelProperty(value = "Commission code", allowEmptyValue = true)
 	private String code;
 	
-	@ApiModelProperty(value = "Commission name", allowEmptyValue = true)
-	private String name;
+	@ApiModelProperty(value = "Commission name on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> name;
 	
-	@ApiModelProperty(value = "Commission description", allowEmptyValue = true)
-	private String description;
+	@ApiModelProperty(value = "Commission description on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> description;
 	
 	@ApiModelProperty("Commission value")
 	private BigDecimal value;
@@ -57,20 +60,20 @@ public class Commission implements Serializable {
 	public void setCode(String code) {
 		this.code = code;
 	}
-
-	public String getName() {
+	
+    public ConcurrentMap<Lang, String> getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(ConcurrentMap<Lang, String> name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
+	public ConcurrentMap<Lang, String> getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(ConcurrentMap<Lang, String> description) {
 		this.description = description;
 	}
 

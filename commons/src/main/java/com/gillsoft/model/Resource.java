@@ -1,6 +1,7 @@
 package com.gillsoft.model;
 
 import java.io.Serializable;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -10,18 +11,20 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Resource information")
-public class Resource implements Serializable {
+public class Resource implements Serializable, Name, Description {
 
 	private static final long serialVersionUID = -8794588643510471510L;
 
 	@ApiModelProperty("Uniq resource code")
 	private String code;
 	
-	@ApiModelProperty("Resource shot name or trade mark")
-	private String name;
+	@ApiModelProperty(value = "Resource shot name or trade mark on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> name;
 	
-	@ApiModelProperty(value = "Information about resource", allowEmptyValue = true)
-	private String description;
+	@ApiModelProperty(value = "Information about resource on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> description;
 	
 	public Resource() {
 		
@@ -35,19 +38,19 @@ public class Resource implements Serializable {
 		this.code = code;
 	}
 
-	public String getName() {
+	public ConcurrentMap<Lang, String> getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(ConcurrentMap<Lang, String> name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
+	public ConcurrentMap<Lang, String> getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(ConcurrentMap<Lang, String> description) {
 		this.description = description;
 	}
 

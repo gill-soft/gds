@@ -275,9 +275,5 @@ public enum Citizenship {
     public String getAlfa3Code() {
 		return alfa3Code;
 	}
-    
-    public static void main(String[] args) {
-		System.out.println(Citizenship.valueOf(Citizenship.SS.toString()).getAlfa3Code());
-	}
 	
 }

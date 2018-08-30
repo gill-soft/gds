@@ -2,7 +2,6 @@ package com.gillsoft.model;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,7 +12,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The organisation object such as carrier, agent, insurance and etc.")
-public class Organisation implements Serializable {
+public class Organisation implements Serializable, Name, Address {
 
 	private static final long serialVersionUID = -2219422407233195486L;
 
@@ -65,56 +64,6 @@ public class Organisation implements Serializable {
 	public void setPhones(List<String> phones) {
 		this.phones = phones;
 	}
-
-	public String getName(String lang) {
-        if (this.name == null) {
-            return null;
-        }
-        String name = this.name.get(lang);
-        if (name == null) {
-            for (String pointName : this.name.values()) {
-                if (pointName != null) {
-                    return pointName;
-                }
-            }
-        }
-        return name;
-    }
-
-    public void setName(Lang lang, String name) {
-        if (name == null) {
-            return;
-        }
-        if (this.name == null) {
-        	this.name = new ConcurrentHashMap<>();
-        }
-        this.name.put(lang, name);
-    }
-
-    public String getAddress(Lang lang) {
-        if (this.address == null) {
-            return null;
-        }
-        String address = this.address.get(lang);
-        if (address == null) {
-            for (String pointAddress : this.address.values()) {
-                if (pointAddress != null) {
-                    return pointAddress;
-                }
-            }
-        }
-        return address;
-    }
-
-    public void setAddress(Lang lang, String address) {
-        if (address == null) {
-            return;
-        }
-        if (this.address == null) {
-        	this.address = new ConcurrentHashMap<>();
-        }
-        this.address.put(lang, address);
-    }
 
 	public ConcurrentMap<Lang, String> getName() {
 		return name;

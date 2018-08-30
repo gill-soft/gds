@@ -2,6 +2,7 @@ package com.gillsoft.model;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -11,7 +12,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The object of trip route")
-public class Route implements Serializable {
+public class Route implements Serializable, Name {
 
 	private static final long serialVersionUID = -1055185265830128083L;
 
@@ -21,8 +22,9 @@ public class Route implements Serializable {
 	@ApiModelProperty(value = "Route number", allowEmptyValue = true)
 	private String number;
 	
-	@ApiModelProperty(value = "Route name", allowEmptyValue = true)
-	private String name;
+	@ApiModelProperty(value = "Route name on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> name;
 	
 	@ApiModelProperty(value = "Route path", allowEmptyValue = true)
 	private List<RoutePoint> path;
@@ -46,11 +48,11 @@ public class Route implements Serializable {
 		this.number = number;
 	}
 
-	public String getName() {
+	public ConcurrentMap<Lang, String> getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(ConcurrentMap<Lang, String> name) {
 		this.name = name;
 	}
 

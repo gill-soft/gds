@@ -1,6 +1,7 @@
 package com.gillsoft.model;
 
 import java.io.Serializable;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -10,7 +11,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "Information about api method")
-public class Method implements Serializable {
+public class Method implements Serializable, Name {
 
 	private static final long serialVersionUID = -3077978935800118750L;
 
@@ -64,8 +65,9 @@ public class Method implements Serializable {
 	
 	public static final String ORDER_DOCUMENTS = "/api/order/document";
 	
-	@ApiModelProperty("Method name")
-	private String name;
+	@ApiModelProperty(value = "Method name on a different language",
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> name;
 	
 	@ApiModelProperty("Method request url")
 	private String url;
@@ -73,11 +75,11 @@ public class Method implements Serializable {
 	@ApiModelProperty("Method type")
 	private MethodType type;
 
-	public String getName() {
+	public ConcurrentMap<Lang, String> getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(ConcurrentMap<Lang, String> name) {
 		this.name = name;
 	}
 

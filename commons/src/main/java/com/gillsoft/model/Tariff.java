@@ -3,6 +3,7 @@ package com.gillsoft.model;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -12,7 +13,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @JsonInclude(Include.NON_NULL)
 @ApiModel(description = "The tariff object")
-public class Tariff implements Serializable {
+public class Tariff implements Serializable, Name, Description {
 
 	private static final long serialVersionUID = -2964608164425056900L;
 
@@ -22,11 +23,13 @@ public class Tariff implements Serializable {
 	@ApiModelProperty(value = "Tariff code", allowEmptyValue = true)
 	private String code;
 	
-	@ApiModelProperty(value = "Tariff name", allowEmptyValue = true)
-	private String name;
+	@ApiModelProperty(value = "Tariff name on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> name;
 	
-	@ApiModelProperty(value = "Tariff description", allowEmptyValue = true)
-	private String description;
+	@ApiModelProperty(value = "Tariff description on a different language", allowEmptyValue = true,
+			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
+	private ConcurrentMap<Lang, String> description;
 	
 	@ApiModelProperty(value = "Tariff value", allowEmptyValue = true)
 	private BigDecimal value;
@@ -62,19 +65,19 @@ public class Tariff implements Serializable {
 		this.code = code;
 	}
 
-	public String getName() {
+	public ConcurrentMap<Lang, String> getName() {
 		return name;
 	}
 
-	public void setName(String name) {
+	public void setName(ConcurrentMap<Lang, String> name) {
 		this.name = name;
 	}
 
-	public String getDescription() {
+	public ConcurrentMap<Lang, String> getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(ConcurrentMap<Lang, String> description) {
 		this.description = description;
 	}
 
