@@ -22,7 +22,7 @@ public class ServiceItem implements Serializable {
 	private String id;
 	
 	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
-	@ApiModelProperty("The expire datetime of reserved order in format yyyy-MM-dd HH:mm")
+	@ApiModelProperty("The expire datetime of reserved service in format yyyy-MM-dd HH:mm")
 	private Date expire;
 	
 	@ApiModelProperty(value = "The return condition id. Applied when service prepared to return.", allowEmptyValue = true)
