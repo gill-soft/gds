@@ -1,9 +1,12 @@
 package com.gillsoft.model;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import io.swagger.annotations.ApiModel;
@@ -17,6 +20,10 @@ public class ServiceItem implements Serializable {
 
 	@ApiModelProperty("The id of created service")
 	private String id;
+	
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+	@ApiModelProperty("The expire datetime of reserved order in format yyyy-MM-dd HH:mm")
+	private Date expire;
 	
 	@ApiModelProperty(value = "The return condition id. Applied when service prepared to return.", allowEmptyValue = true)
 	private String returnConditionId;
@@ -52,6 +59,14 @@ public class ServiceItem implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public Date getExpire() {
+		return expire;
+	}
+
+	public void setExpire(Date expire) {
+		this.expire = expire;
 	}
 
 	public String getReturnConditionId() {
