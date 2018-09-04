@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import com.gillsoft.model.Customer;
+import com.gillsoft.model.Document;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Organisation;
 import com.gillsoft.model.Segment;
@@ -51,6 +52,9 @@ public class OrderResponse extends Response {
 	@ApiModelProperty(value = "The map with additional params",
 			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
 	private Map<String, String> additionals;
+	
+	@ApiModelProperty("The list that contains documents of current order")
+	private List<Document> documents;
 	
 	public OrderResponse() {
 		
@@ -131,6 +135,14 @@ public class OrderResponse extends Response {
 
 	public void setAdditionals(Map<String, String> additionals) {
 		this.additionals = additionals;
+	}
+
+	public List<Document> getDocuments() {
+		return documents;
+	}
+
+	public void setDocuments(List<Document> documents) {
+		this.documents = documents;
 	}
 
 	public void fillMaps() {

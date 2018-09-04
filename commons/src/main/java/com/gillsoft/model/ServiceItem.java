@@ -2,6 +2,7 @@ package com.gillsoft.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -49,6 +50,9 @@ public class ServiceItem implements Serializable {
 	@ApiModelProperty(value = "The map with additional params",
 			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
 	private Map<String, String> additionals;
+	
+	@ApiModelProperty("The list that contains documents of current service")
+	private List<Document> documents;
 	
 	@ApiModelProperty(allowEmptyValue = true)
 	private RestError error;
@@ -131,6 +135,14 @@ public class ServiceItem implements Serializable {
 
 	public void setAdditionals(Map<String, String> additionals) {
 		this.additionals = additionals;
+	}
+
+	public List<Document> getDocuments() {
+		return documents;
+	}
+
+	public void setDocuments(List<Document> documents) {
+		this.documents = documents;
 	}
 
 	public RestError getError() {
