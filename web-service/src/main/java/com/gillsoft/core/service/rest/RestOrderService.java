@@ -86,8 +86,7 @@ public class RestOrderService implements OrderService {
 
 	@Override
 	public OrderResponse getPdfDocuments(OrderRequest request) {
-		// TODO Auto-generated method stub
-		return null;
+		return sendPostRequest(Method.ORDER_DOCUMENTS, request, new LinkedMultiValueMap<>(0));
 	}
 
 	public void setResourceService(RestResourceService resourceService) {

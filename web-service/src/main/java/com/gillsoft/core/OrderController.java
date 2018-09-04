@@ -204,6 +204,13 @@ public class OrderController {
 		});
 	}
 	
+	public List<OrderResponse> getDocuments(List<OrderRequest> requests) {
+		return getResponse(requests, (orderRequest) -> {
+			return store.getResourceService(orderRequest.getParams())
+					.getOrderService().getPdfDocuments(orderRequest);
+		});
+	}
+	
 	private interface ResponseCreator {
 		
 		public OrderResponse create(OrderRequest request);

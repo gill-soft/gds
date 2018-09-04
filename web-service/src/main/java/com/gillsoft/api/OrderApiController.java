@@ -79,5 +79,12 @@ public class OrderApiController {
 	public List<OrderResponse> getService(@Validated @RequestBody List<OrderRequest> request) {
 		return controller.getService(request);
 	}
+	
+	@ApiOperation(value = "Returns the pdf document of selected orders",
+			response = OrderResponse.class, responseContainer="List")
+	@PostMapping("/document")
+	public List<OrderResponse> getDocuments(@Validated @RequestBody List<OrderRequest> request) {
+		return controller.getDocuments(request);
+	}
 
 }
