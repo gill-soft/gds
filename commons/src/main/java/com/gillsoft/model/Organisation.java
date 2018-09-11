@@ -25,6 +25,9 @@ public class Organisation implements Serializable, Name, Address {
 	@ApiModelProperty(value = "The list of organisation phones", allowEmptyValue = true)
 	private List<String> phones;
 	
+	@ApiModelProperty(value = "The list of organisation emails", allowEmptyValue = true)
+	private List<String> emails;
+	
 	@ApiModelProperty(value = "Organisation names on a different language", allowEmptyValue = true,
 			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
     private ConcurrentMap<Lang, String> name;
@@ -63,6 +66,14 @@ public class Organisation implements Serializable, Name, Address {
 
 	public void setPhones(List<String> phones) {
 		this.phones = phones;
+	}
+
+	public List<String> getEmails() {
+		return emails;
+	}
+
+	public void setEmails(List<String> emails) {
+		this.emails = emails;
 	}
 
 	public ConcurrentMap<Lang, String> getName() {
