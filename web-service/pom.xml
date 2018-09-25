@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>com.gillsoft</groupId>
 		<artifactId>gds-service</artifactId>
-		<version>0.0.1</version>
+		<version>0.0.2</version>
 	</parent>
 
 	<artifactId>gds-web-service</artifactId>
@@ -31,7 +31,7 @@
 		<dependency>
 			<groupId>com.gillsoft</groupId>
 			<artifactId>gds-commons</artifactId>
-			<version>0.0.1</version>
+			<version>0.0.2</version>
 			<scope>compile</scope>
 		</dependency>
 

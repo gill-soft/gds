@@ -20,6 +20,7 @@ import com.gillsoft.model.service.AdditionalService;
 import com.gillsoft.model.service.LocalityService;
 import com.gillsoft.model.service.OrderService;
 import com.gillsoft.model.service.ResourceService;
+import com.gillsoft.model.service.ScheduleService;
 import com.gillsoft.model.service.TripSearchService;
 import com.gillsoft.util.StringUtil;
 
@@ -31,6 +32,7 @@ public class RestResourceService implements ResourceService {
 	private RestLocalityService localityService;
 	private RestTripSearchService searchService;
 	private RestOrderService orderService;
+	private RestScheduleService scheduleService;
 	
 	private Map<String, ?> getMap() {
 		return new HashMap<>(0);
@@ -111,6 +113,15 @@ public class RestResourceService implements ResourceService {
 	public AdditionalService getAdditionalService() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public ScheduleService getScheduleService() {
+		if (scheduleService == null) {
+			scheduleService = new RestScheduleService();
+			scheduleService.setResourceService(this);
+		}
+		return scheduleService;
 	}
 
 }

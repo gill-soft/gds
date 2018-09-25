@@ -47,5 +47,13 @@ public interface ResourceService extends ResourceInfoService {
 	 * @return Сервис.
 	 */
 	public AdditionalService getAdditionalService();
+	
+	
+	/**
+	 * Возвращает сервис работы с функциями расписания ресурса.
+	 * 
+	 * @return Сервис.
+	 */
+	public ScheduleService getScheduleService();
 
 }

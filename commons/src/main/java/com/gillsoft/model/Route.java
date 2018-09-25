@@ -2,6 +2,7 @@ package com.gillsoft.model;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -31,6 +32,10 @@ public class Route implements Serializable, Name {
 	
 	@ApiModelProperty("Route type")
 	private RouteType type;
+	
+	@ApiModelProperty(value = "The map with additional params",
+			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.lang.String]")
+	private Map<String, String> additionals;
 
 	public String getId() {
 		return id;
@@ -70,6 +75,14 @@ public class Route implements Serializable, Name {
 
 	public void setType(RouteType type) {
 		this.type = type;
+	}
+
+	public Map<String, String> getAdditionals() {
+		return additionals;
+	}
+
+	public void setAdditionals(Map<String, String> additionals) {
+		this.additionals = additionals;
 	}
 
 }

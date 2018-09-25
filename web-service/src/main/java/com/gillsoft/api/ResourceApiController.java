@@ -36,8 +36,8 @@ public class ResourceApiController {
 	@ApiOperation(value = "Information about available API methods of resource",
 			response = ResourceMethodResponse.class, responseContainer = "List")
 	@PostMapping("/method")
-	public List<ResourceMethodResponse> getMethods(
-			@Validated @RequestBody List<ResourceRequest> request) throws AccessException {
+	public List<ResourceMethodResponse> getMethods(@Validated @RequestBody List<ResourceRequest> request)
+			throws AccessException {
 		return controller.getMethods(request);
 	}
 

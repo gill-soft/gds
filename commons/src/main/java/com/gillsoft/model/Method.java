@@ -65,6 +65,8 @@ public class Method implements Serializable, Name {
 	
 	public static final String ORDER_DOCUMENTS = "/api/order/document";
 	
+	public static final String SCHEDULE = "/api/schedule";
+	
 	@ApiModelProperty(value = "Method name on a different language",
 			dataType="java.util.Map[com.gillsoft.model.Lang, java.lang.String]")
 	private ConcurrentMap<Lang, String> name;

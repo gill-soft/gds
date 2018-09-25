@@ -34,16 +34,14 @@ public class LocalityApiController {
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc of resource wich can use in search",
 			response = LocalityResponse.class, responseContainer = "List")
 	@PostMapping("/used")
-	public List<LocalityResponse> getUsed(
-			@Validated @RequestBody List<LocalityRequest> request) {
+	public List<LocalityResponse> getUsed(@Validated @RequestBody List<LocalityRequest> request) {
 		return controller.getUsed(request);
 	}
 
 	@ApiOperation(value = "The binding beetwen cities, stations, stoppings, etc of resource",
 			response = LocalityResponse.class, responseContainer = "List")
 	@PostMapping("/binding")
-	public List<LocalityResponse> getBinding(
-			@Validated @RequestBody List<LocalityRequest> request) {
+	public List<LocalityResponse> getBinding(@Validated @RequestBody List<LocalityRequest> request) {
 		return controller.getBinding(request);
 	}
 
