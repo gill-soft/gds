@@ -38,6 +38,10 @@ public class ScheduleResponse extends Response {
 	@ApiModelProperty("The list of routes.")
 	private List<ScheduleRoute> routes;
 	
+	public ScheduleResponse() {
+		
+	}
+
 	public ScheduleResponse(String id, Exception e) {
 		setId(id);
 		setException(e);
