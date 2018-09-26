@@ -73,7 +73,7 @@ public class ScheduleRoute extends Route {
 		setName(name);
 		setType(type);
 		setAdditionals(additionals);
-		super.setPath(path);
+		setPath(path);
 		this.kind = kind;
 		this.carrier = carrier;
 		this.insurance = insurance;
