@@ -93,7 +93,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER_RETURN_PREPARE)
 	public OrderResponse prepareReturnServices(@RequestBody OrderRequest request) {
-		return prepareReturnServicesResponse(request);
+		OrderResponse response = prepareReturnServicesResponse(request);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse prepareReturnServicesResponse(OrderRequest request);
@@ -101,7 +103,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER_RETURN_CONFIRM)
 	public OrderResponse returnServices(@RequestBody OrderRequest request) {
-		return returnServicesResponse(request);
+		OrderResponse response = returnServicesResponse(request);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse returnServicesResponse(OrderRequest request);
