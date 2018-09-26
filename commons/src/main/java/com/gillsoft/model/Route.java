@@ -28,9 +28,9 @@ public class Route implements Serializable, Name {
 	private ConcurrentMap<Lang, String> name;
 	
 	@ApiModelProperty(value = "Route path", allowEmptyValue = true)
-	private List<RoutePoint> path;
+	private List<? extends RoutePoint> path;
 	
-	@ApiModelProperty("Route type")
+	@ApiModelProperty("The type of route like as INTERNAL, CITY & etc")
 	private RouteType type;
 	
 	@ApiModelProperty(value = "The map with additional params",
@@ -61,11 +61,11 @@ public class Route implements Serializable, Name {
 		this.name = name;
 	}
 
-	public List<RoutePoint> getPath() {
+	public List<? extends RoutePoint> getPath() {
 		return path;
 	}
 
-	public void setPath(List<RoutePoint> path) {
+	public void setPath(List<? extends RoutePoint> path) {
 		this.path = path;
 	}
 

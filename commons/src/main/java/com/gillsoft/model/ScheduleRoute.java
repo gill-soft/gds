@@ -2,9 +2,13 @@ package com.gillsoft.model;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -15,9 +19,6 @@ public class ScheduleRoute extends Route {
 
 	private static final long serialVersionUID = -6189535005849623910L;
 
-	@ApiModelProperty(value = "The type of route like as INTERNAL, CITY & etc", allowEmptyValue = true)
-	private RouteType type;
-	
 	@ApiModelProperty(value = "The kind of route like as REGULAR, ADDITIONAL & etc", allowEmptyValue = true)
 	private RouteKind kind;
 	
@@ -44,13 +45,44 @@ public class ScheduleRoute extends Route {
 	
 	@ApiModelProperty(value = "The currency of tariff grid", allowEmptyValue = true)
 	private String currency;
-
-	public RouteType getType() {
-		return type;
+	
+	public ScheduleRoute() {
+		
 	}
 
-	public void setType(RouteType type) {
-		this.type = type;
+	@JsonCreator
+	public ScheduleRoute(
+			@JsonProperty("id") String id, 
+			@JsonProperty("number") String number, 
+			@JsonProperty("name") ConcurrentMap<Lang, String> name, 
+			@JsonProperty("type") RouteType type, 
+			@JsonProperty("additionals") Map<String, String> additionals, 
+			@JsonProperty("path") List<ScheduleRoutePoint> path,
+			@JsonProperty("kind") RouteKind kind, 
+			@JsonProperty("carrier") Organisation carrier, 
+			@JsonProperty("insurance") Organisation insurance, 
+			@JsonProperty("vehicle") Vehicle vehicle,
+			@JsonProperty("startedAt") Date startedAt, 
+			@JsonProperty("endedAt") Date endedAt, 
+			@JsonProperty("regularity") Regularity regularity, 
+			@JsonProperty("regularityDays") List<Integer> regularityDays, 
+			@JsonProperty("currency") String currency) {
+		super();
+		setId(id);
+		setNumber(number);
+		setName(name);
+		setType(type);
+		setAdditionals(additionals);
+		super.setPath(path);
+		this.kind = kind;
+		this.carrier = carrier;
+		this.insurance = insurance;
+		this.vehicle = vehicle;
+		this.startedAt = startedAt;
+		this.endedAt = endedAt;
+		this.regularity = regularity;
+		this.regularityDays = regularityDays;
+		this.currency = currency;
 	}
 
 	public RouteKind getKind() {
