@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,9 +34,11 @@ public class ScheduleRoute extends Route {
 	private Vehicle vehicle;
 	
 	@ApiModelProperty(value = "The date when route started to operate", allowEmptyValue = true)
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
 	private Date startedAt;
 	
 	@ApiModelProperty(value = "The date when route ended to operate", allowEmptyValue = true)
+	@JsonFormat(shape = Shape.STRING, pattern = "yyyy-MM-dd")
 	private Date endedAt;
 	
 	@ApiModelProperty(value = "The regularity of route like as EVERY_DAY, DAYS_OF_THE_WEEK & etc", allowEmptyValue = true)
