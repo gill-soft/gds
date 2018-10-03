@@ -85,7 +85,9 @@ public abstract class AbstractOrderService implements OrderService {
 	@Override
 	@PostMapping(Method.ORDER_CANCEL)
 	public OrderResponse cancel(@RequestParam("orderId") String orderId) {
-		return cancelResponse(orderId);
+		OrderResponse response = cancelResponse(orderId);
+		response.fillMaps();
+		return response;
 	}
 	
 	public abstract OrderResponse cancelResponse(String orderId);

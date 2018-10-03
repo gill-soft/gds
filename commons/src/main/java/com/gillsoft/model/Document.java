@@ -13,15 +13,20 @@ import io.swagger.annotations.ApiModelProperty;
 public class Document implements Serializable {
 
 	private static final long serialVersionUID = -6285428228882736147L;
-	
+
 	@ApiModelProperty("Type")
 	private DocumentType type;
-	
+
 	@ApiModelProperty("The file in base64 string")
 	private String base64;
 
 	public Document() {
-		
+
+	}
+	
+	public Document(DocumentType type, String base64) {
+		this.type = type;
+		this.base64 = base64;
 	}
 
 	public DocumentType getType() {
