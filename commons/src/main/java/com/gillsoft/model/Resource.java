@@ -14,6 +14,9 @@ import io.swagger.annotations.ApiModelProperty;
 public class Resource implements Serializable, Name, Description {
 
 	private static final long serialVersionUID = -8794588643510471510L;
+	
+	@ApiModelProperty(value = "Uniq resource id", allowEmptyValue = true)
+	private Long id;
 
 	@ApiModelProperty("Uniq resource code")
 	private String code;
@@ -28,6 +31,14 @@ public class Resource implements Serializable, Name, Description {
 	
 	public Resource() {
 		
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getCode() {
