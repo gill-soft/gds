@@ -1,6 +1,6 @@
 package com.gillsoft.concurrent;
 
-public enum PoolType {
+public enum PoolType implements BasePoolType {
 	
 	RESOURCE_INFO(10),
 	LOCALITY(20),

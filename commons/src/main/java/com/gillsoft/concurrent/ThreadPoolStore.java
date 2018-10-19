@@ -16,7 +16,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class ThreadPoolStore {
 	
-	private static ConcurrentMap<PoolType, ExecutorService> executors = new ConcurrentHashMap<>();
+	private static ConcurrentMap<BasePoolType, ExecutorService> executors = new ConcurrentHashMap<>();
 	
 	/**
 	 * Запускает задание и возвращает ссылку на него. По ссылке будет доступен
@@ -28,7 +28,23 @@ public class ThreadPoolStore {
 	 *            Задание.
 	 * @return Ссылка на результат.
 	 */
-	public static <T> Future<T> execute(PoolType poolType, Callable<T> callable) {
+	public static <T> Future<T> execute(BasePoolType poolType, Callable<T> callable) {
+		return getExcecutor(poolType).submit(callable);
+	}
+	
+	/**
+	 * Добавляет задание в очередь на выполнение.
+	 * 
+	 * @param poolType
+	 *            Пул выполнения заданий.
+	 * @param runnable
+	 *            Задание.
+	 */
+	public static void execute(BasePoolType poolType, Runnable runnable) {
+		getExcecutor(poolType).submit(runnable);
+	}
+	
+	private static ExecutorService getExcecutor(BasePoolType poolType) {
 		ExecutorService executor = executors.get(poolType);
 		if (executor == null) {
 			synchronized (poolType) {
@@ -40,7 +56,7 @@ public class ThreadPoolStore {
 				}
 			}
 		}
-		return executor.submit(callable);
+		return executor;
 	}
 	
 	/**
@@ -53,7 +69,7 @@ public class ThreadPoolStore {
 	 *            Список заданий на выполнение.
 	 * @return Список ссылок на результат.
 	 */
-	public static <T> List<Future<T>> executeAll(PoolType poolType, List<Callable<T>> callables) {
+	public static <T> List<Future<T>> executeAll(BasePoolType poolType, List<Callable<T>> callables) {
 		List<Future<T>> futures = new CopyOnWriteArrayList<>();
 		for (Callable<T> callable : callables) {
 			futures.add(execute(poolType, callable));
@@ -71,7 +87,7 @@ public class ThreadPoolStore {
 	 *            Список заданий на выполнение.
 	 * @return Список ответов заданий.
 	 */
-	public static <T> List<T> getResult(PoolType poolType, List<Callable<T>> callables) {
+	public static <T> List<T> getResult(BasePoolType poolType, List<Callable<T>> callables) {
 		List<Future<T>> futures = new ArrayList<>();
 		for (Callable<T> callable : callables) {
 			futures.add(execute(poolType, callable));
