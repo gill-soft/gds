@@ -15,6 +15,10 @@ public class ResourceMethodResponse extends Response {
 	@ApiModelProperty("Available api methods")
 	private List<Method> methods;
 	
+	public ResourceMethodResponse() {
+		
+	}
+
 	public ResourceMethodResponse(String id, List<Method> methods) {
 		setId(id);
 		this.methods = methods;

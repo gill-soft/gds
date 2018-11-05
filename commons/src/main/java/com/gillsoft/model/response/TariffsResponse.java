@@ -15,6 +15,10 @@ public class TariffsResponse extends Response {
 	@ApiModelProperty(value = "The list of trips tariffs", allowEmptyValue = true)
 	private List<Tariff> tariffs;
 	
+	public TariffsResponse() {
+		
+	}
+
 	public TariffsResponse(String id, List<Tariff> tariffs) {
 		setId(id);
 		this.tariffs = tariffs;

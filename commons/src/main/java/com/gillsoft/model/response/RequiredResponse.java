@@ -13,6 +13,10 @@ public class RequiredResponse extends Response {
 	@ApiModelProperty(value = "The route of trip", allowEmptyValue = true)
 	private List<RequiredField> fields;
 	
+	public RequiredResponse() {
+		
+	}
+
 	public RequiredResponse(String id, List<RequiredField> fields) {
 		setId(id);
 		this.fields = fields;

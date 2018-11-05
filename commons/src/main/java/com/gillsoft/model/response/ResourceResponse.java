@@ -11,6 +11,10 @@ public class ResourceResponse extends Response {
 	
 	private Resource resource;
 	
+	public ResourceResponse() {
+		
+	}
+
 	public ResourceResponse(String id, Resource resource) {
 		setId(id);
 		this.resource = resource;

@@ -15,6 +15,10 @@ public class SeatsResponse extends Response {
 	@ApiModelProperty(value = "The list of trips seats", allowEmptyValue = true)
 	private List<Seat> seats;
 	
+	public SeatsResponse() {
+		
+	}
+
 	public SeatsResponse(String id, List<Seat> seats) {
 		setId(id);
 		this.seats = seats;

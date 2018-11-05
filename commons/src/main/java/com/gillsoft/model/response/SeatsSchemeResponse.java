@@ -13,6 +13,10 @@ public class SeatsSchemeResponse extends Response {
 	@ApiModelProperty("The seats scheme of selected trip")
 	private SeatsScheme scheme;
 	
+	public SeatsSchemeResponse() {
+		
+	}
+
 	public SeatsSchemeResponse(String id, SeatsScheme scheme) {
 		setId(id);
 		this.scheme = scheme;

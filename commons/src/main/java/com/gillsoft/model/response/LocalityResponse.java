@@ -20,6 +20,10 @@ public class LocalityResponse extends Response {
 			allowEmptyValue = true, dataType="java.util.Map[java.lang.String, java.util.List[java.lang.String]]")
 	private Map<String, List<String>> binding;
 	
+	public LocalityResponse() {
+		
+	}
+
 	public LocalityResponse(String id, List<Locality> localities) {
 		setId(id);
 		this.localities = localities;

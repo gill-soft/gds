@@ -13,6 +13,10 @@ public class RouteResponse extends Response {
 	@ApiModelProperty(value = "The route of trip", allowEmptyValue = true)
 	private Route route;
 	
+	public RouteResponse() {
+		
+	}
+
 	public RouteResponse(String id, Route route) {
 		setId(id);
 		this.route = route;
