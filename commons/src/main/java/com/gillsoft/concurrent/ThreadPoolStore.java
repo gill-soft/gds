@@ -10,13 +10,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class ThreadPoolStore {
 	
 	private static ConcurrentMap<BasePoolType, ExecutorService> executors = new ConcurrentHashMap<>();
+	private static ConcurrentMap<BasePoolType, ScheduledExecutorService> scheduledExecutors = new ConcurrentHashMap<>();
 	
 	/**
 	 * Запускает задание и возвращает ссылку на него. По ссылке будет доступен
@@ -44,6 +47,37 @@ public class ThreadPoolStore {
 		getExcecutor(poolType).submit(runnable);
 	}
 	
+	/**
+	 * Запускает задание с указанной задержкой и возвращает ссылку на него. По
+	 * ссылке будет доступен результат по окончанию выполнения задания.
+	 * 
+	 * @param poolType
+	 *            Пул выполнения заданий.
+	 * @param callable
+	 *            Задание.
+	 * @param delay
+	 *            Задержка в секундах.
+	 * @return Ссылка на результат.
+	 */
+	public static <T> Future<T> schedule(BasePoolType poolType, Callable<T> callable, long delay) {
+		return getScheduledExcecutor(poolType).schedule(callable, delay, TimeUnit.SECONDS);
+	}
+	
+	/**
+	 * Добавляет задание в очередь на выполнение с указанной задержкой.
+	 * 
+	 * @param poolType
+	 *            Пул выполнения заданий.
+	 * @param runnable
+	 *            Задание.
+	 * @param delay
+	 *            Задержка в секундах.
+	 * @return Ссылка на результат.
+	 */
+	public static void schedule(BasePoolType poolType, Runnable runnable, long delay) {
+		getScheduledExcecutor(poolType).schedule(runnable, delay, TimeUnit.SECONDS);
+	}
+	
 	private static ExecutorService getExcecutor(BasePoolType poolType) {
 		ExecutorService executor = executors.get(poolType);
 		if (executor == null) {
@@ -53,6 +87,21 @@ public class ThreadPoolStore {
 					ThreadFactory factory = new ThreadFactoryBuilder().setNameFormat(poolType.name() + "-%d").build();
 					executor = Executors.newFixedThreadPool(poolType.getSize(), factory);
 					executors.put(poolType, executor);
+				}
+			}
+		}
+		return executor;
+	}
+	
+	private static ScheduledExecutorService getScheduledExcecutor(BasePoolType poolType) {
+		ScheduledExecutorService executor = scheduledExecutors.get(poolType);
+		if (executor == null) {
+			synchronized (poolType) {
+				executor = scheduledExecutors.get(poolType);
+				if (executor == null) {
+					ThreadFactory factory = new ThreadFactoryBuilder().setNameFormat(poolType.name() + "-%d").build();
+					executor = Executors.newScheduledThreadPool(poolType.getSize(), factory);
+					scheduledExecutors.put(poolType, executor);
 				}
 			}
 		}
@@ -119,6 +168,9 @@ public class ThreadPoolStore {
 	 */
 	public static void shutdown() {
 		for (ExecutorService service : executors.values()) {
+			service.shutdown();
+		}
+		for (ScheduledExecutorService service : scheduledExecutors.values()) {
 			service.shutdown();
 		}
 	}
