@@ -88,7 +88,7 @@ public class MemoryCacheHandler implements CacheHandler {
 			cacheObject.setReaded(true);
 			return cacheObject.getCachedObject();
 		} else {
-			return null;
+			throw new IOCacheException();
 		}
 	}
 	
