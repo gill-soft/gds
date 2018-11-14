@@ -1,19 +1,28 @@
 package com.gillsoft.service.impl;
 
+import java.net.URI;
+import java.util.Base64;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.config.Config;
 import com.gillsoft.entity.Commission;
+import com.gillsoft.entity.Organisation;
 import com.gillsoft.entity.Resource;
 import com.gillsoft.entity.User;
+import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.service.MsDataService;
 
@@ -22,13 +31,25 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static Logger LOGGER = LogManager.getLogger(MsDataRestService.class);
 	
-	private static Object synch = new Object();
+	private static final Object synch = new Object();
+	
+	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
 	private RestTemplate template;
 	
 	@Autowired
 	@Qualifier("msAuthHeader")
 	private HttpHeaders msAuth;
+	
+	@Bean(name = "msAuthHeader")
+	public HttpHeaders createMsAuthHeaders() {
+		HttpHeaders headers = new HttpHeaders();
+		String auth = Config.getMsLogin() + ":" + Config.getMsPassword();
+		byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes());
+		String authHeader = "Basic " + new String(encodedAuth);
+		headers.add("Authorization", authHeader);
+		return headers;
+	}
 
 	@Override
 	public List<Resource> getUserResources(String userName) {
@@ -41,11 +62,22 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	@Override
+	public Organisation getUserOrganisation(String userName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 	@Override
 	public List<Commission> getAllCommissions() {
-		// TODO Auto-generated method stub
-		return null;
+		URI uri = UriComponentsBuilder.fromUriString(Config.getMsUrl() + ALL_COMMISSIONS).build().toUri();
+		RequestEntity<Object> entity = new RequestEntity<Object>(msAuth, HttpMethod.GET, uri);
+		try {
+			return getResult(entity, new ParameterizedTypeReference<List<Commission>>() { });
+		} catch (ResponseError e) {
+			return null;
+		}
 	}
 
 	@Override

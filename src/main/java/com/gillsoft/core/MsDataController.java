@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
+import com.gillsoft.entity.Commission;
 import com.gillsoft.entity.Resource;
 import com.gillsoft.service.MsDataService;
 
@@ -23,6 +24,8 @@ import com.gillsoft.service.MsDataService;
 public class MsDataController {
 	
 	private static final String ACTIVE_RESOURCES_CACHE_KEY = "active.resources.";
+	
+	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
 	
 	@Autowired
 	private MsDataService msService;
@@ -37,21 +40,33 @@ public class MsDataController {
 		if (authentication == null) {
 			return null;
 		}
+		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(authentication.getName()),
+				new UserResourcesUpdateTask(authentication.getName()), () -> msService.getUserResources(authentication.getName()), 1800000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<Commission> getAllCommissions() {
+		return (List<Commission>) getFromCache(getAllCommissionsKey(),
+				new AllCommissionsUpdateTask(), () -> msService.getAllCommissions(), 1800000l);
+	}
+	
+	private Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
+		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
 		Map<String, Object> params = new HashMap<>();
-		params.put(MemoryCacheHandler.OBJECT_NAME, getActiveResourcesCacheKey(authentication.getName()));
+		params.put(MemoryCacheHandler.OBJECT_NAME, cacheKey);
 		try {
-			return (List<Resource>) cache.read(params);
+			return cache.read(params);
 		} catch (IOCacheException readException) {
-			List<Resource> resources = msService.getUserResources(authentication.getName());
+			Object object = objectGetter.forCache();
 			params.put(MemoryCacheHandler.IGNORE_AGE, true);
-			params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
-			params.put(MemoryCacheHandler.UPDATE_TASK, new ActiveResourcesUpdateTask(authentication.getName()));
+			params.put(MemoryCacheHandler.UPDATE_DELAY, updateDelay);
+			params.put(MemoryCacheHandler.UPDATE_TASK, updateTask);
 			try {
-				cache.write(resources, params);
+				cache.write(object, params);
 			} catch (IOCacheException writeException) {
 			}
-			return resources;
+			return object;
 		}
 	}
 	
@@ -61,6 +76,16 @@ public class MsDataController {
 
 	public static String getActiveResourcesCacheKey(String userName) {
 		return ACTIVE_RESOURCES_CACHE_KEY + userName;
+	}
+
+	public static String getAllCommissionsKey() {
+		return ALL_COMMISSIONS_KEY;
+	}
+	
+	private interface CacheObjectGetter {
+		
+		public Object forCache();
+		
 	}
 
 }

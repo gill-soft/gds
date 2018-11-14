@@ -39,8 +39,8 @@ public abstract class AbstractRestService {
 				return response.getBody();
 			}
 		} catch (RestClientException e) {
-			getLogger().error("REST execute error. Method: " + Config.getMsUrl(), e);
-			throw new ResponseError("REST execute error. Method: " + Config.getMsUrl(), e);
+			getLogger().error("REST execute error. Method: " + request.getUrl().getPath(), e);
+			throw new ResponseError("REST execute error. Method: " + request.getUrl().getPath(), e);
 		}
 	}
 	
