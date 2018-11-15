@@ -56,34 +56,39 @@ public class ResourceInfoController {
 		try {
 			return (List<Method>) cache.read(params);
 		} catch (IOCacheException readException) {
-			ResourceRequest request = createRequest(resource);
-			return createCachedMethods(request);
+			return createCachedMethods(createRequest(resource));
 		}
 	}
 	
 	protected List<Method> createCachedMethods(ResourceRequest request) {
-		Map<String, Object> params = new HashMap<>();
-		params.put(MemoryCacheHandler.OBJECT_NAME, getActiveResourcesCacheKey(request.getParams().getResource().getId()));
-		List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
-		List<Method> methods = null;
-		if (response == null
-				|| response.isEmpty()
-				|| Utils.isError(LOGGER, response.get(0))
-				|| request.getId().equals(response.get(0).getId())) {
-			params.put(MemoryCacheHandler.UPDATE_DELAY, 300000l);
-		} else {
-			methods = response.get(0).getMethods();
-			params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
+		String key = getActiveResourcesCacheKey(request.getParams().getResource().getId());
+		
+		// синхронизируем выгрузку методов по ресурсу
+		synchronized (key.intern()) {
+			Map<String, Object> params = new HashMap<>();
+			params.put(MemoryCacheHandler.OBJECT_NAME, key);
+			List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
+			List<Method> methods = null;
+			if (response == null
+					|| response.isEmpty()
+					|| Utils.isError(LOGGER, response.get(0))
+					|| request.getId().equals(response.get(0).getId())) {
+				params.put(MemoryCacheHandler.UPDATE_DELAY, 300000l);
+			} else {
+				methods = response.get(0).getMethods();
+				params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
+			}
+			params.put(MemoryCacheHandler.IGNORE_AGE, true);
+			params.put(MemoryCacheHandler.UPDATE_TASK, new MethodsUpdateTask(request));
+			try {
+				cache.write(methods, params);
+			} catch (IOCacheException writeException) {
+			}
+			return methods;
 		}
-		params.put(MemoryCacheHandler.IGNORE_AGE, true);
-		params.put(MemoryCacheHandler.UPDATE_TASK, new MethodsUpdateTask(request));
-		try {
-			cache.write(methods, params);
-		} catch (IOCacheException writeException) {
-		}
-		return methods;
 	}
 	
+	// создание запроса получения информации о ресурсе 
 	private ResourceRequest createRequest(Resource resource) {
 		ResourceRequest request = new ResourceRequest();
 		request.setId(StringUtil.generateUUID());

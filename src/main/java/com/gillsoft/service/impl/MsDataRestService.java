@@ -14,6 +14,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -35,6 +37,12 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
+	private static final String GET_USER = "user/by_name/{name}";
+	
+	private static final String GET_USER_ORGANISATION = "user/{name}/organisation";
+	
+	private static final String GET_USER_RESOURCES = "user/{name}/resources";
+	
 	private RestTemplate template;
 	
 	@Autowired
@@ -53,28 +61,39 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 
 	@Override
 	public List<Resource> getUserResources(String userName) {
-		// TODO Auto-generated method stub
-		return null;
+		return getResultByUser(userName, GET_USER_RESOURCES, new ParameterizedTypeReference<List<Resource>>() { });
 	}
 
 	@Override
 	public User getUser(String userName) {
-		// TODO Auto-generated method stub
-		return null;
+		return getResultByUser(userName, GET_USER, new ParameterizedTypeReference<User>() { });
 	}
 	
 	@Override
 	public Organisation getUserOrganisation(String userName) {
-		// TODO Auto-generated method stub
-		return null;
+		return getResultByUser(userName, GET_USER_ORGANISATION, new ParameterizedTypeReference<Organisation>() { });
 	}
 
 	@Override
 	public List<Commission> getAllCommissions() {
-		URI uri = UriComponentsBuilder.fromUriString(Config.getMsUrl() + ALL_COMMISSIONS).build().toUri();
+		return getResult(ALL_COMMISSIONS, null, new ParameterizedTypeReference<List<Commission>>() { });
+	}
+	
+	private <T> T getResultByUser(String userName, String method, ParameterizedTypeReference<T> type) {
+		MultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
+		params.add("name", userName);
+		return getResult(method, params, type);
+	}
+	
+	private <T> T getResult(String method, MultiValueMap<String, String> params, ParameterizedTypeReference<T> type) {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(Config.getMsUrl() + method);
+		if (params != null) {
+			builder.queryParams(params);
+		}
+		URI uri = builder.build().toUri();
 		RequestEntity<Object> entity = new RequestEntity<Object>(msAuth, HttpMethod.GET, uri);
 		try {
-			return getResult(entity, new ParameterizedTypeReference<List<Commission>>() { });
+			return getResult(entity, type);
 		} catch (ResponseError e) {
 			return null;
 		}
