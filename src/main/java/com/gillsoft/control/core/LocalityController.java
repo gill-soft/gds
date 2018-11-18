@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -24,6 +25,8 @@ import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.Lang;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.LocalityRequest;
@@ -52,24 +55,24 @@ public class LocalityController {
 	@Autowired
 	private MappingService mappingService;
 	
-	public List<Mapping> getAll() {
-		List<LocalityRequest> requests = createRequest(Method.LOCALITY_ALL, MethodType.POST);
+	public List<Locality> getAll(LocalityRequest mainRequest) {
+		List<LocalityRequest> requests = createRequest(Method.LOCALITY_ALL, MethodType.POST, mainRequest);
 		List<LocalityResponse> responses = service.getAll(requests);
-		return getMapping(requests, responses);
+		return getMapping(requests, responses, mainRequest);
 	}
 	
-	public List<Mapping> getUsed() {
-		List<LocalityRequest> requests = createRequest(Method.LOCALITY_USED, MethodType.POST);
+	public List<Locality> getUsed(LocalityRequest mainRequest) {
+		List<LocalityRequest> requests = createRequest(Method.LOCALITY_USED, MethodType.POST, mainRequest);
 		List<LocalityResponse> responses = service.getUsed(requests);
-		return getMapping(requests, responses);
+		return getMapping(requests, responses, mainRequest);
 	}
 	
-	private List<Mapping> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses) {
+	private List<Locality> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses, LocalityRequest mainRequest) {
 		if (responses == null) {
 			return new ArrayList<>(0);
 		}
 		// сюда складываем уникальный маппинг по каждому запрашиваемому ресурсу
-		Map<Long, Mapping> idsMapping = new HashMap<>();
+		Map<Long, Mapping> mappings = new HashMap<>();
 		for (LocalityResponse localityResponse : responses) {
 			if (!Utils.isError(LOGGER, localityResponse)
 					&& localityResponse.getLocalities() != null
@@ -82,22 +85,53 @@ public class LocalityController {
 					
 					// мапинг ресурса
 					long resourceId = request.getParams().getResource().getId();
-					idsMapping.putAll(localityResponse.getLocalities().stream()
-							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId()))
+					mappings.putAll(localityResponse.getLocalities().stream()
+							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang()))
 							.flatMap(maps -> maps.stream()).collect(Collectors.toMap(Mapping::getId, m -> m)));
 				}
 			}
 		}
-		return new ArrayList<>(idsMapping.values());
+		// преобразовываем Mapping в Locality
+		Map<String, Locality> localities = new HashMap<>();
+		for (Mapping mapping : mappings.values()) {
+			addLocality(mapping, mainRequest.getLang(), localities);
+		}
+		return new ArrayList<>(localities.values());
 	}
 	
-	public Map<Long, Set<Long>> getBinding() {
-		List<LocalityRequest> requests = createRequest(Method.LOCALITY_BINDING, MethodType.POST);
+	public void addLocality(Mapping mapping, Lang lang, Map<String, Locality> localities) {
+		if (!localities.containsKey(String.valueOf(mapping.getId()))) {
+			localities.put(String.valueOf(mapping.getId()), createLocality(mapping, lang));
+			if (mapping.getParent() != null) {
+				addLocality(mapping.getParent(), lang, localities);
+			}
+		}
+	}
+	
+	public Locality createLocality(Mapping mapping, Lang lang) {
+		Locality locality = new Locality();
+		locality.setId(String.valueOf(mapping.getId()));
+		if (lang == null
+				&& mapping.getLangAttributes() != null) {
+			for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
+				locality.setName(entry.getKey(), entry.getValue().get("name"));
+				locality.setAddress(entry.getKey(), entry.getValue().get("address"));
+			}
+		} else if (mapping.getAttributes() != null) {
+			locality.setName(lang, mapping.getAttributes().get("name"));
+			locality.setAddress(lang, mapping.getAttributes().get("address"));
+		}
+		locality.setParent(mapping.getParent() != null ? new Locality(String.valueOf(mapping.getParent().getId())): null);
+		return locality;
+	}
+	
+	public Map<String, Set<String>> getBinding(LocalityRequest mainRequest) {
+		List<LocalityRequest> requests = createRequest(Method.LOCALITY_BINDING, MethodType.POST, mainRequest);
 		List<LocalityResponse> responses = service.getBinding(requests);
 		if (responses == null) {
 			return new HashMap<>(0);
 		}
-		Map<Long, Set<Long>> fromToMapping = new HashMap<>();
+		Map<String, Set<String>> fromToMapping = new HashMap<>();
 		for (LocalityResponse localityResponse : responses) {
 			if (!Utils.isError(LOGGER, localityResponse)
 					&& localityResponse.getBinding() != null
@@ -124,15 +158,15 @@ public class LocalityController {
 						Set<Long> mappingIds = mapping.get(entry.getKey());
 						if (mappingIds != null) {
 							for (Long mappingId : mappingIds) {
-								Set<Long> tos = fromToMapping.get(mappingId);
+								Set<String> tos = fromToMapping.get(mappingId);
 								if (tos == null) {
 									tos = new HashSet<>();
-									fromToMapping.put(mappingId, tos);
+									fromToMapping.put(String.valueOf(mappingId), tos);
 								}
 								for (String id : entry.getValue()) {
 									Set<Long> toMappingIds = mapping.get(id);
 									if (toMappingIds != null) {
-										tos.addAll(toMappingIds);
+										tos.addAll(toMappingIds.stream().map(toId -> String.valueOf(toId)).collect(Collectors.toSet()));
 									}
 								}
 							}
@@ -144,7 +178,7 @@ public class LocalityController {
 		return fromToMapping;
 	}
 	
-	private List<LocalityRequest> createRequest(String methodPath, MethodType methodType) {
+	private List<LocalityRequest> createRequest(String methodPath, MethodType methodType, LocalityRequest mainRequest) {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			List<LocalityRequest> request = new ArrayList<>();

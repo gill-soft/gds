@@ -52,7 +52,7 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 		try {
 			return getResult(entity, new ParameterizedTypeReference<TripSearchResponse>() { });
 		} catch (ResponseError e) {
-			return null;
+			return new TripSearchResponse(null, e);
 		}
 	}
 

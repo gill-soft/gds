@@ -5,15 +5,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.LocalityController;
-import com.gillsoft.mapper.model.Mapping;
+import com.gillsoft.model.Lang;
+import com.gillsoft.model.Locality;
+import com.gillsoft.model.request.LocalityRequest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 @RestController
 @RequestMapping("/locality")
@@ -24,23 +28,31 @@ public class LocalityApiController {
 	private LocalityController controller;
 
 	@ApiOperation(value = "The list of all cities, stations, stoppings, etc wich are available for user",
-			response = Mapping.class, responseContainer = "List")
-	@PostMapping("/all")
-	public List<Mapping> getAll() {
-		return controller.getAll();
+			response = Locality.class, responseContainer = "List")
+	@PostMapping("/all/{lang}")
+	public List<Locality> getAll(@ApiParam(value = "The lang of requested data", required = true)
+			@PathVariable(required = false) Lang lang) {
+		return controller.getAll(createRequest(lang));
 	}
 
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc",
-			response = Mapping.class)
+			response = Locality.class, responseContainer = "List")
 	@PostMapping("/used")
-	public List<Mapping> getUsed() {
-		return controller.getUsed();
+	public List<Locality> getUsed(@ApiParam(value = "The lang of requested data", required = true)
+			@PathVariable(required = false) Lang lang) {
+		return controller.getUsed(createRequest(lang));
 	}
 
 	@ApiOperation(value = "The binding beetwen cities, stations, stoppings, etc", responseContainer = "Map")
 	@PostMapping("/binding")
-	public Map<Long, Set<Long>> getBinding() {
-		return controller.getBinding();
+	public Map<String, Set<String>> getBinding() {
+		return controller.getBinding(null);
+	}
+	
+	private LocalityRequest createRequest(Lang lang) {
+		LocalityRequest request = new LocalityRequest();
+		request.setLang(lang);
+		return request;
 	}
 
 }
