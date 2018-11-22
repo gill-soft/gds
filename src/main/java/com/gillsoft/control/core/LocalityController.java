@@ -1,5 +1,6 @@
 package com.gillsoft.control.core;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,7 +88,7 @@ public class LocalityController {
 					long resourceId = request.getParams().getResource().getId();
 					mappings.putAll(localityResponse.getLocalities().stream()
 							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang()))
-							.flatMap(maps -> maps.stream()).collect(Collectors.toMap(Mapping::getId, m -> m)));
+							.filter(map -> map != null).flatMap(maps -> maps.stream()).collect(Collectors.toMap(Mapping::getId, m -> m)));
 				}
 			}
 		}
@@ -114,15 +115,33 @@ public class LocalityController {
 		if (lang == null
 				&& mapping.getLangAttributes() != null) {
 			for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
-				locality.setName(entry.getKey(), entry.getValue().get("name"));
-				locality.setAddress(entry.getKey(), entry.getValue().get("address"));
+				locality.setName(entry.getKey(), entry.getValue().get("NAME"));
+				locality.setAddress(entry.getKey(), entry.getValue().get("ADDRESS"));
 			}
 		} else if (mapping.getAttributes() != null) {
-			locality.setName(lang, mapping.getAttributes().get("name"));
-			locality.setAddress(lang, mapping.getAttributes().get("address"));
+			locality.setName(lang, mapping.getAttributes().get("NAME"));
+			locality.setAddress(lang, mapping.getAttributes().get("ADDRESS"));
+		}
+		if (mapping.getAttributes() != null) {
+			locality.setLatitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LATITUDE")));
+			locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
+			locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
+			locality.setDetails(mapping.getAttributes().get("DETAILS"));
 		}
 		locality.setParent(mapping.getParent() != null ? new Locality(String.valueOf(mapping.getParent().getId())): null);
 		return locality;
+	}
+	
+	private BigDecimal createDecimal(long mappingId, String value) {
+		if (value == null) {
+			return null;
+		}
+		try {
+			return new BigDecimal(value);
+		} catch (NumberFormatException e) {
+			LOGGER.error("Invalid latitude or longitude for geo point id: " + mappingId, e);
+			return null;
+		}
 	}
 	
 	public Map<String, Set<String>> getBinding(LocalityRequest mainRequest) {
@@ -151,7 +170,10 @@ public class LocalityController {
 					// формируем мапинг
 					long resourceId = request.getParams().getResource().getId();
 					Map<String, Set<Long>> mapping = resourceIds.stream().collect(
-							Collectors.toMap(id -> id, id -> mappingService.getMappingIds(MapType.GEO, resourceId, id)));
+							Collectors.toMap(id -> id, id -> {
+								Set<Long> ids = mappingService.getMappingIds(MapType.GEO, resourceId, id);
+								return ids == null ? new HashSet<>() : ids;
+							}));
 					
 					// формируем пары маппинга from - to
 					for (Entry<String, List<String>> entry : localityResponse.getBinding().entrySet()) {
@@ -187,6 +209,7 @@ public class LocalityController {
 					LocalityRequest localityRequest = new LocalityRequest();
 					localityRequest.setId(StringUtil.generateUUID());
 					localityRequest.setParams(resource.createParams());
+					localityRequest.getParams().getResource().setId(40l);
 					request.add(localityRequest);
 				}
 			}

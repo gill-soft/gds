@@ -31,14 +31,12 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 	
 	private static Logger LOGGER = LogManager.getLogger(AgregatorTripSearchRestService.class);
 	
-	private static final String SEARCH_INIT = "search";
+	private static final String SEARCH = "search";
 	
-	private static final String GET_SEARCH = "search/{searchId}";
-
 	@Override
 	public TripSearchResponse initSearch(List<TripSearchRequest> request) {
 		try {
-			return getResult(request, new ParameterizedTypeReference<TripSearchResponse>() { }, SEARCH_INIT);
+			return getResult(request, new ParameterizedTypeReference<TripSearchResponse>() { }, SEARCH);
 		} catch (ResponseError e) {
 			return new TripSearchResponse(null, e);
 		}
@@ -46,7 +44,7 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 
 	@Override
 	public TripSearchResponse getSearchResult(String searchId) {
-		URI uri = UriComponentsBuilder.fromUriString(Config.getResourceAgregatorUrl() + GET_SEARCH)
+		URI uri = UriComponentsBuilder.fromUriString(Config.getResourceAgregatorUrl() + SEARCH)
 				.queryParam("searchId", searchId).build().toUri();
 		RequestEntity<Object> entity = new RequestEntity<Object>(HttpMethod.GET, uri);
 		try {

@@ -72,7 +72,7 @@ public class ResourceInfoController {
 			if (response == null
 					|| response.isEmpty()
 					|| Utils.isError(LOGGER, response.get(0))
-					|| request.getId().equals(response.get(0).getId())) {
+					|| !request.getId().equals(response.get(0).getId())) {
 				params.put(MemoryCacheHandler.UPDATE_DELAY, 300000l);
 			} else {
 				methods = response.get(0).getMethods();

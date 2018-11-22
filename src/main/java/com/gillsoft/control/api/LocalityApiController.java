@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,22 +29,36 @@ public class LocalityApiController {
 
 	@ApiOperation(value = "The list of all cities, stations, stoppings, etc wich are available for user",
 			response = Locality.class, responseContainer = "List")
-	@PostMapping("/all/{lang}")
+	@GetMapping("/all/{lang}")
 	public List<Locality> getAll(@ApiParam(value = "The lang of requested data", required = true)
 			@PathVariable(required = false) Lang lang) {
 		return controller.getAll(createRequest(lang));
 	}
+	
+	@ApiOperation(value = "The list of all cities, stations, stoppings, etc wich are available for user",
+			response = Locality.class, responseContainer = "List")
+	@GetMapping("/all")
+	public List<Locality> getAll() {
+		return controller.getAll(createRequest(null));
+	}
 
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc",
 			response = Locality.class, responseContainer = "List")
-	@PostMapping("/used")
+	@GetMapping("/used/{lang}")
 	public List<Locality> getUsed(@ApiParam(value = "The lang of requested data", required = true)
 			@PathVariable(required = false) Lang lang) {
 		return controller.getUsed(createRequest(lang));
 	}
+	
+	@ApiOperation(value = "The list of used cities, stations, stoppings, etc",
+			response = Locality.class, responseContainer = "List")
+	@GetMapping("/used")
+	public List<Locality> getUsed() {
+		return controller.getUsed(createRequest(null));
+	}
 
 	@ApiOperation(value = "The binding beetwen cities, stations, stoppings, etc", responseContainer = "Map")
-	@PostMapping("/binding")
+	@GetMapping("/binding")
 	public Map<String, Set<String>> getBinding() {
 		return controller.getBinding(null);
 	}
