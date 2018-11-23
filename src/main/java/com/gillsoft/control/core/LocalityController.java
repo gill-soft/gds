@@ -88,7 +88,8 @@ public class LocalityController {
 					long resourceId = request.getParams().getResource().getId();
 					mappings.putAll(localityResponse.getLocalities().stream()
 							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang()))
-							.filter(map -> map != null).flatMap(maps -> maps.stream()).collect(Collectors.toMap(Mapping::getId, m -> m)));
+							.filter(map -> map != null).flatMap(maps -> maps.stream()).collect(
+									Collectors.toMap(Mapping::getId, m -> m, (m1, m2) -> m1)));
 				}
 			}
 		}
@@ -173,7 +174,7 @@ public class LocalityController {
 							Collectors.toMap(id -> id, id -> {
 								Set<Long> ids = mappingService.getMappingIds(MapType.GEO, resourceId, id);
 								return ids == null ? new HashSet<>() : ids;
-							}));
+							}, (ids1, ids2) -> ids1));
 					
 					// формируем пары маппинга from - to
 					for (Entry<String, List<String>> entry : localityResponse.getBinding().entrySet()) {
@@ -209,7 +210,6 @@ public class LocalityController {
 					LocalityRequest localityRequest = new LocalityRequest();
 					localityRequest.setId(StringUtil.generateUUID());
 					localityRequest.setParams(resource.createParams());
-					localityRequest.getParams().getResource().setId(40l);
 					request.add(localityRequest);
 				}
 			}
