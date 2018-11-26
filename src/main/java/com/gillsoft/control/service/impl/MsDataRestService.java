@@ -21,12 +21,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
+import com.gillsoft.model.ResponseError;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.User;
-import com.gillsoft.model.ResponseError;
-import com.gillsoft.model.Segment;
 
 @Service
 public class MsDataRestService extends AbstractRestService implements MsDataService {
@@ -37,7 +36,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
-	private static final String GET_USER = "user/by_name/{name}";
+	private static final String GET_USER = "user/by_name_with_parents/{name}";
 	
 	private static final String GET_USER_ORGANISATION = "user/{name}/organisation";
 	
@@ -97,12 +96,6 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		} catch (ResponseError e) {
 			return null;
 		}
-	}
-
-	@Override
-	public List<Commission> getCommissions(String userName, Segment tripSegment) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

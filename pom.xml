@@ -102,7 +102,6 @@
 			<groupId>com.gillsoft</groupId>
 			<artifactId>gds-commons</artifactId>
 			<version>0.0.2</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -169,14 +168,12 @@
 			<groupId>com.gillsoft</groupId>
 			<artifactId>ms-gds-auth</artifactId>
 			<version>0.0.1</version>
-			<scope>compile</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.gillsoft</groupId>
 			<artifactId>ms-gds-commons</artifactId>
 			<version>0.0.1</version>
-			<scope>compile</scope>
 		</dependency>
 		
 		<dependency>

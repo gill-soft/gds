@@ -2,40 +2,40 @@ package com.gillsoft.control.core;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.MsDataService;
-import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.User;
 import com.gillsoft.util.ContextProvider;
 
-public class AllCommissionsUpdateTask implements Runnable, Serializable {
+public class UserUpdateTask implements Runnable, Serializable {
 
-	private static final long serialVersionUID = 9204052080494610361L;
-
-	public AllCommissionsUpdateTask() {
-		
+	private static final long serialVersionUID = -5750023671147167649L;
+	
+	private String userName;
+	
+	public UserUpdateTask(String userName) {
+		this.userName = userName;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void run() {
 		Map<String, Object> params = new HashMap<>();
-		params.put(MemoryCacheHandler.OBJECT_NAME, MsDataController.getAllCommissionsKey());
+		params.put(MemoryCacheHandler.OBJECT_NAME, MsDataController.getUserCacheKey(userName));
 		params.put(MemoryCacheHandler.IGNORE_AGE, true);
-		params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
+		params.put(MemoryCacheHandler.UPDATE_DELAY, 600000l);
 		
 		MsDataService service = ContextProvider.getBean(MsDataService.class);
 		MsDataController dataController = ContextProvider.getBean(MsDataController.class);
 		try {
-			Map<Long, List<Commission>> commissions = dataController.toMap(service.getAllCommissions());
-			if (commissions == null) {
-				commissions = (Map<Long, List<Commission>>) dataController.getCache().read(params);
+			User user = service.getUser(userName);
+			if (user == null) {
+				user = (User) dataController.getCache().read(params);
 			}
 			params.put(MemoryCacheHandler.UPDATE_TASK, this);
-			dataController.getCache().write(commissions, params);
+			dataController.getCache().write(user, params);
 		} catch (IOCacheException e) {
 		}
 	}

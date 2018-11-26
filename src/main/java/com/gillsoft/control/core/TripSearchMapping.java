@@ -298,16 +298,16 @@ public class TripSearchMapping {
 				String[] pair = container.getRequest().getLocalityPairs().get(0);
 				for (Trip trip : container.getTrips()) {
 					if (trip.getId() != null) {
-						trip.setId(new TripIdModel(resourceId, trip.getId()).asString());
 						setTimeInWay(searchResponse.getSegments().get(trip.getId()), pair);
+						trip.setId(new TripIdModel(resourceId, trip.getId()).asString());
 					}
 					if (trip.getBackId() != null) {
-						trip.setBackId(new TripIdModel(resourceId, trip.getBackId()).asString());
 						setTimeInWay(searchResponse.getSegments().get(trip.getBackId()), pair);
+						trip.setBackId(new TripIdModel(resourceId, trip.getBackId()).asString());
 					}
 					if (trip.getSegments() != null) {
-						trip.setSegments(trip.getSegments().stream().map(id -> new TripIdModel(resourceId, id).asString()).collect(Collectors.toList()));
 						trip.getSegments().forEach((id) -> setTimeInWay(searchResponse.getSegments().get(id), pair));
+						trip.setSegments(trip.getSegments().stream().map(id -> new TripIdModel(resourceId, id).asString()).collect(Collectors.toList()));
 					}
 				}
 			}
