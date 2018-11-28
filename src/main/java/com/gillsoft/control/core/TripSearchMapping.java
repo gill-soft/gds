@@ -2,12 +2,13 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -21,9 +22,11 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.Commission;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Organisation;
+import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
@@ -42,6 +45,9 @@ public class TripSearchMapping {
 	
 	@Autowired
 	private MappingService mappingService;
+	
+	@Autowired
+	private MsDataController dataController;
 	
 	/**
 	 * Создает пустые словари в ответе.
@@ -214,7 +220,7 @@ public class TripSearchMapping {
 			if (result.getOrganisations().containsKey(carrierKey)) {
 				segment.setCarrier(new Organisation(result.getOrganisations().get(carrierKey).getId()));
 			}
-			// если страховой нет, то добавляем его с маппинга по уникальному номеру рейса
+			// если страховой нет, то добавляем её с маппинга по уникальному номеру рейса
 			if (segment.getInsurance() == null
 					&& !result.getOrganisations().containsKey(tripNumber + "_insurance")) {
 				addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.INSURANCE);
@@ -224,8 +230,18 @@ public class TripSearchMapping {
 			if (result.getOrganisations().containsKey(insuranceKey)) {
 				segment.setInsurance(new Organisation(result.getOrganisations().get(insuranceKey).getId()));
 			}
-			// мапинг тарифа и начислени сборов TODO
-			
+			// TODO мапинг тарифа и начислени сборов
+			Collection<Commission> commissions = dataController.getCommissions(segment);
+			if (commissions != null) {
+				segment.getPrice().getCommissions().addAll(commissions);
+			}
+			// мапинг пунктов маршрута
+			if (segment.getRoute() != null) {
+				for (RoutePoint point : segment.getRoute().getPath()) {
+					point.setLocality(new Locality(result.getLocalities().get(
+							getKey(resourceId, point.getLocality().getId())).getId()));
+				}
+			}
 			// добавляем рейсы в результат
 			result.getSegments().put(new TripIdModel(resourceId, entry.getKey()).asString(), segment);
 		}

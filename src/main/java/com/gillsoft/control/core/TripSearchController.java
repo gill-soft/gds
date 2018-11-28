@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gillsoft.cache.CacheHandler;
@@ -21,10 +23,18 @@ import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.AgregatorTripSearchService;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.Document;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ResponseError;
+import com.gillsoft.model.ReturnCondition;
+import com.gillsoft.model.Route;
+import com.gillsoft.model.Seat;
+import com.gillsoft.model.SeatsScheme;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.TripContainer;
+import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
@@ -188,6 +198,77 @@ public class TripSearchController {
 				}
 			}
 			return request;
+		}
+		return null;
+	}
+	
+	public Route getRoute(String tripId) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
+		if (requests != null) {
+			
+		}
+		return null;
+	}
+	
+	public SeatsScheme getSeatsScheme(String tripId) {
+		
+		return null;
+	}
+	
+	public List<Seat> getSeats(String tripId) {
+		
+		return null;
+	}
+	
+	public final List<Tariff> getTariffs(String tripId) {
+
+		return null;
+	}
+
+	public final List<RequiredField> getRequiredFields(String tripId) {
+
+		return null;
+	}
+	
+	public final List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
+
+		return null;
+	}
+	
+	public final List<ReturnCondition> getConditions(String tripId, String tariffId) {
+
+		return null;
+	}
+	
+	public final List<Document> getDocuments(String tripId) {
+
+		return null;
+	}
+	
+	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, String methodPath, MethodType methodType) {
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		TripDetailsRequest request = createDetailsRequest(idModel.getResourceId(), methodPath, methodType);
+		if (request != null) {
+			return Collections.singletonList(request);
+		}
+		return null;
+	}
+	
+	private TripDetailsRequest createDetailsRequest(long resourceId, String methodPath, MethodType methodType) {
+		List<Resource> resources = dataController.getUserResources();
+		if (resources != null) {
+			for (Resource resource : resources) {
+				if (resource.getId() == resourceId) {
+					if (infoController.isMethodAvailable(resource, methodPath, methodType)) {
+						TripDetailsRequest request = new TripDetailsRequest();
+						request.setId(StringUtil.generateUUID());
+						request.setParams(resource.createParams());
+						return request;
+					} else {
+						return null;
+					}
+				}
+			}
 		}
 		return null;
 	}
