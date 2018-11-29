@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.TripSearchController;
 import com.gillsoft.model.Document;
+import com.gillsoft.model.Lang;
 import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
@@ -42,65 +44,69 @@ public class TripSearchApiController {
 	
 	@ApiOperation(value = "Returns part of founded trips and link id to next result",
 			response = TripSearchResponse.class)
-	@GetMapping
+	@GetMapping("/{searchId}")
 	public TripSearchResponse getSearchResult(@ApiParam(value = "The search id from init search request", required = true)
-			@Validated @RequestParam("searchId") String searchId) {
+			@Validated @PathVariable String searchId) {
 		return controller.getSearchResult(searchId);
 	}
 	
 	@ApiOperation(value = "Returns the list of trip seats",
 			response = Seat.class, responseContainer="List")
-	@GetMapping("/trip/seats")
-	public List<Seat> getSeats(@Validated @RequestParam("tripId") String tripId) {
+	@GetMapping("/trip/{tripId}/seats")
+	public List<Seat> getSeats(@Validated @PathVariable String tripId) {
 		return controller.getSeats(tripId);
 	}
 	
 	@ApiOperation(value = "Returns the list of trip seats", response = SeatsScheme.class)
-	@GetMapping("/trip/seats/scheme")
-	public SeatsScheme getScheme(@Validated @RequestParam("tripId") String tripId) {
+	@GetMapping("/trip/{tripId}/seats/scheme")
+	public SeatsScheme getScheme(@Validated @PathVariable String tripId) {
 		return controller.getSeatsScheme(tripId);
 	}
 	
 	@ApiOperation(value = "Returns the list of trip tariffs",
 			response = Tariff.class, responseContainer="List")
-	@GetMapping("/trip/tariffs")
-	public List<Tariff> getTariffs(@Validated @RequestParam("tripId") String tripId) {
-		return controller.getTariffs(tripId);
+	@GetMapping("/trip/{tripId}/tariffs/{lang}")
+	public List<Tariff> getTariffs(@Validated @PathVariable String tripId,
+			@PathVariable(required = false) Lang lang) {
+		return controller.getTariffs(tripId, lang);
 	}
 	
 	@ApiOperation(value = "Returns the route of trip", response = Route.class)
-	@GetMapping("/trip/route")
-	public Route getRoute(@Validated @RequestParam("tripId") String tripId) {
-		return controller.getRoute(tripId);
+	@GetMapping("/trip/{tripId}/route/{lang}")
+	public Route getRoute(@Validated @PathVariable String tripId,
+			@PathVariable(required = false) Lang lang) {
+		return controller.getRoute(tripId, lang);
 	}
 	
 	@ApiOperation(value = "Returns the list of required fields to create order to this trip",
 			response = RequiredField.class, responseContainer="List")
-	@GetMapping("/trip/required")
-	public List<RequiredField> getRequiredFields(@Validated @RequestParam("tripId") String tripId) {
+	@GetMapping("/trip/{tripId}/required")
+	public List<RequiredField> getRequiredFields(@Validated @PathVariable String tripId) {
 		return controller.getRequiredFields(tripId);
 	}
 	
 	@ApiOperation(value = "Returns the list of updated seats to this trip",
 			response = Seat.class, responseContainer="List")
-	@PostMapping("/trip/seats")
-	public List<Seat> updateSeats(@Validated @RequestParam("tripId") String tripId, @Validated @RequestBody List<Seat> seats) {
+	@PostMapping("/trip/{tripId}/seats")
+	public List<Seat> updateSeats(@Validated @PathVariable String tripId, @Validated @RequestBody List<Seat> seats) {
 		return controller.updateSeats(tripId, seats);
 	}
 	
 	@ApiOperation(value = "Returns the list of tariff return conditions to this trip and selected tariff",
 			response = ReturnCondition.class, responseContainer="List")
-	@GetMapping("/trip/conditions")
-	public List<ReturnCondition> getReturnConditions(@Validated @RequestParam("tripId") String tripId,
-			@Validated @RequestParam("tariffId") String tariffId) {
-		return controller.getConditions(tripId, tariffId);
+	@GetMapping("/trip/{tripId}/conditions/{tariffId}/{lang}")
+	public List<ReturnCondition> getReturnConditions(@Validated @PathVariable String tripId,
+			@Validated @RequestParam("tariffId") String tariffId,
+			@PathVariable(required = false) Lang lang) {
+		return controller.getConditions(tripId, tariffId, lang);
 	}
 	
 	@ApiOperation(value = "Returns the list of some documents about trip",
 			response = Document.class, responseContainer="List")
-	@GetMapping("/trip/documents")
-	public List<Document> getDocuments(@Validated @RequestParam("tripId") String tripId) {
-		return controller.getDocuments(tripId);
+	@GetMapping("/trip/{tripId}/documents/{lang}")
+	public List<Document> getDocuments(@Validated @PathVariable String tripId,
+			@PathVariable(required = false) Lang lang) {
+		return controller.getDocuments(tripId, lang);
 	}
 
 }

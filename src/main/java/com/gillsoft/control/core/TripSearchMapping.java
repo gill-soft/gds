@@ -31,6 +31,7 @@ import com.gillsoft.model.Segment;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
+import com.gillsoft.model.request.LangRequest;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 
@@ -75,9 +76,7 @@ public class TripSearchMapping {
 	public void mapDictionaries(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
 		
 		// мапим словари
-		mappingObjects(request, searchResponse.getLocalities(), result.getLocalities(), MapType.GEO,
-				(mapping, lang) -> localityController.createLocality(mapping, lang),
-				(resourceId, id, l) -> l.setId(getKey(resourceId, id)));
+		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
 		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.CARRIER,
 				(mapping, lang) -> createOrganisation(mapping, lang),
 				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
@@ -87,9 +86,18 @@ public class TripSearchMapping {
 	}
 	
 	/**
+	 * Получает мапинг словаря географии ответа и создает словарь из мапинга. Если мапинга нет, то добавляется объект ответа.
+	 */
+	public void mappingGeo(LangRequest request, Map<String, Locality> objects, Map<String, Locality> result) {
+		mappingObjects(request, objects, result, MapType.GEO,
+				(mapping, lang) -> localityController.createLocality(mapping, lang),
+				(resourceId, id, l) -> l.setId(getKey(resourceId, id)));
+	}
+	
+	/**
 	 * Получает мапинг словарей ответа и создает словари из мапинга. Если мапинга нет, то добавляется объект ответа.
 	 */
-	public <T> void mappingObjects(TripSearchRequest request, Map<String, T> objects, Map<String, T> result,
+	public <T> void mappingObjects(LangRequest request, Map<String, T> objects, Map<String, T> result,
 			MapType mapType, MapObjectCreator<T> creator, ObjectIdSetter<T> idSetter) {
 		if (objects == null
 				|| objects.isEmpty()) {
@@ -114,10 +122,10 @@ public class TripSearchMapping {
 		}
 	}
 	
-	/*
+	/**
 	 * Ключ словаря с ид ресурса + ид объекта словаря.
 	 */
-	private String getKey(long resourceId, String id) {
+	public String getKey(long resourceId, String id) {
 		return resourceId + ";" + id;
 	}
 	

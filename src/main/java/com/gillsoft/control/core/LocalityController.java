@@ -21,6 +21,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.gillsoft.cache.CacheHandler;
+import com.gillsoft.control.api.ApiException;
+import com.gillsoft.control.api.MethodUnavalaibleException;
+import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorLocalityService;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.mapper.model.MapType;
@@ -201,7 +204,7 @@ public class LocalityController {
 		return fromToMapping;
 	}
 	
-	private List<LocalityRequest> createRequest(String methodPath, MethodType methodType, LocalityRequest mainRequest) {
+	private List<LocalityRequest> createRequest(String methodPath, MethodType methodType, LocalityRequest mainRequest) throws ApiException {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			List<LocalityRequest> request = new ArrayList<>();
@@ -213,9 +216,12 @@ public class LocalityController {
 					request.add(localityRequest);
 				}
 			}
+			if (request.isEmpty()) {
+				throw new MethodUnavalaibleException("Method is not available");
+			}
 			return request;
 		}
-		return null;
+		throw new ResourceUnavailableException("User does not has available resources");
 	}
 
 }

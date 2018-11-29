@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -21,24 +22,41 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
+import com.gillsoft.control.api.ApiException;
+import com.gillsoft.control.api.MethodUnavalaibleException;
+import com.gillsoft.control.api.RequestValidateException;
+import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorTripSearchService;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Document;
+import com.gillsoft.model.Lang;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.Route;
+import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
 import com.gillsoft.model.Tariff;
 import com.gillsoft.model.TripContainer;
+import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.RequiredResponse;
+import com.gillsoft.model.response.Response;
+import com.gillsoft.model.response.ReturnConditionResponse;
+import com.gillsoft.model.response.RouteResponse;
+import com.gillsoft.model.response.SeatsResponse;
+import com.gillsoft.model.response.SeatsSchemeResponse;
+import com.gillsoft.model.response.TariffsResponse;
+import com.gillsoft.model.response.TripDocumentsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
+import com.google.common.base.Objects;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -67,16 +85,30 @@ public class TripSearchController {
 	
 	public TripSearchResponse initSearch(TripSearchRequest request) {
 		
-		// проверяем параметры запроса TODO
+		// проверяем параметры запроса
+		validateSearchRequest(request);
 		
 		// проверяем ответ и записываем в память запросы под ид поиска
 		List<TripSearchRequest> requests = createSearchRequest(request);
-		TripSearchResponse response = service.initSearch(requests);
-		if (response.getError() != null) {
-			return response;
-		}
+		TripSearchResponse response = checkResponse(null, service.initSearch(requests));
 		putRequestToCache(response.getSearchId(), requests);
 		return response;
+	}
+	
+	private void validateSearchRequest(TripSearchRequest request) {
+		if (request.getLocalityPairs() == null
+				|| request.getLocalityPairs().isEmpty()) {
+			throw new RequestValidateException("Empty localityPairs");
+		}
+		for (String[] pair : request.getLocalityPairs()) {
+			if (pair.length != 2) {
+				throw new RequestValidateException("localityPairs has invalid pair " + Arrays.toString(pair));
+			}
+		}
+		if (request.getDates() == null
+				|| request.getDates().isEmpty()) {
+			throw new RequestValidateException("Empty dates");
+		}
 	}
 	
 	private void putRequestToCache(String searchId, List<TripSearchRequest> requests) {
@@ -105,11 +137,11 @@ public class TripSearchController {
 		}
 		if (requests == null) {
 			LOGGER.error("Too late for getting result by searchId: " + searchId);
-			return new TripSearchResponse(null, new ResponseError("Too late for getting result or invalid searchId."));
+			throw new ApiException(new ResponseError("Too late for getting result or invalid searchId."));
 		}
 		TripSearchResponse response = service.getSearchResult(searchId);
 		if (response.getError() != null) {
-			return response;
+			throw new ApiException(response.getError());
 		}
 		// добавляем в кэш запрос под новым searchId, для получения остального результата
 		putRequestToCache(response.getSearchId(), requests);
@@ -197,64 +229,95 @@ public class TripSearchController {
 					}
 				}
 			}
+			if (request.isEmpty()) {
+				throw new MethodUnavalaibleException("Method is not available");
+			}
 			return request;
 		}
-		return null;
+		throw new ResourceUnavailableException("User does not have available resources");
 	}
 	
-	public Route getRoute(String tripId) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
-		if (requests != null) {
-			
+	public Route getRoute(String tripId, Lang lang) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
+		RouteResponse response = checkResponse(requests.get(0), service.getRoute(requests).get(0));
+		
+		// мапим пункты маршрута
+		Map<String, Locality> localities = new HashMap<>();
+		Route route = response.getRoute();
+		if (route.getPath() != null) {
+			for (RoutePoint point : route.getPath()) {
+				localities.put(point.getLocality().getId(), point.getLocality());
+			}
+			Map<String, Locality> mapped = new HashMap<>();
+			tripSearchMapping.mappingGeo(requests.get(0), localities, mapped);
+			for (RoutePoint point : route.getPath()) {
+				point.setLocality(mapped.get(tripSearchMapping.getKey(
+						requests.get(0).getParams().getResource().getId(), point.getLocality().getId())));
+			}
 		}
-		return null;
+		return route;
 	}
 	
 	public SeatsScheme getSeatsScheme(String tripId) {
-		
-		return null;
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS_SCHEME, MethodType.GET);
+		SeatsSchemeResponse response = checkResponse(requests.get(0), service.getSeatsScheme(requests).get(0));
+		return response.getScheme();
 	}
 	
 	public List<Seat> getSeats(String tripId) {
-		
-		return null;
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.GET);
+		SeatsResponse response = checkResponse(requests.get(0), service.getSeats(requests).get(0));
+		return response.getSeats();
 	}
 	
-	public final List<Tariff> getTariffs(String tripId) {
-
-		return null;
+	public List<Tariff> getTariffs(String tripId, Lang lang) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
+		TariffsResponse response = checkResponse(requests.get(0), service.getTariffs(requests).get(0));
+		return response.getTariffs();
 	}
 
-	public final List<RequiredField> getRequiredFields(String tripId) {
-
-		return null;
-	}
-	
-	public final List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
-
-		return null;
+	public List<RequiredField> getRequiredFields(String tripId) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_REQUIRED, MethodType.GET);
+		RequiredResponse response = checkResponse(requests.get(0), service.getRequiredFields(requests).get(0));
+		return response.getFields();
 	}
 	
-	public final List<ReturnCondition> getConditions(String tripId, String tariffId) {
-
-		return null;
+	public List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.POST);
+		SeatsResponse response = checkResponse(requests.get(0), service.updateSeats(requests).get(0));
+		return response.getSeats();
 	}
 	
-	public final List<Document> getDocuments(String tripId) {
-
-		return null;
+	public List<ReturnCondition> getConditions(String tripId, String tariffId, Lang lang) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
+		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
+		return response.getConditions();
 	}
 	
-	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, String methodPath, MethodType methodType) {
-		TripIdModel idModel = new TripIdModel().create(tripId);
-		TripDetailsRequest request = createDetailsRequest(idModel.getResourceId(), methodPath, methodType);
-		if (request != null) {
-			return Collections.singletonList(request);
+	public List<Document> getDocuments(String tripId, Lang lang) {
+		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_DOCUMENTS, MethodType.GET);
+		TripDocumentsResponse response = checkResponse(requests.get(0), service.getDocuments(requests).get(0));
+		return response.getDocuments();
+	}
+	
+	private <T extends Response> T checkResponse(Request request, T response) {
+		if (request != null
+				&& !Objects.equal(request.getId(), response.getId())) {
+			throw new ApiException("The response does not match the request");
 		}
-		return null;
+		if (response.getError() != null) {
+			throw new ApiException(response.getError());
+		} else {
+			return response;
+		}
 	}
 	
-	private TripDetailsRequest createDetailsRequest(long resourceId, String methodPath, MethodType methodType) {
+	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, Lang lang, String methodPath, MethodType methodType) {
+		TripIdModel idModel = new TripIdModel().create(tripId);
+		return Collections.singletonList(createDetailsRequest(idModel.getResourceId(), lang, methodPath, methodType));
+	}
+	
+	private TripDetailsRequest createDetailsRequest(long resourceId, Lang lang, String methodPath, MethodType methodType) {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			for (Resource resource : resources) {
@@ -262,15 +325,16 @@ public class TripSearchController {
 					if (infoController.isMethodAvailable(resource, methodPath, methodType)) {
 						TripDetailsRequest request = new TripDetailsRequest();
 						request.setId(StringUtil.generateUUID());
+						request.setLang(lang);
 						request.setParams(resource.createParams());
 						return request;
 					} else {
-						return null;
+						throw new MethodUnavalaibleException("Method for this trip is unavailable");
 					}
 				}
 			}
 		}
-		return null;
+		throw new ResourceUnavailableException("Resource of this trip is unavailable for user");
 	}
 
 }

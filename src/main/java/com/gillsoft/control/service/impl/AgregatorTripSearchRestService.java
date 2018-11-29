@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.impl;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,6 +34,20 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 	
 	private static final String SEARCH = "search";
 	
+	private static final String ROUTE = "search/trip/route";
+	
+	private static final String SEATS = "search/trip/seats";
+	
+	private static final String SCHEME = "search/trip/seats/scheme";
+	
+	private static final String TARIFFS = "search/trip/tariffs";
+	
+	private static final String REQUIRED = "search/trip/required";
+	
+	private static final String CONDITIONS = "search/trip/conditions";
+	
+	private static final String DOCUMENTS = "search/trip/documents";
+	
 	@Override
 	public TripSearchResponse initSearch(List<TripSearchRequest> request) {
 		try {
@@ -56,50 +71,74 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 
 	@Override
 	public List<RouteResponse> getRoute(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<RouteResponse>>() { }, ROUTE);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new RouteResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<SeatsSchemeResponse> getSeatsScheme(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<SeatsSchemeResponse>>() { }, SCHEME);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new SeatsSchemeResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<SeatsResponse> getSeats(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<SeatsResponse>>() { }, SEATS);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new SeatsResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<TariffsResponse> getTariffs(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<TariffsResponse>>() { }, TARIFFS);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new TariffsResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<RequiredResponse> getRequiredFields(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<RequiredResponse>>() { }, REQUIRED);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new RequiredResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<SeatsResponse> updateSeats(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<SeatsResponse>>() { }, SEATS, HttpMethod.PUT);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new SeatsResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<ReturnConditionResponse> getConditions(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<ReturnConditionResponse>>() { }, CONDITIONS);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new ReturnConditionResponse(null, e));
+		}
 	}
 
 	@Override
 	public List<TripDocumentsResponse> getDocuments(List<TripDetailsRequest> requests) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return getResult(requests, new ParameterizedTypeReference<List<TripDocumentsResponse>>() { }, DOCUMENTS);
+		} catch (ResponseError e) {
+			return Collections.singletonList(new TripDocumentsResponse(null, e));
+		}
 	}
 
 	@Override
@@ -108,8 +147,12 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 	}
 	
 	private <T> T getResult(List<? extends ResourceRequest> request, ParameterizedTypeReference<T> type, String method) throws ResponseError {
+		return getResult(request, type, method, HttpMethod.POST);
+	}
+	
+	private <T> T getResult(List<? extends ResourceRequest> request, ParameterizedTypeReference<T> type, String method, HttpMethod httpMethod) throws ResponseError {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getResourceAgregatorUrl() + method).build().toUri();
-		RequestEntity<List<? extends ResourceRequest>> entity = new RequestEntity<List<? extends ResourceRequest>>(request, HttpMethod.POST, uri);
+		RequestEntity<List<? extends ResourceRequest>> entity = new RequestEntity<List<? extends ResourceRequest>>(request, httpMethod, uri);
 		return getResult(entity, type);
 	}
 
