@@ -217,7 +217,7 @@ public class LocalityController {
 				}
 			}
 			if (request.isEmpty()) {
-				throw new MethodUnavalaibleException("Method is not available");
+				throw new MethodUnavalaibleException("Method is unavailable");
 			}
 			return request;
 		}

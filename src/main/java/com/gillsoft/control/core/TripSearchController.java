@@ -157,7 +157,7 @@ public class TripSearchController {
 			
 			for (TripSearchResponse searchResponse : response.getResult()) {
 				
-				Stream<TripSearchRequest> stream = requests.stream().filter(request -> request.getId().equals(searchResponse.getId()));
+				Stream<TripSearchRequest> stream = requests.stream().filter(r -> r.getId().equals(searchResponse.getId()));
 				if (stream != null) {
 					
 					// запрос, по которому получен результат
@@ -230,11 +230,11 @@ public class TripSearchController {
 				}
 			}
 			if (request.isEmpty()) {
-				throw new MethodUnavalaibleException("Method is not available");
+				throw new MethodUnavalaibleException("Method is unavailable");
 			}
 			return request;
 		}
-		throw new ResourceUnavailableException("User does not have available resources");
+		throw new ResourceUnavailableException("User does not has available resources");
 	}
 	
 	public Route getRoute(String tripId, Lang lang) {
@@ -284,12 +284,14 @@ public class TripSearchController {
 	
 	public List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
 		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.POST);
+		requests.get(0).setSeats(seats);
 		SeatsResponse response = checkResponse(requests.get(0), service.updateSeats(requests).get(0));
 		return response.getSeats();
 	}
 	
 	public List<ReturnCondition> getConditions(String tripId, String tariffId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
+		requests.get(0).setTariffId(tariffId);
 		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
 		return response.getConditions();
 	}
@@ -313,21 +315,18 @@ public class TripSearchController {
 	}
 	
 	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, Lang lang, String methodPath, MethodType methodType) {
-		TripIdModel idModel = new TripIdModel().create(tripId);
-		return Collections.singletonList(createDetailsRequest(idModel.getResourceId(), lang, methodPath, methodType));
-	}
-	
-	private TripDetailsRequest createDetailsRequest(long resourceId, Lang lang, String methodPath, MethodType methodType) {
+		IdModel idModel = new IdModel().create(tripId);
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			for (Resource resource : resources) {
-				if (resource.getId() == resourceId) {
+				if (resource.getId() == idModel.getResourceId()) {
 					if (infoController.isMethodAvailable(resource, methodPath, methodType)) {
 						TripDetailsRequest request = new TripDetailsRequest();
 						request.setId(StringUtil.generateUUID());
 						request.setLang(lang);
 						request.setParams(resource.createParams());
-						return request;
+						request.setTripId(idModel.getId());
+						return Collections.singletonList(request);
 					} else {
 						throw new MethodUnavalaibleException("Method for this trip is unavailable");
 					}

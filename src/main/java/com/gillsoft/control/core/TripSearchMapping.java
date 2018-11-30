@@ -251,7 +251,7 @@ public class TripSearchMapping {
 				}
 			}
 			// добавляем рейсы в результат
-			result.getSegments().put(new TripIdModel(resourceId, entry.getKey()).asString(), segment);
+			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 		}
 		// объединяем контайнеры по смапленому запросу
 		joinContainers(resourceId, result.getTripContainers(), searchResponse.getTripContainers());
@@ -323,15 +323,15 @@ public class TripSearchMapping {
 				for (Trip trip : container.getTrips()) {
 					if (trip.getId() != null) {
 						setTimeInWay(searchResponse.getSegments().get(trip.getId()), pair);
-						trip.setId(new TripIdModel(resourceId, trip.getId()).asString());
+						trip.setId(new IdModel(resourceId, trip.getId()).asString());
 					}
 					if (trip.getBackId() != null) {
 						setTimeInWay(searchResponse.getSegments().get(trip.getBackId()), pair);
-						trip.setBackId(new TripIdModel(resourceId, trip.getBackId()).asString());
+						trip.setBackId(new IdModel(resourceId, trip.getBackId()).asString());
 					}
 					if (trip.getSegments() != null) {
 						trip.getSegments().forEach((id) -> setTimeInWay(searchResponse.getSegments().get(id), pair));
-						trip.setSegments(trip.getSegments().stream().map(id -> new TripIdModel(resourceId, id).asString()).collect(Collectors.toList()));
+						trip.setSegments(trip.getSegments().stream().map(id -> new IdModel(resourceId, id).asString()).collect(Collectors.toList()));
 					}
 				}
 			}

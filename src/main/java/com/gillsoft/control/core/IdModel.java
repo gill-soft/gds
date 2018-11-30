@@ -2,21 +2,21 @@ package com.gillsoft.control.core;
 
 import com.gillsoft.model.AbstractJsonModel;
 
-public class TripIdModel extends AbstractJsonModel {
+public class IdModel extends AbstractJsonModel {
 
 	private static final long serialVersionUID = 651911356161511195L;
 	
 	private long resourceId;
 	
-	private String tripId;
+	private String id;
 
-	public TripIdModel() {
+	public IdModel() {
 		
 	}
 
-	public TripIdModel(long resourceId, String tripId) {
+	public IdModel(long resourceId, String id) {
 		this.resourceId = resourceId;
-		this.tripId = tripId;
+		this.id = id;
 	}
 
 	public long getResourceId() {
@@ -27,17 +27,17 @@ public class TripIdModel extends AbstractJsonModel {
 		this.resourceId = resourceId;
 	}
 
-	public String getTripId() {
-		return tripId;
+	public String getId() {
+		return id;
 	}
 
-	public void setTripId(String tripId) {
-		this.tripId = tripId;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	@Override
-	public TripIdModel create(String json) {
-		return (TripIdModel) super.create(json);
+	public IdModel create(String json) {
+		return (IdModel) super.create(json);
 	}
 	
 }
