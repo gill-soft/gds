@@ -203,6 +203,8 @@ public class TripSearchMapping {
 			segment.setArrival(new Locality(result.getLocalities().get(
 					getKey(resourceId, segment.getArrival().getId())).getId()));
 			
+			setTimeInWay(segment, segment.getDeparture().getId(), segment.getArrival().getId());
+			
 			String tripNumber = mappingService.getResourceTripNumber(segment, resourceId);
 			
 			// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
@@ -254,33 +256,59 @@ public class TripSearchMapping {
 			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 		}
 		// объединяем контайнеры по смапленому запросу
-		joinContainers(resourceId, result.getTripContainers(), searchResponse.getTripContainers());
-		
-		// добавляем ид ресурса к ид рейса
-		updateTripIdsAndTimeInWay(resourceId, searchResponse);
+		joinContainers(resourceId, result, searchResponse.getTripContainers());
 	}
 	
 	/*
 	 * Объединяет все запросы с одинаковым мапингом.
 	 */
-	private void joinContainers(long resourceId, List<TripContainer> result, List<TripContainer> containers) {
+	private void joinContainers(long resourceId, TripSearchResponse result, List<TripContainer> containers) {
 		for (TripContainer container : containers) {
-			
 			List<Mapping> fromMappings = mappingService.getMappings(MapType.GEO, resourceId,
 					container.getRequest().getLocalityPairs().get(0)[0]);
 			if (fromMappings != null) {
 				List<Mapping> toMappings = mappingService.getMappings(MapType.GEO, resourceId,
 						container.getRequest().getLocalityPairs().get(0)[1]);
 				if (toMappings != null) {
-					TripContainer resultContainer = getTripContainer(container.getRequest(), result);
+					List<String[]> pair = Collections.singletonList(
+							new String[] { String.valueOf(fromMappings.get(0).getId()), String.valueOf(toMappings.get(0).getId())});
+					
+					// обновляем ид рейсов, а потом подменяем запрос
+					updateTripIds(resourceId, result, container, pair.get(0));
+					container.getRequest().setLocalityPairs(pair);
+					
+					TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
 					if (resultContainer != null) {
-						resultContainer.getTrips().addAll(container.getTrips());
+						if (resultContainer.getTrips() != null) {
+							resultContainer.getTrips().addAll(container.getTrips());
+						}
 					} else {
-						container.getRequest().setLocalityPairs(Collections.singletonList(
-								new String[] { String.valueOf(fromMappings.get(0).getId()), String.valueOf(toMappings.get(0).getId())}));
-						result.add(container);
+						result.getTripContainers().add(container);
 					}
 				}
+			}
+		}
+	}
+	
+	// Добавляем в ид рейса запрос, по которому он был найден и проставляем время в пути.
+	private void updateTripIds(long resourceId, TripSearchResponse result, TripContainer container, String[] pair) {
+		for (Trip trip : container.getTrips()) {
+			
+			// обновляем прямые рейсы
+			if (trip.getId() != null) {
+				trip.setId(replaceTripId(new TripIdModel(resourceId, trip.getId(), container.getRequest()).asString(),
+						new IdModel(resourceId, trip.getId()).asString(), result.getSegments()));
+			}
+			// обновляем обратные рейсы
+			if (trip.getBackId() != null) {
+				trip.setBackId(replaceTripId(new TripIdModel(resourceId, trip.getBackId(), container.getRequest()).asString(), 
+						new IdModel(resourceId, trip.getBackId()).asString(), result.getSegments()));
+			}
+			// обновляем стыковочные рейсы
+			if (trip.getSegments() != null) {
+				trip.setSegments(trip.getSegments().stream().map(id ->
+						replaceTripId(new TripIdModel(resourceId, id, container.getRequest()).asString(),
+								new IdModel(resourceId, id).asString(), result.getSegments())).collect(Collectors.toList()));
 			}
 		}
 	}
@@ -298,8 +326,8 @@ public class TripSearchMapping {
 	/*
 	 * Возвращает контейнер с таким же запросом либо null
 	 */
-	private TripContainer getTripContainer(TripSearchRequest request, List<TripContainer> result) {
-		for (TripContainer container : result) {
+	private TripContainer getTripContainer(TripSearchRequest request, List<TripContainer> containers) {
+		for (TripContainer container : containers) {
 			String[] requestPair = request.getLocalityPairs().get(0);
 			String[] pair = container.getRequest().getLocalityPairs().get(0);
 			if (Objects.equals(pair[0], requestPair[0])
@@ -313,37 +341,17 @@ public class TripSearchMapping {
 		return null;
 	}
 	
-	/*
-	 * Добавляет к каждому ид рейса ид ресурса и устанавливает время в пути рейсам с учетом таймзон.
-	 */
-	private void updateTripIdsAndTimeInWay(long resourceId, TripSearchResponse searchResponse) {
-		for (TripContainer container : searchResponse.getTripContainers()) {
-			if (container.getTrips() != null) {
-				String[] pair = container.getRequest().getLocalityPairs().get(0);
-				for (Trip trip : container.getTrips()) {
-					if (trip.getId() != null) {
-						setTimeInWay(searchResponse.getSegments().get(trip.getId()), pair);
-						trip.setId(new IdModel(resourceId, trip.getId()).asString());
-					}
-					if (trip.getBackId() != null) {
-						setTimeInWay(searchResponse.getSegments().get(trip.getBackId()), pair);
-						trip.setBackId(new IdModel(resourceId, trip.getBackId()).asString());
-					}
-					if (trip.getSegments() != null) {
-						trip.getSegments().forEach((id) -> setTimeInWay(searchResponse.getSegments().get(id), pair));
-						trip.setSegments(trip.getSegments().stream().map(id -> new IdModel(resourceId, id).asString()).collect(Collectors.toList()));
-					}
-				}
-			}
-		}
+	private String replaceTripId(String newId, String oldId, Map<String, Segment> segments) {
+		segments.put(newId, segments.remove(oldId));
+		return newId;
 	}
 	
 	/*
 	 * Время в пути с учетом таймзон
 	 */
-	private void setTimeInWay(Segment segment, String[] pair) {
+	private void setTimeInWay(Segment segment, String from, String to) {
 		segment.setTimeInWay(Utils.getTimeInRoad(segment.getDepartureDate(), segment.getArrivalDate(),
-				Long.valueOf(pair[0]), Long.valueOf(pair[1])));
+				Long.valueOf(from), Long.valueOf(to)));
 	}
 	
 	/**

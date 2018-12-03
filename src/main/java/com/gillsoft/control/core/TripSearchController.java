@@ -315,7 +315,7 @@ public class TripSearchController {
 	}
 	
 	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, Lang lang, String methodPath, MethodType methodType) {
-		IdModel idModel = new IdModel().create(tripId);
+		TripIdModel idModel = new TripIdModel().create(tripId);
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			for (Resource resource : resources) {

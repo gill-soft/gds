@@ -137,7 +137,7 @@ public class OrderController {
 		if (resources != null) {
 			Map<Long, OrderRequest> requests = new HashMap<>();
 			for (ServiceItem item : request.getServices()) {
-				IdModel idModel = new IdModel().create(item.getSegment().getId());
+				TripIdModel idModel = new TripIdModel().create(item.getSegment().getId());
 				
 				// проверяем ресурс
 				Resource serviceResource = null;
