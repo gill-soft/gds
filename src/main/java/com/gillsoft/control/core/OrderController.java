@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,10 +22,11 @@ import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.request.OrderRequest;
-import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.OrderResponse;
+import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
 
@@ -49,14 +51,20 @@ public class OrderController {
 	@Autowired
 	private TripSearchMapping tripSearchMapping;
 	
+	@Autowired
+	private TripSearchController searchController;
+	
 	public OrderResponse create(OrderRequest request) {
 		
 		// проверяем параметры запроса
 		validateOrderRequest(request);
 		
+		// получаем все рейсы, чтобы вернуть потом в заказе
+		OrderResponse result = search(request);
+		
+		// создаем заказ в ресурсе
 		OrderRequest createRequest = createRequest(request);
 		OrderResponse response = service.create(createRequest);
-		
 		if (response.getError() != null) {
 			throw new ApiException(response.getError());
 		}
@@ -64,10 +72,6 @@ public class OrderController {
 				&& !response.getResources().isEmpty()) {
 			
 			// преобразовываем ответ
-			OrderResponse result = new OrderResponse();
-			result.setId(request.getId());
-			result.setCustomers(request.getCustomers());
-			result.setServices(new ArrayList<>());
 			// TODO orderId
 			for (OrderResponse orderResponse : response.getResources()) {
 				Stream<OrderRequest> stream = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId()));
@@ -75,8 +79,16 @@ public class OrderController {
 					
 					// запрос, по которому получен результат
 					OrderRequest currRequest = stream.findFirst().get();
-					for (ServiceItem item : orderResponse.getServices()) {
-						
+					if (orderResponse.getError() != null) {
+						currRequest.getServices().forEach(s -> s.setError(orderResponse.getError()));
+						result.getServices().addAll(currRequest.getServices());
+					} else {
+						for (ServiceItem item : orderResponse.getServices()) {
+							if (item.getSegment() != null) {
+								setSegment(result.getSegments(), item);
+							}
+							
+						}
 					}
 				}
 			}
@@ -85,6 +97,42 @@ public class OrderController {
 		} else {
 			throw new ApiException("Empty response");
 		}
+	}
+	
+	private void setSegment(Map<String, Segment> segments, ServiceItem item) {
+		for (String id : segments.keySet()) {
+			TripIdModel model = new TripIdModel().create(id);
+			if (Objects.equals(item.getSegment().getId(), model.getId())) {
+				item.setSegment(new Segment(id));
+				break;
+			}
+		}
+	}
+	
+	private OrderResponse search(OrderRequest request) {
+		OrderResponse response = new OrderResponse();
+		response.setId(request.getId());
+		response.setCustomers(request.getCustomers());
+		response.setServices(new ArrayList<>());
+		response.setVehicles(new HashMap<>());
+		response.setOrganisations(new HashMap<>());
+		response.setLocalities(new HashMap<>());
+		response.setSegments(new HashMap<>());
+		for (ServiceItem item : request.getServices()) {
+			String tripId = item.getSegment().getId();
+			if (!response.getSegments().containsKey(tripId)) {
+				TripSearchResponse search = searchController.search(tripId);
+				if (search.getVehicles() != null) {
+					response.getVehicles().putAll(search.getVehicles());
+				}
+				if (search.getOrganisations() != null) {
+					response.getOrganisations().putAll(search.getOrganisations());
+				}
+				response.getLocalities().putAll(search.getLocalities());
+				response.getSegments().putAll(search.getSegments());
+			}
+		}
+		return response;
 	}
 	
 	private void validateOrderRequest(OrderRequest request) {
@@ -168,6 +216,8 @@ public class OrderController {
 				resourceRequest.getServices().add(item);
 			}
 			OrderRequest newRequest = new OrderRequest();
+			newRequest.setCustomers(request.getCustomers());
+			newRequest.setResources(new ArrayList<>(requests.values()));
 			return newRequest;
 		}
 		throw new ResourceUnavailableException("User does not has available resources");

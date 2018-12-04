@@ -30,6 +30,7 @@ import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ValueType;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Resource;
@@ -65,6 +66,18 @@ public class MsDataController {
 		resource.setId(108);
 		resource.setHost("http://localhost:8080/ecolines");
 		return Collections.singletonList(resource);
+	}
+	
+	public ResourceParams createResourceParams(long resourceId) {
+		List<Resource> resources = getUserResources();
+		if (resources != null) {
+			for (Resource resource : resources) {
+				if (resource.getId() == resourceId) {
+					return resource.createParams();
+				}
+			}
+		}
+		return null;
 	}
 	
 	@SuppressWarnings("unchecked")

@@ -19,7 +19,7 @@ public class SwaggerConfig implements WebMvcConfigurer {
 	@Bean
 	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2).select()
-				.apis(RequestHandlerSelectors.basePackage("com.gillsoft.api")).paths(PathSelectors.any())
+				.apis(RequestHandlerSelectors.basePackage("com.gillsoft.control.api")).paths(PathSelectors.any())
 				.build()
 				.apiInfo(metaData())
 				.tags(new Tag("Localities", "Methods to get information about available cities", 0),

@@ -40,6 +40,7 @@ import com.gillsoft.model.Route;
 import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.Tariff;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.request.Request;
@@ -83,13 +84,23 @@ public class TripSearchController {
 	@Autowired
 	private TripSearchMapping tripSearchMapping;
 	
+	/**
+	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
+	 */
 	public TripSearchResponse initSearch(TripSearchRequest request) {
 		
 		// проверяем параметры запроса
 		validateSearchRequest(request);
 		
+		return initSearch(createSearchRequest(request));
+	}
+	
+	/**
+	 * Запускает поиск по запросам к конкретным ресурсам.
+	 */
+	public TripSearchResponse initSearch(List<TripSearchRequest> requests) {
+		
 		// проверяем ответ и записываем в память запросы под ид поиска
-		List<TripSearchRequest> requests = createSearchRequest(request);
 		TripSearchResponse response = checkResponse(null, service.initSearch(requests));
 		putRequestToCache(response.getSearchId(), requests);
 		return response;
@@ -334,6 +345,50 @@ public class TripSearchController {
 			}
 		}
 		throw new ResourceUnavailableException("Resource of this trip is unavailable for user");
+	}
+	
+	public TripSearchResponse search(String tripId) { 
+		try {
+			// создаем поиск
+			TripIdModel model = new TripIdModel().create(tripId);
+			model.getRequest().setId(StringUtil.generateUUID());
+			model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
+			TripSearchResponse response = initSearch(Collections.singletonList(model.getRequest()));
+			
+			// получаем результат сразу же так как он уже в кэше
+			response = getSearchResult(response.getSearchId());
+				
+			// оставляем в запросе только указанный рейс
+			if (response.getSegments() != null
+					&& response.getSegments().containsKey(tripId)) {
+				Segment segment = response.getSegments().get(tripId);
+				response.getSegments().clear();
+				response.getSegments().put(tripId, segment);
+				segment.setRoute(null);
+				segment.setSeats(null);
+				response.setTripContainers(null);
+				
+				// перезаливаем словари
+				if (response.getVehicles() != null) {
+					response.getVehicles().keySet().removeIf(key ->
+							segment.getVehicle() == null || !Objects.equal(key, segment.getVehicle().getId()));
+				}
+				if (response.getOrganisations() != null) {
+					response.getOrganisations().keySet().removeIf(key ->
+							(segment.getCarrier() == null || !Objects.equal(key, segment.getCarrier().getId()))
+							&& (segment.getInsurance() == null || !Objects.equal(key, segment.getInsurance().getId())));
+				}
+				if (response.getLocalities() != null) {
+					response.getLocalities().keySet().removeIf(key ->
+							!Objects.equal(key, segment.getDeparture().getId())
+							&& !Objects.equal(key, segment.getArrival().getId()));
+				}
+				return response;
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error when search selected trip", e);
+		}
+		return null;
 	}
 
 }
