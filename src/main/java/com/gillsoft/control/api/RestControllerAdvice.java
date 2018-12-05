@@ -21,7 +21,7 @@ public class RestControllerAdvice {
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
 	public RestError validateExceptions(RequestValidateException e) {
-		LOGGER.error("Validate exception", e);
+		LOGGER.error("Validate exception: " + e.getMessage());
 		return e.createRestError();
 	}
 	
@@ -29,7 +29,7 @@ public class RestControllerAdvice {
 	@ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
 	@ResponseBody
 	public RestError unavalaibleExceptions(MethodUnavalaibleException e) {
-		LOGGER.error("Method unavalaible exception", e);
+		LOGGER.error("Method unavalaible exception: " + e.getMessage());
 		return e.createRestError();
 	}
 	
@@ -37,7 +37,7 @@ public class RestControllerAdvice {
 	@ResponseStatus(HttpStatus.UNAVAILABLE_FOR_LEGAL_REASONS)
 	@ResponseBody
 	public RestError resourceExceptions(ResourceUnavailableException e) {
-		LOGGER.error("Resource unavalaible exception", e);
+		LOGGER.error("Resource unavalaible exception: " + e.getMessage());
 		return e.createRestError();
 	}
 	
@@ -45,7 +45,7 @@ public class RestControllerAdvice {
 	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 	@ResponseBody
 	public RestError apiExceptions(ApiException e) {
-		LOGGER.error("Api exception", e);
+		LOGGER.error("Api exception: " + e.getMessage());
 		return e.createRestError();
 	}
 	

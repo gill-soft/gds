@@ -249,7 +249,7 @@ public class TripSearchController {
 	}
 	
 	public Route getRoute(String tripId, Lang lang) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
 		RouteResponse response = checkResponse(requests.get(0), service.getRoute(requests).get(0));
 		
 		// мапим пункты маршрута
@@ -270,47 +270,51 @@ public class TripSearchController {
 	}
 	
 	public SeatsScheme getSeatsScheme(String tripId) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS_SCHEME, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS_SCHEME, MethodType.GET);
 		SeatsSchemeResponse response = checkResponse(requests.get(0), service.getSeatsScheme(requests).get(0));
 		return response.getScheme();
 	}
 	
 	public List<Seat> getSeats(String tripId) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.GET);
 		SeatsResponse response = checkResponse(requests.get(0), service.getSeats(requests).get(0));
 		return response.getSeats();
 	}
 	
 	public List<Tariff> getTariffs(String tripId, Lang lang) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
 		TariffsResponse response = checkResponse(requests.get(0), service.getTariffs(requests).get(0));
 		return response.getTariffs();
 	}
 
 	public List<RequiredField> getRequiredFields(String tripId) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_REQUIRED, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_REQUIRED, MethodType.GET);
 		RequiredResponse response = checkResponse(requests.get(0), service.getRequiredFields(requests).get(0));
 		return response.getFields();
 	}
 	
 	public List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.POST);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.POST);
 		requests.get(0).setSeats(seats);
 		SeatsResponse response = checkResponse(requests.get(0), service.updateSeats(requests).get(0));
 		return response.getSeats();
 	}
 	
 	public List<ReturnCondition> getConditions(String tripId, String tariffId, Lang lang) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
 		requests.get(0).setTariffId(tariffId);
 		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
 		return response.getConditions();
 	}
 	
 	public List<Document> getDocuments(String tripId, Lang lang) {
-		List<TripDetailsRequest> requests = createTripDetailsRequest(tripId, lang, Method.SEARCH_TRIP_DOCUMENTS, MethodType.GET);
+		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_DOCUMENTS, MethodType.GET);
 		TripDocumentsResponse response = checkResponse(requests.get(0), service.getDocuments(requests).get(0));
 		return response.getDocuments();
+	}
+	
+	public List<RequiredResponse> getRequiredFields(List<TripDetailsRequest> requests) {
+		return service.getRequiredFields(requests);
 	}
 	
 	private <T extends Response> T checkResponse(Request request, T response) {
@@ -325,7 +329,11 @@ public class TripSearchController {
 		}
 	}
 	
-	private List<TripDetailsRequest> createTripDetailsRequest(String tripId, Lang lang, String methodPath, MethodType methodType) {
+	public List<TripDetailsRequest> createTripDetailsRequests(String tripId, Lang lang, String methodPath, MethodType methodType) {
+		return Collections.singletonList(createTripDetailsRequest(tripId, lang, methodPath, methodType));
+	}
+	
+	public TripDetailsRequest createTripDetailsRequest(String tripId, Lang lang, String methodPath, MethodType methodType) {
 		TripIdModel idModel = new TripIdModel().create(tripId);
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
@@ -337,7 +345,7 @@ public class TripSearchController {
 						request.setLang(lang);
 						request.setParams(resource.createParams());
 						request.setTripId(idModel.getId());
-						return Collections.singletonList(request);
+						return request;
 					} else {
 						throw new MethodUnavalaibleException("Method for this trip is unavailable");
 					}

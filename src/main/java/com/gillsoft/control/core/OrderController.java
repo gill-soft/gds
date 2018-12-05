@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
-import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.mapper.service.MappingService;
@@ -46,18 +45,18 @@ public class OrderController {
 	private ResourceInfoController infoController;
 	
 	@Autowired
-	private MappingService mappingService;
-	
-	@Autowired
-	private TripSearchMapping tripSearchMapping;
-	
-	@Autowired
 	private TripSearchController searchController;
+	
+	@Autowired
+	private OrderRequestValidator validator;
 	
 	public OrderResponse create(OrderRequest request) {
 		
 		// проверяем параметры запроса
-		validateOrderRequest(request);
+		validator.validateOrderRequest(request);
+		
+		// валидируем обязательные поля для оформления
+		validator.validateRequiredFields(request);
 		
 		// получаем все рейсы, чтобы вернуть потом в заказе
 		OrderResponse result = search(request);
@@ -72,7 +71,6 @@ public class OrderController {
 				&& !response.getResources().isEmpty()) {
 			
 			// преобразовываем ответ
-			// TODO orderId
 			for (OrderResponse orderResponse : response.getResources()) {
 				Stream<OrderRequest> stream = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId()));
 				if (stream != null) {
@@ -87,12 +85,12 @@ public class OrderController {
 							if (item.getSegment() != null) {
 								setSegment(result.getSegments(), item);
 							}
-							
+							result.getServices().add(item);
 						}
 					}
 				}
 			}
-			
+			saveOrder(result);
 			return result;
 		} else {
 			throw new ApiException("Empty response");
@@ -133,51 +131,6 @@ public class OrderController {
 			}
 		}
 		return response;
-	}
-	
-	private void validateOrderRequest(OrderRequest request) {
-		
-		// проверяем кастомеров
-		if (request.getCustomers() == null
-				|| request.getCustomers().isEmpty()) {
-			throw new RequestValidateException("Empty customers");
-		}
-		// проверяем сервисы
-		if (request.getServices() == null
-				|| request.getServices().isEmpty()) {
-			throw new RequestValidateException("Empty services");
-		}
-		for (ServiceItem item : request.getServices()) {
-			
-			// проверяем сегменты
-			if (item.getSegment() == null) {
-				throw new RequestValidateException("Empty segment");
-			}
-			if (item.getSegment().getId() == null) {
-				throw new RequestValidateException("Segment part is present but empty id property");
-			}
-			// проверяем кастомеров
-			if (item.getCustomer() == null) {
-				throw new RequestValidateException("Empty customer");
-			}
-			if (item.getCustomer().getId() == null) {
-				throw new RequestValidateException("Customer part is present but empty id property");
-			}
-			// проверяем места
-			if (item.getSeat() != null
-					&& item.getSeat().getId() == null) {
-				throw new RequestValidateException("Seat part is present but empty id property");
-			}
-			// проверяем тариф
-			if (item.getPrice() != null) {
-				if (item.getPrice().getTariff() == null) {
-					throw new RequestValidateException("Price part is present but empty tariff part");
-				}
-				if (item.getPrice().getTariff().getId() == null) {
-					throw new RequestValidateException("Tariff part is present but empty id property");
-				}
-			}
-		}
 	}
 	
 	private OrderRequest createRequest(OrderRequest request) {
@@ -221,6 +174,13 @@ public class OrderController {
 			return newRequest;
 		}
 		throw new ResourceUnavailableException("User does not has available resources");
+	}
+	
+	/*
+	 * Сохраняем и устанавливаем все необходимые поля.
+	 */
+	private void saveOrder(OrderResponse response) {
+		//TODO
 	}
 
 }

@@ -279,7 +279,12 @@ public class TripSearchMapping {
 					
 					TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
 					if (resultContainer != null) {
-						if (resultContainer.getTrips() != null) {
+						if (resultContainer.getTrips() == null
+								&& container.getTrips() != null) {
+							resultContainer.setTrips(container.getTrips());
+						}
+						if (resultContainer.getTrips() != null
+								&& container.getTrips() != null) {
 							resultContainer.getTrips().addAll(container.getTrips());
 						}
 					} else {
@@ -292,6 +297,9 @@ public class TripSearchMapping {
 	
 	// Добавляем в ид рейса запрос, по которому он был найден и проставляем время в пути.
 	private void updateTripIds(long resourceId, TripSearchResponse result, TripContainer container, String[] pair) {
+		if (container.getTrips() == null) {
+			return;
+		}
 		for (Trip trip : container.getTrips()) {
 			
 			// обновляем прямые рейсы
