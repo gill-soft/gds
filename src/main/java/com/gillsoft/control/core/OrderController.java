@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,10 +17,11 @@ import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorOrderService;
-import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.control.service.OrderDAOManager;
+import com.gillsoft.control.service.model.ManageException;
+import com.gillsoft.control.service.model.Order;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
-import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
@@ -50,6 +50,12 @@ public class OrderController {
 	@Autowired
 	private OrderRequestValidator validator;
 	
+	@Autowired
+	private OrderResponseConverter converter;
+	
+	@Autowired
+	private OrderDAOManager manager;
+	
 	public OrderResponse create(OrderRequest request) {
 		
 		// проверяем параметры запроса
@@ -70,40 +76,10 @@ public class OrderController {
 		if (response.getResources() != null
 				&& !response.getResources().isEmpty()) {
 			
-			// преобразовываем ответ
-			for (OrderResponse orderResponse : response.getResources()) {
-				Stream<OrderRequest> stream = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId()));
-				if (stream != null) {
-					
-					// запрос, по которому получен результат
-					OrderRequest currRequest = stream.findFirst().get();
-					if (orderResponse.getError() != null) {
-						currRequest.getServices().forEach(s -> s.setError(orderResponse.getError()));
-						result.getServices().addAll(currRequest.getServices());
-					} else {
-						for (ServiceItem item : orderResponse.getServices()) {
-							if (item.getSegment() != null) {
-								setSegment(result.getSegments(), item);
-							}
-							result.getServices().add(item);
-						}
-					}
-				}
-			}
-			saveOrder(result);
-			return result;
+			// заказ для сохранения
+			return saveOrder(converter.convertToNewOrder(createRequest, result, response));
 		} else {
 			throw new ApiException("Empty response");
-		}
-	}
-	
-	private void setSegment(Map<String, Segment> segments, ServiceItem item) {
-		for (String id : segments.keySet()) {
-			TripIdModel model = new TripIdModel().create(id);
-			if (Objects.equals(item.getSegment().getId(), model.getId())) {
-				item.setSegment(new Segment(id));
-				break;
-			}
 		}
 	}
 	
@@ -116,20 +92,16 @@ public class OrderController {
 		response.setOrganisations(new HashMap<>());
 		response.setLocalities(new HashMap<>());
 		response.setSegments(new HashMap<>());
-		for (ServiceItem item : request.getServices()) {
-			String tripId = item.getSegment().getId();
-			if (!response.getSegments().containsKey(tripId)) {
-				TripSearchResponse search = searchController.search(tripId);
-				if (search.getVehicles() != null) {
-					response.getVehicles().putAll(search.getVehicles());
-				}
-				if (search.getOrganisations() != null) {
-					response.getOrganisations().putAll(search.getOrganisations());
-				}
-				response.getLocalities().putAll(search.getLocalities());
-				response.getSegments().putAll(search.getSegments());
-			}
+		TripSearchResponse search = searchController.search(request,
+				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
+		if (search.getVehicles() != null) {
+			response.getVehicles().putAll(search.getVehicles());
 		}
+		if (search.getOrganisations() != null) {
+			response.getOrganisations().putAll(search.getOrganisations());
+		}
+		response.getLocalities().putAll(search.getLocalities());
+		response.getSegments().putAll(search.getSegments());
 		return response;
 	}
 	
@@ -161,6 +133,7 @@ public class OrderController {
 					resourceRequest = new OrderRequest();
 					resourceRequest.setId(StringUtil.generateUUID());
 					resourceRequest.setLang(request.getLang());
+					resourceRequest.setCurrency(request.getCurrency());
 					resourceRequest.setParams(serviceResource.createParams());
 					resourceRequest.setServices(new ArrayList<>());
 					requests.put(serviceResource.getId(), resourceRequest);
@@ -179,8 +152,13 @@ public class OrderController {
 	/*
 	 * Сохраняем и устанавливаем все необходимые поля.
 	 */
-	private void saveOrder(OrderResponse response) {
-		//TODO
+	private OrderResponse saveOrder(Order order) {
+		try {
+			return converter.getResponse(manager.create(order));
+		} catch (ManageException e) {
+			LOGGER.error("Error when save order", e);
+			throw new ApiException(e);
+		}
 	}
 
 }

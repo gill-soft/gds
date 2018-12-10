@@ -2,7 +2,6 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
-import com.gillsoft.model.Commission;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Organisation;
@@ -240,11 +238,11 @@ public class TripSearchMapping {
 			if (result.getOrganisations().containsKey(insuranceKey)) {
 				segment.setInsurance(new Organisation(result.getOrganisations().get(insuranceKey).getId()));
 			}
-			// TODO мапинг тарифа и начислени сборов
-			Collection<Commission> commissions = dataController.getCommissions(segment);
-			if (commissions != null) {
-				segment.getPrice().getCommissions().addAll(commissions);
-			}
+			// TODO мапинг тарифа
+			
+			// начисление сборов
+			segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+			
 			// мапинг пунктов маршрута
 			if (segment.getRoute() != null) {
 				for (RoutePoint point : segment.getRoute().getPath()) {
@@ -395,6 +393,12 @@ public class TripSearchMapping {
 					return v;
 				}, (v1, v2) -> v1)));
 			}
+		}
+		if (result.getSegments().isEmpty()) {
+			result.setSegments(null);
+		}
+		if (result.getTripContainers().isEmpty()) {
+			result.setTripContainers(null);
 		}
 	}
 	

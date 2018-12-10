@@ -1,0 +1,78 @@
+package com.gillsoft.control.service.model;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "service_statuses")
+public class ServiceStatus implements Serializable {
+
+	private static final long serialVersionUID = 7197097579192677781L;
+	
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private long id;
+	
+	@Column(nullable = false)
+	private Date created;
+	
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private Status status;
+	
+	@Column(name = "user_id", nullable = false)
+	private long userId;
+	
+	@Column(name = "org_id", nullable = false)
+	private long organisationId;
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public Date getCreated() {
+		return created;
+	}
+
+	public void setCreated(Date created) {
+		this.created = created;
+	}
+
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(long userId) {
+		this.userId = userId;
+	}
+
+	public long getOrganisationId() {
+		return organisationId;
+	}
+
+	public void setOrganisationId(long organisationId) {
+		this.organisationId = organisationId;
+	}
+
+}

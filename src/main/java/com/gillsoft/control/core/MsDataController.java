@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -21,6 +23,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
@@ -28,6 +31,7 @@ import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
+import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.request.ResourceParams;
@@ -39,6 +43,8 @@ import com.gillsoft.ms.entity.User;
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class MsDataController {
+	
+	private static Logger LOGGER = LogManager.getLogger(MsDataController.class);
 	
 	private static final String ACTIVE_RESOURCES_CACHE_KEY = "active.resources.";
 	
@@ -127,22 +133,37 @@ public class MsDataController {
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, cacheKey);
 		try {
-			return cache.read(params);
-		} catch (IOCacheException readException) {
-			
-			// синхронизация по ключу кэша
-			synchronized (cacheKey.intern()) {
-				Object object = objectGetter.forCache();
-				params.put(MemoryCacheHandler.IGNORE_AGE, true);
-				params.put(MemoryCacheHandler.UPDATE_DELAY, updateDelay);
-				params.put(MemoryCacheHandler.UPDATE_TASK, updateTask);
-				try {
-					cache.write(object, params);
-				} catch (IOCacheException writeException) {
+			Object object = cache.read(params);
+			if (object == null) {
+				
+				// синхронизация по ключу кэша
+				synchronized (cacheKey.intern()) {
+					object = objectGetter.forCache();
+					params.put(MemoryCacheHandler.IGNORE_AGE, true);
+					params.put(MemoryCacheHandler.UPDATE_DELAY, updateDelay);
+					params.put(MemoryCacheHandler.UPDATE_TASK, updateTask);
+					try {
+						cache.write(object, params);
+					} catch (IOCacheException writeException) {
+					}
+					return object;
 				}
+			} else {
 				return object;
 			}
+		} catch (IOCacheException e) {
+			LOGGER.error("Error in cache", e);
+			return null;
 		}
+	}
+	
+	public Price recalculate(Segment segment, Price price, Currency currency) {
+		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		Collection<com.gillsoft.model.Commission> commissions = getCommissions(segment);
+		if (commissions != null) {
+			price.getCommissions().addAll(commissions);
+		}
+		return price;// TODO Calculator.calculateResource(price, getUser(), currency);
 	}
 	
 	public Collection<com.gillsoft.model.Commission> getCommissions(Segment segment) {
@@ -155,8 +176,9 @@ public class MsDataController {
 					? parent.getParents().iterator().next() : null)) != null) {
 				entities.add(parent);
 			}
-			// TODO add segment object's ids
-			
+			if (segment != null) {
+				// TODO add segment object's ids
+			}
 			return getCommissions(entities);
 		}
 		return null;

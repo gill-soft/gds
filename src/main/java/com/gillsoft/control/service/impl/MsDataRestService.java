@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.impl;
 
 import java.net.URI;
+import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.List;
 
@@ -14,7 +15,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,11 +36,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
-	private static final String GET_USER = "user/by_name_with_parents/{name}";
+	private static final String GET_USER = "user/by_name_with_parents/{0}";
 	
-	private static final String GET_USER_ORGANISATION = "user/{name}/organisation";
+	private static final String GET_USER_ORGANISATION = "user/{0}/organisation";
 	
-	private static final String GET_USER_RESOURCES = "user/{name}/resources";
+	private static final String GET_USER_RESOURCES = "user/{0}/resources";
 	
 	private RestTemplate template;
 	
@@ -79,9 +79,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	}
 	
 	private <T> T getResultByUser(String userName, String method, ParameterizedTypeReference<T> type) {
-		MultiValueMap<String, String> params = new LinkedMultiValueMap<>(1);
-		params.add("name", userName);
-		return getResult(method, params, type);
+		return getResult(MessageFormat.format(method, userName), null, type);
 	}
 	
 	private <T> T getResult(String method, MultiValueMap<String, String> params, ParameterizedTypeReference<T> type) {

@@ -2,6 +2,7 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import com.gillsoft.model.SeatsScheme;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.Tariff;
 import com.gillsoft.model.TripContainer;
+import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
@@ -355,46 +357,68 @@ public class TripSearchController {
 		throw new ResourceUnavailableException("Resource of this trip is unavailable for user");
 	}
 	
-	public TripSearchResponse search(String tripId) { 
+	public TripSearchResponse search(OrderRequest request, Set<String> tripIds) { 
 		try {
-			// создаем поиск
-			TripIdModel model = new TripIdModel().create(tripId);
-			model.getRequest().setId(StringUtil.generateUUID());
-			model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
-			TripSearchResponse response = initSearch(Collections.singletonList(model.getRequest()));
+			// создаем поиски
+			List<TripSearchRequest> searchRequests = new ArrayList<>();
+			for (String tripId : tripIds) {
+				TripIdModel model = new TripIdModel().create(tripId);
+				model.getRequest().setId(StringUtil.generateUUID());
+				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
+				model.getRequest().setLang(request.getLang());
+				model.getRequest().setCurrency(request.getCurrency());
+				searchRequests.add(model.getRequest());
+			}
+			TripSearchResponse response = initSearch(searchRequests);
 			
 			// получаем результат сразу же так как он уже в кэше
 			response = getSearchResult(response.getSearchId());
+			
+			final Collection<Segment> segments = response.getSegments().values();
 				
 			// оставляем в запросе только указанный рейс
-			if (response.getSegments() != null
-					&& response.getSegments().containsKey(tripId)) {
-				Segment segment = response.getSegments().get(tripId);
-				response.getSegments().clear();
-				response.getSegments().put(tripId, segment);
-				segment.setRoute(null);
-				segment.setSeats(null);
+			if (response.getSegments() != null) {
 				response.setTripContainers(null);
-				
-				// перезаливаем словари
-				if (response.getVehicles() != null) {
-					response.getVehicles().keySet().removeIf(key ->
-							segment.getVehicle() == null || !Objects.equal(key, segment.getVehicle().getId()));
-				}
-				if (response.getOrganisations() != null) {
-					response.getOrganisations().keySet().removeIf(key ->
-							(segment.getCarrier() == null || !Objects.equal(key, segment.getCarrier().getId()))
-							&& (segment.getInsurance() == null || !Objects.equal(key, segment.getInsurance().getId())));
-				}
-				if (response.getLocalities() != null) {
-					response.getLocalities().keySet().removeIf(key ->
-							!Objects.equal(key, segment.getDeparture().getId())
-							&& !Objects.equal(key, segment.getArrival().getId()));
-				}
-				return response;
+				response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
+				response.getSegments().values().forEach(segment -> {
+					segment.setRoute(null);
+					segment.setSeats(null);
+				});
 			}
+				
+			// перезаливаем словари
+			if (response.getVehicles() != null) {
+				response.getVehicles().keySet().removeIf(key -> {
+					for (Segment segment : segments) {
+						if (segment.getVehicle() != null
+								&& Objects.equal(key, segment.getVehicle().getId())) {
+							return false;
+						}
+					}; return true;});
+			}
+			if (response.getOrganisations() != null) {
+				response.getOrganisations().keySet().removeIf(key -> {
+					for (Segment segment : segments) {
+						if ((segment.getCarrier() != null
+								&& Objects.equal(key, segment.getCarrier().getId()))
+								|| (segment.getInsurance() != null
+										&& Objects.equal(key, segment.getInsurance().getId()))) {
+							return false;
+						}
+					}; return true;});
+			}
+			if (response.getLocalities() != null) {
+				response.getLocalities().keySet().removeIf(key -> {
+					for (Segment segment : segments) {
+						if (Objects.equal(key, segment.getDeparture().getId())
+								|| Objects.equal(key, segment.getArrival().getId())) {
+							return false;
+						}
+					}; return true;});
+			}
+			return response;
 		} catch (Exception e) {
-			LOGGER.error("Error when search selected trip", e);
+			LOGGER.error("Error when search selected trips", e);
 		}
 		return null;
 	}
