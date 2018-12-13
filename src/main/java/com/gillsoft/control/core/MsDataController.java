@@ -69,8 +69,8 @@ public class MsDataController {
 //		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
 //				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 1800000l);
 		Resource resource = new Resource();
-		resource.setId(108);
-		resource.setHost("http://localhost:8080/ecolines");
+		resource.setId(102);
+		resource.setHost("http://localhost:8080/neobus");
 		return Collections.singletonList(resource);
 	}
 	

@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -11,6 +12,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -30,14 +32,20 @@ public class ResourceOrder implements Serializable {
 	private long id;
 	
 	@Lob
-	@Column(name = "native_order_id", nullable = false)
+	@Column(name = "native_order_id", nullable = true)
 	private String resourceNativeOrderId;
 	
-	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
-	@JoinColumn(name = "resource_order_id")
+	@Column(name = "resource_id", nullable = false)
+	private long resourceId;
+	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy="parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
 	private Set<ResourceService> services;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+	private Order parent;
 
 	public long getId() {
 		return id;
@@ -55,12 +63,36 @@ public class ResourceOrder implements Serializable {
 		this.resourceNativeOrderId = resourceNativeOrderId;
 	}
 
+	public long getResourceId() {
+		return resourceId;
+	}
+
+	public void setResourceId(long resourceId) {
+		this.resourceId = resourceId;
+	}
+
 	public Set<ResourceService> getServices() {
 		return services;
 	}
 
 	public void setServices(Set<ResourceService> services) {
 		this.services = services;
+	}
+	
+	public void addResourceService(ResourceService resourceService) {
+		if (services == null) {
+			services = new HashSet<>();
+		}
+		resourceService.setParent(this);
+		services.add(resourceService);
+	}
+
+	public Order getParent() {
+		return parent;
+	}
+
+	public void setParent(Order parent) {
+		this.parent = parent;
 	}
 
 }

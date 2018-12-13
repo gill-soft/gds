@@ -7,9 +7,13 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
@@ -34,6 +38,14 @@ public class ServiceStatus implements Serializable {
 	
 	@Column(name = "org_id", nullable = false)
 	private long organisationId;
+	
+	@Lob
+	@Column(nullable = true)
+	private String error;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_service_id", nullable = false)
+	private ResourceService parent;
 
 	public long getId() {
 		return id;
@@ -73,6 +85,22 @@ public class ServiceStatus implements Serializable {
 
 	public void setOrganisationId(long organisationId) {
 		this.organisationId = organisationId;
+	}
+
+	public String getError() {
+		return error;
+	}
+
+	public void setError(String error) {
+		this.error = error;
+	}
+
+	public ResourceService getParent() {
+		return parent;
+	}
+
+	public void setParent(ResourceService parent) {
+		this.parent = parent;
 	}
 
 }

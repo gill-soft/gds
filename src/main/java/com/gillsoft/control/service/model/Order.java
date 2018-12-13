@@ -2,6 +2,7 @@ package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -11,7 +12,6 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -35,8 +35,7 @@ public class Order implements Serializable {
 	@Column(nullable = false)
 	private Date created;
 	
-	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
-	@JoinColumn(name = "order_id")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
 	private Set<ResourceOrder> orders;
@@ -67,6 +66,14 @@ public class Order implements Serializable {
 
 	public void setOrders(Set<ResourceOrder> orders) {
 		this.orders = orders;
+	}
+	
+	public void addResourceOrder(ResourceOrder resourceOrder) {
+		if (orders == null) {
+			orders = new HashSet<>();
+		}
+		resourceOrder.setParent(this);
+		orders.add(resourceOrder);
 	}
 
 	public OrderResponse getResponse() {

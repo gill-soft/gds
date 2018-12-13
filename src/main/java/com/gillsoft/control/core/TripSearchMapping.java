@@ -356,8 +356,11 @@ public class TripSearchMapping {
 	 * Время в пути с учетом таймзон
 	 */
 	private void setTimeInWay(Segment segment, String from, String to) {
-		segment.setTimeInWay(Utils.getTimeInRoad(segment.getDepartureDate(), segment.getArrivalDate(),
-				Long.valueOf(from), Long.valueOf(to)));
+		try {
+			segment.setTimeInWay(Utils.getTimeInRoad(segment.getDepartureDate(), segment.getArrivalDate(),
+					Long.valueOf(from), Long.valueOf(to)));
+		} catch (NumberFormatException e) {
+		}
 	}
 	
 	/**

@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -11,6 +12,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -30,17 +32,17 @@ public class ResourceService implements Serializable {
 	private long id;
 	
 	@Lob
-	@Column(name = "native_service_id", nullable = false)
+	@Column(name = "native_service_id", nullable = true)
 	private String resourceNativeServiceId;
 	
-	@Column(name = "resource_id", nullable = false)
-	private long resourceId;
-	
-	@OneToMany(fetch = FetchType.LAZY, orphanRemoval = true)
-	@JoinColumn(name = "resource_service_id")
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
 	private Set<ServiceStatus> statuses;
+	
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_order_id", nullable = false)
+	private ResourceOrder parent;
 
 	public long getId() {
 		return id;
@@ -58,20 +60,28 @@ public class ResourceService implements Serializable {
 		this.resourceNativeServiceId = resourceNativeServiceId;
 	}
 
-	public long getResourceId() {
-		return resourceId;
-	}
-
-	public void setResourceId(long resourceId) {
-		this.resourceId = resourceId;
-	}
-
 	public Set<ServiceStatus> getStatuses() {
 		return statuses;
 	}
 
 	public void setStatuses(Set<ServiceStatus> statuses) {
 		this.statuses = statuses;
+	}
+	
+	public void addStatus(ServiceStatus status) {
+		if (statuses == null) {
+			statuses = new HashSet<>();
+		}
+		status.setParent(this);
+		statuses.add(status);
+	}
+
+	public ResourceOrder getParent() {
+		return parent;
+	}
+
+	public void setParent(ResourceOrder parent) {
+		this.parent = parent;
 	}
 
 }

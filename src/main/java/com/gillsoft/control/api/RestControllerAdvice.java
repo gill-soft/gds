@@ -17,6 +17,14 @@ public class RestControllerAdvice {
 	
 	private static Logger LOGGER = LogManager.getLogger(RestControllerAdvice.class);
 	
+	@ExceptionHandler(NoDataFoundException.class)
+	@ResponseStatus(HttpStatus.NOT_FOUND)
+	@ResponseBody
+	public RestError validateExceptions(NoDataFoundException e) {
+		LOGGER.error("No data found exception: " + e.getMessage());
+		return e.createRestError();
+	}
+	
 	@ExceptionHandler(RequestValidateException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
