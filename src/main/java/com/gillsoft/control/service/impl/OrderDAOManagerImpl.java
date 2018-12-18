@@ -89,10 +89,10 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		return update(order);
 	}
 
+	@Transactional
 	@Override
 	public Order removeServices(Order order) throws ManageException {
-		// TODO Auto-generated method stub
-		return null;
+		return update(order);
 	}
 
 }

@@ -91,7 +91,7 @@ public class OrderApiController {
 			response = OrderResponse.class)
 	@PostMapping("/{orderId}/service/remove")
 	public OrderResponse removeServices(@PathVariable long orderId, @RequestBody OrderRequest request) {
-		return null;
+		return controller.removeService(orderId, request);
 	}
 	
 }

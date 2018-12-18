@@ -185,7 +185,7 @@ public class OrderController {
 									.collect(Collectors.toList()).toArray()));
 				}
 				// проверяем доступность метода
-				if (!infoController.isMethodAvailable(serviceResource, Method.ORDER_CONFIRM, MethodType.POST)) {
+				if (!infoController.isMethodAvailable(serviceResource, method, MethodType.POST)) {
 					throw new MethodUnavalaibleException("Method is unavailable for service ids "
 							+ Arrays.toString(resourceOrder.getServices().stream().map(ResourceService::getId)
 									.collect(Collectors.toList()).toArray()));
@@ -403,5 +403,24 @@ public class OrderController {
 		}
 		return converter.getResponse(order);
 	}
-
+	
+	public OrderResponse removeService(long orderId, OrderRequest request) {
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, Status.NEW)) {
+			throw new NoDataFoundException("Operation is unavailable on order for this user");
+		}
+		// проверяем статус заказа. удалить из заказа можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+		Set<Status> statuses = getStatusesForConfirm();
+		checkStatus(order, statuses);
+		
+		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
+		order = converter.removeServices(order, request.getServices());
+		try {
+			order = manager.removeServices(order);
+		} catch (ManageException e) {
+			LOGGER.error("Remove services from order error in db", e);
+		}
+		return converter.getResponse(order);
+	}
+	
 }

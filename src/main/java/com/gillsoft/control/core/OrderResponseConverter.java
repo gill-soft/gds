@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
@@ -291,45 +293,47 @@ public class OrderResponseConverter {
 	 * Удаляет все сервисы с ответа кроме выбранного.
 	 */
 	public OrderResponse getService(OrderResponse response, long serviceId) {
-		ServiceItem item = null;
 		for (Iterator<ServiceItem> iterator = response.getServices().iterator(); iterator.hasNext();) {
 			ServiceItem service = iterator.next();
 			if (!Objects.equals(service.getId(), String.valueOf(serviceId))) {
 				iterator.remove();
-			} else {
-				item = service;
 			}
 		}
-		if (item != null) {
-			final ServiceItem finded = item;
-			final Segment segment = item.getSegment() == null ? null : response.getSegments().get(item.getSegment().getId());
-			
-			// оставляем в запросе только указанный рейс
-			if (response.getSegments() != null) {
-				response.getSegments().keySet().removeIf(key -> segment == null
-						|| !Objects.equals(key, finded.getSegment().getId()));
-			}
-			// перезаливаем словари
-			if (response.getVehicles() != null) {
-				response.getVehicles().keySet().removeIf(key -> segment == null
-						|| segment.getVehicle() == null
-						|| !Objects.equals(key, segment.getVehicle().getId()));
-			}
-			if (response.getOrganisations() != null) {
-				response.getOrganisations().keySet().removeIf(key -> segment == null
-						|| (segment.getCarrier() == null && segment.getInsurance() == null)
-						|| (!Objects.equals(key, segment.getCarrier().getId()) && !Objects.equals(key, segment.getInsurance().getId())));
-			}
-			if (response.getLocalities() != null) {
-				response.getLocalities().keySet().removeIf(key -> segment == null
-						|| (!Objects.equals(key, segment.getDeparture().getId()) && !Objects.equals(key, segment.getArrival().getId())));
-			}
-			if (response.getCustomers() != null) {
-				response.getCustomers().keySet().removeIf(key -> finded.getCustomer() == null
-						|| !Objects.equals(key, finded.getCustomer().getId()));
-			}
-		}
+		updateDictionaries(response);
 		return response;
+	}
+	
+	private void updateDictionaries(OrderResponse response) {
+		
+		// оставляем в запросе только указанный рейс
+		if (response.getSegments() != null) {
+			response.getSegments().keySet().removeIf(key -> response.getServices() == null
+					|| !response.getServices().stream().anyMatch(
+							s -> s.getSegment() != null && Objects.equals(key, s.getSegment().getId())));
+		}
+		// перезаливаем словари
+		if (response.getCustomers() != null) {
+			response.getCustomers().keySet().removeIf(key -> response.getServices() == null 
+					|| !response.getServices().stream().anyMatch(
+							s -> s.getCustomer() != null && Objects.equals(key, s.getCustomer().getId())));
+		}
+		if (response.getVehicles() != null) {
+			response.getVehicles().keySet().removeIf(key -> response.getSegments() == null
+					|| !response.getSegments().values().stream().anyMatch(
+							s -> s.getVehicle() != null && Objects.equals(key, s.getVehicle().getId())));
+		}
+		if (response.getOrganisations() != null) {
+			response.getOrganisations().keySet().removeIf(key -> response.getSegments() == null
+					|| !response.getSegments().values().stream().anyMatch(
+							s -> (s.getCarrier() != null && Objects.equals(key, s.getCarrier().getId()))
+							|| (s.getInsurance() != null && Objects.equals(key, s.getInsurance().getId()))));
+		}
+		if (response.getLocalities() != null) {
+			response.getLocalities().keySet().removeIf(key -> response.getSegments() == null
+					|| !response.getSegments().values().stream().anyMatch(
+							s -> Objects.equals(key, s.getDeparture().getId())
+							|| Objects.equals(key, s.getArrival().getId())));
+		}
 	}
 	
 	public Order joinOrders(Order presentOrder, Order newOrder) {
@@ -374,6 +378,38 @@ public class OrderResponseConverter {
 			}
 		}
 		return presentMap;
+	}
+	
+	public Order removeServices(Order order, List<ServiceItem> removed) {
+		Date created = new Date();
+		User user = dataController.getUser();
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			Set<String> resourceServiceIds = removed.stream().map(ServiceItem::getId).collect(Collectors.toSet());
+			if (resourceOrder.getServices().stream().anyMatch(rs -> resourceServiceIds.contains(String.valueOf(rs.getId())))) {
+				if (resourceOrder.getServices().stream().allMatch(rs -> resourceServiceIds.contains(String.valueOf(rs.getId())))) {
+					for (ResourceService resourceService : resourceOrder.getServices()) {
+						
+						// добавляем статус об удалении позиции
+						resourceService.addStatus(createStatus(created, user, Status.REMOVE, null));
+
+						// удаляем сервисы из заказа
+						for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {
+							ServiceItem service = iterator.next();
+							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+								iterator.remove();
+								break;
+							}
+						}
+					}
+				} else {
+					throw new RequestValidateException("Services with ids ["
+							+ String.join(", ", resourceOrder.getServices().stream().map(rs -> String.valueOf(rs.getId())).collect(Collectors.toSet()))
+							+ "] must be removed together");
+				}
+			}
+		}
+		updateDictionaries(order.getResponse());
+		return order;
 	}
 
 }
