@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -151,7 +152,8 @@ public class OrderResponseConverter {
 		return response;
 	}
 	
-	public OrderResponse convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
+	public OrderResponse convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
+			Status confirmStatus, Status errorStatus) {
 		List<ServiceItem> services = new ArrayList<>();
 		Date created = new Date();
 		User user = dataController.getUser();
@@ -176,7 +178,7 @@ public class OrderResponseConverter {
 								services.add(item);
 								
 								// добавляем статус об ошибке
-								resourceService.addStatus(createStatus(created, user, Status.CONFIRM_ERROR, orderResponse.getError().getMessage()));
+								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage()));
 							}
 							break;
 						}
@@ -194,11 +196,11 @@ public class OrderResponseConverter {
 										
 										if (!service.getConfirmed()
 												&& service.getError() == null) {
-											service.setError(new RestError("Error when confirm order"));
+											service.setError(new RestError("Error when " + confirmStatus + " order"));
 										}
 										// добавляем статус
 										resourceService.addStatus(createStatus(created, user,
-												service.getConfirmed() ? Status.CONFIRM : Status.CONFIRM_ERROR,
+												service.getConfirmed() ? confirmStatus : errorStatus,
 														service.getError() == null ? null : service.getError().getMessage()));
 										break;
 									}
@@ -207,7 +209,6 @@ public class OrderResponseConverter {
 							break;
 						}
 					}
-					
 				}
 			}
 		}
@@ -219,16 +220,18 @@ public class OrderResponseConverter {
 		response.setOrderId(String.valueOf(order.getId()));
 		response.setServices(new ArrayList<>());
 		
-		//TODO обновляем полученные данные в самом OrderResponse, который в базе
 		for (ServiceItem dbItem : order.getResponse().getServices()) {
 			outer:
 			for (ServiceItem service : services) {
 				if (Objects.equals(dbItem.getId(), service.getId())) {
 					
 					ServiceItem responseItem = null;
+					
 					// данные с ошибками не обновляем
 					if (service.getError() == null) {
-						//TODO update response data in db
+						
+						// обновляем полученные данные в самом OrderResponse, который в базе
+						updateServiceData(dbItem, service);
 						responseItem = dbItem;
 					} else {
 						responseItem = service;
@@ -249,8 +252,128 @@ public class OrderResponseConverter {
 		return response;
 	}
 	
-	private Status getLastStatus(Set<ServiceStatus> statuses) {
-		return statuses.stream().max(Comparator.comparing(ServiceStatus::getCreated)).get().getStatus();
+	private void updateServiceData(ServiceItem service, ServiceItem newData) {
+		if (newData.getExpire() != null) {
+			service.setExpire(newData.getExpire());
+		}
+		if (newData.getReturnConditionId() != null
+				&& !newData.getReturnConditionId().isEmpty()) {
+			service.setReturnConditionId(newData.getReturnConditionId());
+		}
+		if (newData.getNumber() != null
+				&& !newData.getNumber().isEmpty()) {
+			service.setNumber(newData.getNumber());
+		}
+		if (newData.getAdditionals() != null) {
+			if (service.getAdditionals() == null) {
+				service.setAdditionals(newData.getAdditionals());
+			} else {
+				service.getAdditionals().putAll(newData.getAdditionals());
+			}
+		}
+		if (newData.getSeat() != null) {
+			service.setSeat(newData.getSeat());
+		}
+		if (newData.getDocuments() != null) {
+			if (service.getDocuments() == null) {
+				service.setDocuments(newData.getDocuments());
+			} else {
+				service.getDocuments().addAll(newData.getDocuments());
+			}
+		}
+	}
+	
+	public Status getLastStatus(Set<ServiceStatus> statuses) {
+		return statuses.stream().max(Comparator.comparing(ServiceStatus::getId)).get().getStatus();
+	}
+	
+	/**
+	 * Удаляет все сервисы с ответа кроме выбранного.
+	 */
+	public OrderResponse getService(OrderResponse response, long serviceId) {
+		ServiceItem item = null;
+		for (Iterator<ServiceItem> iterator = response.getServices().iterator(); iterator.hasNext();) {
+			ServiceItem service = iterator.next();
+			if (!Objects.equals(service.getId(), String.valueOf(serviceId))) {
+				iterator.remove();
+			} else {
+				item = service;
+			}
+		}
+		if (item != null) {
+			final ServiceItem finded = item;
+			final Segment segment = item.getSegment() == null ? null : response.getSegments().get(item.getSegment().getId());
+			
+			// оставляем в запросе только указанный рейс
+			if (response.getSegments() != null) {
+				response.getSegments().keySet().removeIf(key -> segment == null
+						|| !Objects.equals(key, finded.getSegment().getId()));
+			}
+			// перезаливаем словари
+			if (response.getVehicles() != null) {
+				response.getVehicles().keySet().removeIf(key -> segment == null
+						|| segment.getVehicle() == null
+						|| !Objects.equals(key, segment.getVehicle().getId()));
+			}
+			if (response.getOrganisations() != null) {
+				response.getOrganisations().keySet().removeIf(key -> segment == null
+						|| (segment.getCarrier() == null && segment.getInsurance() == null)
+						|| (!Objects.equals(key, segment.getCarrier().getId()) && !Objects.equals(key, segment.getInsurance().getId())));
+			}
+			if (response.getLocalities() != null) {
+				response.getLocalities().keySet().removeIf(key -> segment == null
+						|| (!Objects.equals(key, segment.getDeparture().getId()) && !Objects.equals(key, segment.getArrival().getId())));
+			}
+			if (response.getCustomers() != null) {
+				response.getCustomers().keySet().removeIf(key -> finded.getCustomer() == null
+						|| !Objects.equals(key, finded.getCustomer().getId()));
+			}
+		}
+		return response;
+	}
+	
+	public Order joinOrders(Order presentOrder, Order newOrder) {
+		
+		// добавляем новые заказы ресурса в существующий
+		for (ResourceOrder resourceOrder : newOrder.getOrders()) {
+			presentOrder.addResourceOrder(resourceOrder);
+		}
+		// обновляем словари
+		OrderResponse presentResponse = presentOrder.getResponse();
+		OrderResponse newResponse = newOrder.getResponse();
+		presentResponse.setSegments(getMap(presentResponse.getSegments(), newResponse.getSegments()));
+		presentResponse.setVehicles(getMap(presentResponse.getVehicles(), newResponse.getVehicles()));
+		presentResponse.setOrganisations(getMap(presentResponse.getOrganisations(), newResponse.getOrganisations()));
+		presentResponse.setLocalities(getMap(presentResponse.getLocalities(), newResponse.getLocalities()));
+		presentResponse.setCustomers(getMap(presentResponse.getCustomers(), newResponse.getCustomers()));
+		presentResponse.setAdditionals(getMap(presentResponse.getAdditionals(), newResponse.getAdditionals()));
+		
+		// обновляем сервисы и другое
+		presentResponse.setServices(getList(presentResponse.getServices(), newResponse.getServices()));
+		presentResponse.setDocuments(getList(presentResponse.getDocuments(), newResponse.getDocuments()));
+		return presentOrder;
+	}
+	
+	private <T> List<T> getList(List<T> presentList, List<T> newList) {
+		if (newList != null) {
+			if (presentList != null) {
+				presentList.addAll(newList);
+			} else {
+				return newList;
+			}
+		}
+		return presentList;
+	}
+	
+	private <T> Map<String, T> getMap(Map<String, T> presentMap, Map<String, T> newMap) {
+		if (newMap != null) {
+			if (presentMap != null) {
+				presentMap.putAll(newMap);
+			} else {
+				return newMap;
+			}
+		}
+		return presentMap;
 	}
 
 }

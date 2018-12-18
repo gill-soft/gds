@@ -3,12 +3,12 @@ package com.gillsoft.control.service.model;
 public enum Status {
 
 	NEW,
-	RESERVE,
+	BOOKING,
 	CANCEL,
 	CONFIRM,
 	RETURN,
 	NEW_ERROR,
-	RESERVE_ERROR,
+	BOOKING_ERROR,
 	CANCEL_ERROR,
 	CONFIRM_ERROR,
 	RETURN_ERROR

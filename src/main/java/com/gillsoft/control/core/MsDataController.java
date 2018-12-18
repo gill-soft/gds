@@ -29,6 +29,8 @@ import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.MsDataService;
+import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.Status;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Price;
@@ -236,6 +238,10 @@ public class MsDataController {
 		converted.setType(ValueType.valueOf(commission.getVatType().name()));
 		converted.setCurrency(Currency.valueOf(commission.getCurrency().name()));
 		return converted;
+	}
+	
+	public boolean isOrderAvailable(Order order, Status newStatus) {
+		return msService.isOrderAvailable(order, newStatus);
 	}
 	
 	private int getWeight(Commission commission) {

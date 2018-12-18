@@ -4,10 +4,8 @@ public class OrderParams {
 	
 	private long orderId;
 	
-	private long organisationId;
+	private long serviceId;
 	
-	private long userId;
-
 	public long getOrderId() {
 		return orderId;
 	}
@@ -15,21 +13,13 @@ public class OrderParams {
 	public void setOrderId(long orderId) {
 		this.orderId = orderId;
 	}
-
-	public long getOrganisationId() {
-		return organisationId;
+	
+	public long getServiceId() {
+		return serviceId;
 	}
 
-	public void setOrganisationId(long organisationId) {
-		this.organisationId = organisationId;
-	}
-
-	public long getUserId() {
-		return userId;
-	}
-
-	public void setUserId(long userId) {
-		this.userId = userId;
+	public void setServiceId(long serviceId) {
+		this.serviceId = serviceId;
 	}
 
 }

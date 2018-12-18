@@ -10,8 +10,6 @@ import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
-import com.gillsoft.control.service.model.ServiceParams;
-import com.gillsoft.model.ServiceItem;
 
 @Repository
 public class OrderDAOManagerImpl implements OrderDAOManager {
@@ -20,13 +18,8 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch o.orders as ro "
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
-			+ "where o.id = :orderId "
-			+ "and ss.userId = :userId "
-			+ "and ss.created in "
-			+ "(select max(ssMax.created) "
-			+ "from ServiceStatus ssMax "
-			+ "where ssMax.id = ss.id "
-			+ "and ssMax.userId = :userId)";
+			+ "where (:orderId is not null or :serviceId is not null) "
+			+ "and ((o.id = :orderId or :orderId is null) or (rs.id = :serviceId or :serviceId is null))";
 	
 	@Autowired
 	protected SessionFactory sessionFactory;
@@ -42,8 +35,9 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		}
 	}
 
+	@Transactional
 	@Override
-	public Order reserve(Order order) throws ManageException {
+	public Order booking(Order order) throws ManageException {
 		return update(order);
 	}
 
@@ -60,24 +54,20 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_ORDER, Order.class)
 					.setParameter("orderId", params.getOrderId())
-					.setParameter("userId", params.getUserId())
+					.setParameter("serviceId", params.getServiceId())
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getSingleResult();
 		} catch (Exception e) {
 			throw new ManageException("Error when get order", e);
 		}
 	}
 
-	@Override
-	public ServiceItem getService(ServiceParams params) throws ManageException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	@Transactional
 	@Override
 	public Order cancel(Order order) throws ManageException {
 		return update(order);
 	}
 
+	@Transactional
 	@Override
 	public Order returnServices(Order order) throws ManageException {
 		return update(order);
@@ -93,10 +83,10 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		}
 	}
 
+	@Transactional
 	@Override
 	public Order addServices(Order order) throws ManageException {
-		// TODO Auto-generated method stub
-		return null;
+		return update(order);
 	}
 
 	@Override

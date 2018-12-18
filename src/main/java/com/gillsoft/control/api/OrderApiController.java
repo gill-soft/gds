@@ -42,7 +42,7 @@ public class OrderApiController {
 			response = OrderResponse.class)
 	@PostMapping("/{orderId}/cancel")
 	public OrderResponse cancel(@PathVariable long orderId) {
-		return null;
+		return controller.cancel(orderId);
 	}
 	
 	@ApiOperation(value = "Returns the information about selected order",
@@ -56,6 +56,41 @@ public class OrderApiController {
 			response = OrderResponse.class)
 	@GetMapping("/service/{serviceId}")
 	public OrderResponse getService(@PathVariable long serviceId) {
+		return controller.getService(serviceId);
+	}
+	
+	@ApiOperation(value = "Book selected order and return it",
+			response = OrderResponse.class)
+	@PostMapping("/{orderId}/booking")
+	public OrderResponse booking(@PathVariable long orderId) {
+		return controller.booking(orderId);
+	}
+	
+	@ApiOperation(value = "Prepare selected services to return operation and return its",
+			response = OrderResponse.class)
+	@PostMapping("/return/prepare")
+	public OrderResponse prepareReturnServices(@Validated @RequestBody OrderRequest request) {
+		return null;
+	}
+	
+	@ApiOperation(value = "Confirm return operation of selected services and return its",
+			response = OrderResponse.class)
+	@PostMapping("/return/confirm")
+	public OrderResponse returnServices(@Validated @RequestBody OrderRequest request) {
+		return null;
+	}
+	
+	@ApiOperation(value = "Add new services to selected order and return result order",
+			response = OrderResponse.class)
+	@PostMapping("/{orderId}/service/add")
+	public OrderResponse addServices(@PathVariable long orderId, @Validated @RequestBody OrderRequest request) {
+		return controller.addService(orderId, request);
+	}
+	
+	@ApiOperation(value = "Remove selected services from selected order and return result order",
+			response = OrderResponse.class)
+	@PostMapping("/{orderId}/service/remove")
+	public OrderResponse removeServices(@PathVariable long orderId, @RequestBody OrderRequest request) {
 		return null;
 	}
 	

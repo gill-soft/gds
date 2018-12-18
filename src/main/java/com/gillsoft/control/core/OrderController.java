@@ -35,7 +35,6 @@ import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
-import com.gillsoft.ms.entity.User;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -68,6 +67,14 @@ public class OrderController {
 	public OrderResponse create(OrderRequest request) {
 		
 		// проверяем параметры запроса
+			
+		// заказ для сохранения
+		return saveOrder(createInResource(request));
+	}
+	
+	private Order createInResource(OrderRequest request) {
+		
+		// проверяем параметры запроса
 		validator.validateOrderRequest(request);
 		
 		// валидируем обязательные поля для оформления
@@ -86,7 +93,7 @@ public class OrderController {
 				&& !response.getResources().isEmpty()) {
 			
 			// заказ для сохранения
-			return saveOrder(converter.convertToNewOrder(createRequest, result, response));
+			return converter.convertToNewOrder(createRequest, result, response);
 		} else {
 			throw new ApiException("Empty response");
 		}
@@ -164,11 +171,9 @@ public class OrderController {
 		return newRequest;
 	}
 	
-	private List<OrderRequest> confirmRequests(Order order) {
+	private List<OrderRequest> confirmOperationRequests(Order order, String method, Set<Status> statuses) {
 		List<Resource> resources = getResources();
 		List<OrderRequest> requests = new ArrayList<>();
-		
-		Set<Status> statuses = getNewOrderStatuses();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			if (isStatus(statuses, resourceOrder)) {
 			
@@ -195,10 +200,30 @@ public class OrderController {
 		return requests;
 	}
 	
-	private Set<Status> getNewOrderStatuses() {
+	private Set<Status> getStatusesForBooking() {
+		Set<Status> statuses = new HashSet<>();
+		statuses.add(Status.NEW);
+		statuses.add(Status.BOOKING_ERROR);
+		return statuses;
+	}
+	
+	private Set<Status> getStatusesForConfirm() {
+		Set<Status> statuses = new HashSet<>();
+		statuses.add(Status.NEW);
+		statuses.add(Status.BOOKING);
+		statuses.add(Status.BOOKING_ERROR);
+		statuses.add(Status.CONFIRM_ERROR);
+		return statuses;
+	}
+	
+	private Set<Status> getStatusesForCancel() {
 		Set<Status> statuses = new HashSet<>();
 		statuses.add(Status.NEW);
 		statuses.add(Status.CONFIRM_ERROR);
+		statuses.add(Status.CONFIRM);
+		statuses.add(Status.BOOKING);
+		statuses.add(Status.BOOKING_ERROR);
+		statuses.add(Status.CANCEL_ERROR);
 		return statuses;
 	}
 	
@@ -212,7 +237,9 @@ public class OrderController {
 	}
 	
 	private boolean isStatus(Set<Status> statuses, ResourceOrder resourceOrder) {
-		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(s.getStatuses().iterator().next().getStatus()));
+		
+		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
+		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(converter.getLastStatus(s.getStatuses())));
 	}
 	
 	private List<Resource> getResources() {
@@ -248,46 +275,133 @@ public class OrderController {
 		throw new ResourceUnavailableException("User does not has available resources");
 	}
 	
+	public OrderResponse booking(long orderId) {
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, Status.BOOKING)) {
+			throw new NoDataFoundException("Operation is unavailable on order for this user");
+		}
+		// проверяем статус заказа. выкупить можно NEW, RESERV_ERROR
+		Set<Status> statuses = getStatusesForBooking();
+		checkStatus(order, statuses);
+		
+		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_BOOKING, statuses);
+		
+		// подтверждаем в ресурсах
+		List<OrderResponse> responses = service.booking(requests);
+		
+		// преобразовываем и сохраняем
+		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
+		try {
+			manager.booking(order);
+		} catch (ManageException e) {
+			LOGGER.error("Booking order error in db", e);
+		}
+		return response;
+	}
+	
 	public OrderResponse confirm(long orderId) {
 		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, Status.CONFIRM)) {
+			throw new NoDataFoundException("Operation is unavailable on order for this user");
+		}
+		// проверяем статус заказа. выкупить можно NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+		Set<Status> statuses = getStatusesForConfirm();
+		checkStatus(order, statuses);
 		
-		// проверяем статус заказа NEW и CONFIRM_ERROR
-		checkStatus(order, getNewOrderStatuses());
-		
-		List<OrderRequest> requests = confirmRequests(order);
+		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_CONFIRM, statuses);
 		
 		// подтверждаем в ресурсах
 		List<OrderResponse> responses = service.confirm(requests);
 		
 		// преобразовываем и сохраняем
-		OrderResponse response = converter.convertToConfirm(order, requests, responses);
+		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
 		try {
 			manager.confirm(order);
 		} catch (ManageException e) {
-			LOGGER.error("Confirm order error", e);
+			LOGGER.error("Confirm order error in db", e);
+		}
+		return response;
+	}
+	
+	public OrderResponse cancel(long orderId) {
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, Status.CANCEL)) {
+			throw new NoDataFoundException("Operation is unavailable on order for this user");
+		}
+		// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR
+		Set<Status> statuses = getStatusesForCancel();
+		checkStatus(order, statuses);
+		
+		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_CANCEL, statuses);
+		
+		// подтверждаем в ресурсах
+		List<OrderResponse> responses = service.cancel(requests);
+		
+		// преобразовываем и сохраняем
+		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
+		try {
+			manager.cancel(order);
+		} catch (ManageException e) {
+			LOGGER.error("Cancel order error in db", e);
 		}
 		return response;
 	}
 	
 	public OrderResponse getOrder(long orderId) {
-		return converter.getResponse(findOrder(orderId));
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, null)) {
+			throw new NoDataFoundException("Order is unavailable");
+		}
+		return converter.getResponse(order);
 	}
 	
-	public Order findOrder(long orderId) {
+	public OrderResponse getService(long serviceId) {
 		OrderParams params = new OrderParams();
-		User user = dataController.getUser();
-		params.setUserId(user.getId());
+		params.setServiceId(serviceId);
+		Order order = findOrder(params);
+		if (!dataController.isOrderAvailable(order, null)) {
+			throw new NoDataFoundException("Order is unavailable");
+		}
+		return converter.getService(converter.getResponse(order), serviceId);
+	}
+	
+	private Order findOrder(long orderId) {
+		OrderParams params = new OrderParams();
 		params.setOrderId(orderId);
+		return findOrder(params);
+	}
+	
+	private Order findOrder(OrderParams params) {
 		Order order = null;
 		try {
 			order = manager.get(params);
 		} catch (ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("Find order error in db", e);
 		}
 		if (order == null) {
-			throw new NoDataFoundException("Order not found or unavailable");
+			throw new NoDataFoundException("Order not found");
 		}
 		return order;
+	}
+	
+	public OrderResponse addService(long orderId, OrderRequest request) {
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, Status.NEW)) {
+			throw new NoDataFoundException("Operation is unavailable on order for this user");
+		}
+		// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+		Set<Status> statuses = getStatusesForConfirm();
+		checkStatus(order, statuses);
+		
+		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
+		Order newOrder = createInResource(request);
+		order = converter.joinOrders(order, newOrder);
+		try {
+			order = manager.addServices(order);
+		} catch (ManageException e) {
+			LOGGER.error("Add services to order error in db", e);
+		}
+		return converter.getResponse(order);
 	}
 
 }

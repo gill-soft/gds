@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -60,7 +61,6 @@ import com.gillsoft.model.response.TripDocumentsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
-import com.google.common.base.Objects;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -324,7 +324,7 @@ public class TripSearchController {
 	
 	private <T extends Response> T checkResponse(Request request, T response) {
 		if (request != null
-				&& !Objects.equal(request.getId(), response.getId())) {
+				&& !Objects.equals(request.getId(), response.getId())) {
 			throw new ApiException("The response does not match the request");
 		}
 		if (response.getError() != null) {
@@ -395,7 +395,7 @@ public class TripSearchController {
 					response.getVehicles().keySet().removeIf(key -> {
 						for (Segment segment : segments) {
 							if (segment.getVehicle() != null
-									&& Objects.equal(key, segment.getVehicle().getId())) {
+									&& Objects.equals(key, segment.getVehicle().getId())) {
 								return false;
 							}
 						}; return true;});
@@ -404,9 +404,9 @@ public class TripSearchController {
 					response.getOrganisations().keySet().removeIf(key -> {
 						for (Segment segment : segments) {
 							if ((segment.getCarrier() != null
-									&& Objects.equal(key, segment.getCarrier().getId()))
+									&& Objects.equals(key, segment.getCarrier().getId()))
 									|| (segment.getInsurance() != null
-											&& Objects.equal(key, segment.getInsurance().getId()))) {
+											&& Objects.equals(key, segment.getInsurance().getId()))) {
 								return false;
 							}
 						}; return true;});
@@ -414,8 +414,8 @@ public class TripSearchController {
 				if (response.getLocalities() != null) {
 					response.getLocalities().keySet().removeIf(key -> {
 						for (Segment segment : segments) {
-							if (Objects.equal(key, segment.getDeparture().getId())
-									|| Objects.equal(key, segment.getArrival().getId())) {
+							if (Objects.equals(key, segment.getDeparture().getId())
+									|| Objects.equals(key, segment.getArrival().getId())) {
 								return false;
 							}
 						}; return true;});
