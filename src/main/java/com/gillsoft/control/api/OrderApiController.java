@@ -94,4 +94,11 @@ public class OrderApiController {
 		return controller.removeService(orderId, request);
 	}
 	
+	@ApiOperation(value = "Returns the pdf document of selected order",
+			response = OrderResponse.class)
+	@GetMapping("/{orderId}/document")
+	public OrderResponse getDocuments(@PathVariable long orderId) {
+		return controller.getDocuments(orderId);
+	}
+	
 }

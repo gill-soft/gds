@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
+import org.hibernate.Hibernate;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
@@ -43,6 +44,11 @@ public class Order implements Serializable {
 	@Column(nullable = false, columnDefinition = "json")
 	@Convert(converter = JsonResponseConverter.class)
 	private OrderResponse response;
+	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
+	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
+	@Fetch(FetchMode.SELECT)
+	private Set<OrderDocument> documents;
 
 	public long getId() {
 		return id;
@@ -82,6 +88,23 @@ public class Order implements Serializable {
 
 	public void setResponse(OrderResponse response) {
 		this.response = response;
+	}
+
+	public Set<OrderDocument> getDocuments() {
+		return documents;
+	}
+
+	public void setDocuments(Set<OrderDocument> documents) {
+		this.documents = documents;
+	}
+	
+	public void addOrderDocument(OrderDocument orderDocument) {
+		Hibernate.initialize(documents);
+		if (documents == null) {
+			documents = new HashSet<>();
+		}
+		orderDocument.setParent(this);
+		documents.add(orderDocument);
 	}
 
 }

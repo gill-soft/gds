@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +19,13 @@ import org.springframework.stereotype.Component;
 
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.OrderDocument;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatus;
 import com.gillsoft.control.service.model.Status;
+import com.gillsoft.model.Document;
+import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
@@ -138,23 +142,23 @@ public class OrderResponseConverter {
 		
 		// ид сервисов
 		for (ServiceItem service : response.getServices()) {
-			outer:
 			if (service.getId() != null) {
-				for (ResourceOrder resourceOrder : order.getOrders()) {
-					for (ResourceService resourceService : resourceOrder.getServices()) {
-						if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
-							service.setId(String.valueOf(resourceService.getId()));
-							service.setStatus(getLastStatus(resourceService.getStatuses()).name());
-							break outer;
+				out:
+					for (ResourceOrder resourceOrder : order.getOrders()) {
+						for (ResourceService resourceService : resourceOrder.getServices()) {
+							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+								service.setId(String.valueOf(resourceService.getId()));
+								service.setStatus(getLastStatus(resourceService.getStatuses()).name());
+								break out;
+							}
 						}
 					}
-				}
 			}
 		}
 		return response;
 	}
 	
-	public OrderResponse convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
+	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
 			Status confirmStatus, Status errorStatus) {
 		List<ServiceItem> services = new ArrayList<>();
 		Date created = new Date();
@@ -214,44 +218,29 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		return createResponse(order, services);
+		updateResponse(order, services);
+		return order;
 	}
 	
-	private OrderResponse createResponse(Order order, List<ServiceItem> services) {
+	private void updateResponse(Order order, List<ServiceItem> services) {
 		OrderResponse response = new OrderResponse();
 		response.setOrderId(String.valueOf(order.getId()));
 		response.setServices(new ArrayList<>());
 		
 		for (ServiceItem dbItem : order.getResponse().getServices()) {
-			outer:
 			for (ServiceItem service : services) {
 				if (Objects.equals(dbItem.getId(), service.getId())) {
-					
-					ServiceItem responseItem = null;
 					
 					// данные с ошибками не обновляем
 					if (service.getError() == null) {
 						
 						// обновляем полученные данные в самом OrderResponse, который в базе
 						updateServiceData(dbItem, service);
-						responseItem = dbItem;
-					} else {
-						responseItem = service;
 					}
-					for (ResourceOrder resourceOrder : order.getOrders()) {
-						for (ResourceService resourceService : resourceOrder.getServices()) {
-							if (Objects.equals(responseItem.getId(), resourceService.getResourceNativeServiceId())) {
-								responseItem.setId(String.valueOf(resourceService.getId()));
-								responseItem.setStatus(getLastStatus(resourceService.getStatuses()).name());
-								response.getServices().add(responseItem);
-								break outer;
-							}
-						}
-					}
+					break;
 				}
 			}
 		}
-		return response;
 	}
 	
 	private void updateServiceData(ServiceItem service, ServiceItem newData) {
@@ -410,6 +399,78 @@ public class OrderResponseConverter {
 		}
 		updateDictionaries(order.getResponse());
 		return order;
+	}
+	
+	/**
+	 * Добавляет документы в заказ из бд.
+	 */
+	public Order addDocuments(Order order, List<OrderResponse> responses) {
+		for (OrderResponse response : responses) {
+			addDocuments(order, response.getDocuments(), null);
+			if (response.getServices() != null) {
+				for (ServiceItem service : response.getServices()) {
+					addDocuments(order, service.getDocuments(), service);
+				}
+			}
+		}
+		return order;
+	}
+	
+	private void addDocuments(Order order, List<Document> documents, ServiceItem service) {
+		if (documents != null) {
+			for (Document document : documents) {
+				OrderDocument orderDocument = new OrderDocument();
+				orderDocument.setType(document.getType() == null ? DocumentType.TICKET : document.getType());
+				orderDocument.setBase64(document.getBase64());
+				
+				// ищем ид сервиса
+				if (service != null) {
+					out:
+						for (ResourceOrder resourceOrder : order.getOrders()) {
+							for (ResourceService resourceService : resourceOrder.getServices()) {
+								if (Objects.equals(service.getId(),
+										new IdModel().create(resourceService.getResourceNativeServiceId()).getId())) {
+									orderDocument.setServiceId(resourceService.getId());
+									break out;
+								}
+							}
+						}
+				}
+				order.addOrderDocument(orderDocument);
+			}
+		}
+	}
+	
+	/**
+	 * Формирует ответ с документами заказа.
+	 */
+	public OrderResponse getDocumentsResponse(Order order) {
+		OrderResponse response = new OrderResponse();
+		response.setOrderId(String.valueOf(order.getId()));
+		Map<Long, ServiceItem> services = new HashMap<>();
+		for (OrderDocument document : order.getDocuments()) {
+			Document serviceDocument = new Document(document.getType(), document.getBase64());
+			if (document.getServiceId() != 0) {
+				ServiceItem service = services.get(document.getServiceId());
+				if (service == null) {
+					service = new ServiceItem();
+					service.setId(String.valueOf(document.getServiceId()));
+					service.setDocuments(new ArrayList<>());
+					services.put(document.getServiceId(), service);
+				}
+				service.getDocuments().add(serviceDocument);
+			} else {
+				if (response.getDocuments() == null) {
+					response.setDocuments(new ArrayList<>());
+				}
+				response.getDocuments().add(serviceDocument);
+			}
+		}
+		if (response.getDocuments() != null
+				&& response.getDocuments().isEmpty()) {
+			response.setDocuments(null);
+		}
+		return response;
 	}
 
 }

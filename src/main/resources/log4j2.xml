@@ -2,7 +2,7 @@
 <Configuration monitorInterval="10" strict="true">
 	<Properties>
 		<Property name="baseDir" value="/opt/tomcat/logs" />
-		<Property name="filename" value="${baseDir}/warming.log" />
+		<Property name="filename" value="${baseDir}/gds-control.log" />
 	</Properties>
 	<Appenders>
 		<Console name="STDOUT" target="SYSTEM_OUT">

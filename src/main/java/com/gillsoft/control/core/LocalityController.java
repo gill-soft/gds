@@ -15,17 +15,14 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorLocalityService;
-import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
@@ -35,6 +32,7 @@ import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.LocalityRequest;
 import com.gillsoft.model.response.LocalityResponse;
+import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -42,10 +40,6 @@ import com.gillsoft.util.StringUtil;
 public class LocalityController {
 	
 	private static Logger LOGGER = LogManager.getLogger(LocalityController.class);
-	
-	@Autowired
-    @Qualifier("RedisMemoryCache")
-	private CacheHandler cache;
 	
 	@Autowired
 	private AgregatorLocalityService service;

@@ -23,5 +23,7 @@ public interface OrderDAOManager {
 	public Order addServices(Order order) throws ManageException;
 	
 	public Order removeServices(Order order) throws ManageException;
+	
+	public Order getDocuments(OrderParams params) throws ManageException;
 
 }

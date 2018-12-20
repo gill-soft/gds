@@ -21,6 +21,13 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "where (:orderId is not null or :serviceId is not null) "
 			+ "and ((o.id = :orderId or :orderId is null) or (rs.id = :serviceId or :serviceId is null))";
 	
+	private final static String GET_DOCUMENTS = "from Order as o "
+			+ "join fetch o.orders as ro "
+			+ "join fetch ro.services as rs "
+			+ "join fetch rs.statuses as ss "
+			+ "left join fetch o.documents as d "
+			+ "where o.id = :orderId";
+	
 	@Autowired
 	protected SessionFactory sessionFactory;
 
@@ -73,6 +80,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		return update(order);
 	}
 
+	@Transactional
 	@Override
 	public Order update(Order order) throws ManageException {
 		try {
@@ -93,6 +101,19 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	@Override
 	public Order removeServices(Order order) throws ManageException {
 		return update(order);
+	}
+
+	@SuppressWarnings("deprecation")
+	@Transactional(readOnly = true)
+	@Override
+	public Order getDocuments(OrderParams params) throws ManageException {
+		try {
+			return sessionFactory.getCurrentSession().createQuery(GET_DOCUMENTS, Order.class)
+					.setParameter("orderId", params.getOrderId())
+					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getSingleResult();
+		} catch (Exception e) {
+			throw new ManageException("Error when get order documents", e);
+		}
 	}
 
 }

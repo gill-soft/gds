@@ -171,11 +171,12 @@ public class OrderController {
 		return newRequest;
 	}
 	
-	private List<OrderRequest> confirmOperationRequests(Order order, String method, Set<Status> statuses) {
+	private List<OrderRequest> operationRequests(Order order, String method, Set<Status> statuses) {
 		List<Resource> resources = getResources();
 		List<OrderRequest> requests = new ArrayList<>();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
-			if (isStatus(statuses, resourceOrder)) {
+			if (statuses == null
+					|| isStatus(statuses, resourceOrder)) {
 			
 				// проверяем ресурс
 				Resource serviceResource = getResource(resourceOrder.getResourceId(), resources);
@@ -284,19 +285,19 @@ public class OrderController {
 		Set<Status> statuses = getStatusesForBooking();
 		checkStatus(order, statuses);
 		
-		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_BOOKING, statuses);
+		List<OrderRequest> requests = operationRequests(order, Method.ORDER_BOOKING, statuses);
 		
 		// подтверждаем в ресурсах
 		List<OrderResponse> responses = service.booking(requests);
 		
 		// преобразовываем и сохраняем
-		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
+		order = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
 		try {
 			manager.booking(order);
 		} catch (ManageException e) {
 			LOGGER.error("Booking order error in db", e);
 		}
-		return response;
+		return converter.getResponse(order);
 	}
 	
 	public OrderResponse confirm(long orderId) {
@@ -308,19 +309,19 @@ public class OrderController {
 		Set<Status> statuses = getStatusesForConfirm();
 		checkStatus(order, statuses);
 		
-		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_CONFIRM, statuses);
+		List<OrderRequest> requests = operationRequests(order, Method.ORDER_CONFIRM, statuses);
 		
 		// подтверждаем в ресурсах
 		List<OrderResponse> responses = service.confirm(requests);
 		
 		// преобразовываем и сохраняем
-		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
+		order = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
 		try {
 			manager.confirm(order);
 		} catch (ManageException e) {
 			LOGGER.error("Confirm order error in db", e);
 		}
-		return response;
+		return converter.getResponse(order);
 	}
 	
 	public OrderResponse cancel(long orderId) {
@@ -332,19 +333,19 @@ public class OrderController {
 		Set<Status> statuses = getStatusesForCancel();
 		checkStatus(order, statuses);
 		
-		List<OrderRequest> requests = confirmOperationRequests(order, Method.ORDER_CANCEL, statuses);
+		List<OrderRequest> requests = operationRequests(order, Method.ORDER_CANCEL, statuses);
 		
 		// подтверждаем в ресурсах
 		List<OrderResponse> responses = service.cancel(requests);
 		
 		// преобразовываем и сохраняем
-		OrderResponse response = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
+		order = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
 		try {
 			manager.cancel(order);
 		} catch (ManageException e) {
 			LOGGER.error("Cancel order error in db", e);
 		}
-		return response;
+		return converter.getResponse(order);
 	}
 	
 	public OrderResponse getOrder(long orderId) {
@@ -421,6 +422,52 @@ public class OrderController {
 			LOGGER.error("Remove services from order error in db", e);
 		}
 		return converter.getResponse(order);
+	}
+	
+	private Order getOrderDocuments(long orderId) {
+		OrderParams params = new OrderParams();
+		params.setOrderId(orderId);
+		return getOrderDocuments(params);
+	}
+	
+	private Order getOrderDocuments(OrderParams params) {
+		Order order = null;
+		try {
+			order = manager.getDocuments(params);
+		} catch (ManageException e) {
+			LOGGER.error("Find order documents error in db", e);
+		}
+		return order;
+	}
+	
+	public OrderResponse getDocuments(long orderId) {
+		
+		// проверяем билеты в заказе
+		Order order = getOrderDocuments(orderId);
+		if (order.getDocuments() != null
+				&& !order.getDocuments().isEmpty()) {
+			if (!dataController.isOrderAvailable(order, null)) {
+				throw new NoDataFoundException("Order is unavailable");
+			}
+			return converter.getDocumentsResponse(order);
+		}
+		// если нет, то берем у ресурсов и сохраняем что есть
+		if (!dataController.isOrderAvailable(order, null)) {
+			throw new NoDataFoundException("Order is unavailable");
+		}
+		List<OrderRequest> requests = operationRequests(order, Method.ORDER_DOCUMENTS, null);
+		
+		// получаем документы в ресурсах
+		List<OrderResponse> responses = service.getPdfDocuments(requests);
+		
+		// сохраняем документы по заказу
+		order = converter.addDocuments(order, responses);
+		try {
+			order = manager.update(order);
+		} catch (ManageException e) {
+			LOGGER.error("Save documents to order error in db", e);
+		}
+		return converter.getDocumentsResponse(order);
 	}
 	
 }
