@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +28,7 @@ import com.gillsoft.control.service.model.ServiceStatus;
 import com.gillsoft.control.service.model.Status;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
+import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
@@ -110,17 +113,23 @@ public class OrderResponseConverter {
 		}
 		service.setId(new IdModel(resourceId, service.getId()).asString());
 		resourceService.setResourceNativeServiceId(service.getId());
-		resourceService.addStatus(createStatus(created, user, statusType, error));
+		
+		// пересчитанную стоимость сохраняем к статусу
+		resourceService.addStatus(createStatus(created, user, statusType, error, service.getPrice()));
+		
+		// оригинальную стоимость сохраняем в response
+		service.setPrice(service.getPrice().getSource());
 		return resourceService;
 	}
 	
-	private ServiceStatus createStatus(Date created, User user, Status statusType, String error) {
+	private ServiceStatus createStatus(Date created, User user, Status statusType, String error, Price price) {
 		ServiceStatus status = new ServiceStatus();
 		status.setCreated(created);
 		status.setStatus(statusType);
 		status.setUserId(user.getId());
 		status.setOrganisationId(user.getParents().iterator().next().getId());
 		status.setError(error);
+		status.setPrice(price);
 		return status;
 	}
 	
@@ -135,9 +144,10 @@ public class OrderResponseConverter {
 	}
 	
 	public OrderResponse getResponse(Order order) {
-		
-		// устанавливаем ид ордера в респонс и ид сервисов
-		OrderResponse response = order.getResponse();
+		return convertResponse(order, order.getResponse());
+	}
+	
+	private OrderResponse convertResponse(Order order, OrderResponse response) {
 		response.setOrderId(String.valueOf(order.getId()));
 		
 		// ид сервисов
@@ -148,7 +158,14 @@ public class OrderResponseConverter {
 						for (ResourceService resourceService : resourceOrder.getServices()) {
 							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
 								service.setId(String.valueOf(resourceService.getId()));
-								service.setStatus(getLastStatus(resourceService.getStatuses()).name());
+								Status status = getLastStatus(resourceService.getStatuses());
+								service.setStatus(status.name());
+								
+								// устанавливаем стоимость с указанного статуса
+								Price price = getStatusPrice(resourceService.getStatuses(), status);
+								if (price != null) {
+									service.setPrice(price);
+								}
 								break out;
 							}
 						}
@@ -158,7 +175,7 @@ public class OrderResponseConverter {
 		return response;
 	}
 	
-	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
+	public List<ServiceItem> joinServices(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
 			Status confirmStatus, Status errorStatus) {
 		List<ServiceItem> services = new ArrayList<>();
 		Date created = new Date();
@@ -184,7 +201,7 @@ public class OrderResponseConverter {
 								services.add(item);
 								
 								// добавляем статус об ошибке
-								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage()));
+								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
 							}
 							break;
 						}
@@ -200,14 +217,15 @@ public class OrderResponseConverter {
 										service.setId(resourceService.getResourceNativeServiceId());
 										services.add(service);
 										
-										if (!service.getConfirmed()
+										if (service.getConfirmed() != null
+												&& !service.getConfirmed()
 												&& service.getError() == null) {
 											service.setError(new RestError("Error when " + confirmStatus + " order"));
 										}
 										// добавляем статус
 										resourceService.addStatus(createStatus(created, user,
-												service.getConfirmed() ? confirmStatus : errorStatus,
-														service.getError() == null ? null : service.getError().getMessage()));
+												service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
+														service.getError() == null ? null : service.getError().getMessage(), null));
 										break;
 									}
 								}
@@ -218,8 +236,21 @@ public class OrderResponseConverter {
 				}
 			}
 		}
+		return services;
+	}
+	
+	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
+			Status confirmStatus, Status errorStatus) {
+		List<ServiceItem> services = joinServices(order, requests, responses, confirmStatus, errorStatus);
 		updateResponse(order, services);
 		return order;
+	}
+	
+	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
+			Status confirmStatus, Status errorStatus) {
+		OrderResponse response = new OrderResponse();
+		response.setServices(joinServices(order, requests, responses, confirmStatus, errorStatus));
+		return convertResponse(order, response);
 	}
 	
 	private void updateResponse(Order order, List<ServiceItem> services) {
@@ -274,8 +305,41 @@ public class OrderResponseConverter {
 		}
 	}
 	
+	/**
+	 * Возвращает актуальный статус позиции.
+	 */
 	public Status getLastStatus(Set<ServiceStatus> statuses) {
 		return statuses.stream().max(Comparator.comparing(ServiceStatus::getId)).get().getStatus();
+	}
+	
+	/**
+	 * Возвращает стоимость указанного статуса или стоимость с предыдущего
+	 * статуса, если она отсутствует.
+	 */
+	public Price getStatusPrice(Set<ServiceStatus> statuses, Status status) {
+		SortedSet<ServiceStatus> sorted = new TreeSet<>(new Comparator<ServiceStatus>() {
+
+			@Override
+			public int compare(ServiceStatus o1, ServiceStatus o2) {
+				long diff = o1.getId() - o2.getId();
+				if (diff == 0) {
+					return 0;
+				}
+				return diff > 0 ? 1 : -1;
+			}
+		});
+		sorted.addAll(statuses);
+		long statusId = 0;
+		for (ServiceStatus serviceStatus : sorted) {
+			if (serviceStatus.getStatus() == status
+					|| (statusId != 0 && statusId > serviceStatus.getId())) {
+				if (serviceStatus.getPrice() != null) {
+					return serviceStatus.getPrice().getPrice();
+				}
+				statusId = serviceStatus.getId();
+			}
+		}
+		return null;
 	}
 	
 	/**
@@ -379,7 +443,7 @@ public class OrderResponseConverter {
 					for (ResourceService resourceService : resourceOrder.getServices()) {
 						
 						// добавляем статус об удалении позиции
-						resourceService.addStatus(createStatus(created, user, Status.REMOVE, null));
+						resourceService.addStatus(createStatus(created, user, Status.REMOVE, null, null));
 
 						// удаляем сервисы из заказа
 						for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {

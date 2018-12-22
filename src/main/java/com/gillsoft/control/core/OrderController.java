@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -217,6 +219,13 @@ public class OrderController {
 		return statuses;
 	}
 	
+	private Set<Status> getStatusesForReturn() {
+		Set<Status> statuses = new HashSet<>();
+		statuses.add(Status.CONFIRM);
+		statuses.add(Status.RETURN_ERROR);
+		return statuses;
+	}
+	
 	private Set<Status> getStatusesForCancel() {
 		Set<Status> statuses = new HashSet<>();
 		statuses.add(Status.NEW);
@@ -277,10 +286,8 @@ public class OrderController {
 	}
 	
 	public OrderResponse booking(long orderId) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, Status.BOOKING)) {
-			throw new NoDataFoundException("Operation is unavailable on order for this user");
-		}
+		Order order = findOrder(orderId, Status.BOOKING);
+		
 		// проверяем статус заказа. выкупить можно NEW, RESERV_ERROR
 		Set<Status> statuses = getStatusesForBooking();
 		checkStatus(order, statuses);
@@ -301,10 +308,8 @@ public class OrderController {
 	}
 	
 	public OrderResponse confirm(long orderId) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, Status.CONFIRM)) {
-			throw new NoDataFoundException("Operation is unavailable on order for this user");
-		}
+		Order order = findOrder(orderId, Status.CONFIRM);
+		
 		// проверяем статус заказа. выкупить можно NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
 		Set<Status> statuses = getStatusesForConfirm();
 		checkStatus(order, statuses);
@@ -325,10 +330,8 @@ public class OrderController {
 	}
 	
 	public OrderResponse cancel(long orderId) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, Status.CANCEL)) {
-			throw new NoDataFoundException("Operation is unavailable on order for this user");
-		}
+		Order order = findOrder(orderId, Status.CANCEL);
+
 		// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR
 		Set<Status> statuses = getStatusesForCancel();
 		checkStatus(order, statuses);
@@ -349,10 +352,7 @@ public class OrderController {
 	}
 	
 	public OrderResponse getOrder(long orderId) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, null)) {
-			throw new NoDataFoundException("Order is unavailable");
-		}
+		Order order = findOrder(orderId, null, "Order is unavailable");
 		return converter.getResponse(order);
 	}
 	
@@ -364,6 +364,18 @@ public class OrderController {
 			throw new NoDataFoundException("Order is unavailable");
 		}
 		return converter.getService(converter.getResponse(order), serviceId);
+	}
+	
+	private Order findOrder(long orderId, Status status) {
+		return findOrder(orderId, status, "Operation is unavailable on order for this user");
+	}
+	
+	private Order findOrder(long orderId, Status status, String unavailableMessage) {
+		Order order = findOrder(orderId);
+		if (!dataController.isOrderAvailable(order, status)) {
+			throw new NoDataFoundException(unavailableMessage);
+		}
+		return order;
 	}
 	
 	private Order findOrder(long orderId) {
@@ -386,13 +398,10 @@ public class OrderController {
 	}
 	
 	public OrderResponse addService(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, Status.NEW)) {
-			throw new NoDataFoundException("Operation is unavailable on order for this user");
-		}
+		Order order = findOrder(orderId, Status.NEW);
+		
 		// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-		Set<Status> statuses = getStatusesForConfirm();
-		checkStatus(order, statuses);
+		checkStatus(order, getStatusesForConfirm());
 		
 		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
 		Order newOrder = createInResource(request);
@@ -406,13 +415,10 @@ public class OrderController {
 	}
 	
 	public OrderResponse removeService(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId);
-		if (!dataController.isOrderAvailable(order, Status.NEW)) {
-			throw new NoDataFoundException("Operation is unavailable on order for this user");
-		}
+		Order order = findOrder(orderId, Status.NEW);
+
 		// проверяем статус заказа. удалить из заказа можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-		Set<Status> statuses = getStatusesForConfirm();
-		checkStatus(order, statuses);
+		checkStatus(order, getStatusesForConfirm());
 		
 		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
 		order = converter.removeServices(order, request.getServices());
@@ -444,17 +450,14 @@ public class OrderController {
 		
 		// проверяем билеты в заказе
 		Order order = getOrderDocuments(orderId);
-		if (order.getDocuments() != null
-				&& !order.getDocuments().isEmpty()) {
-			if (!dataController.isOrderAvailable(order, null)) {
-				throw new NoDataFoundException("Order is unavailable");
-			}
-			return converter.getDocumentsResponse(order);
-		}
-		// если нет, то берем у ресурсов и сохраняем что есть
 		if (!dataController.isOrderAvailable(order, null)) {
 			throw new NoDataFoundException("Order is unavailable");
 		}
+		if (order.getDocuments() != null
+				&& !order.getDocuments().isEmpty()) {
+			return converter.getDocumentsResponse(order);
+		}
+		// если нет, то берем у ресурсов и сохраняем что есть
 		List<OrderRequest> requests = operationRequests(order, Method.ORDER_DOCUMENTS, null);
 		
 		// получаем документы в ресурсах
@@ -468,6 +471,73 @@ public class OrderController {
 			LOGGER.error("Save documents to order error in db", e);
 		}
 		return converter.getDocumentsResponse(order);
+	}
+	
+	public OrderResponse calcReturn(long orderId, OrderRequest request) {
+		Order order = findOrder(orderId, Status.RETURN);
+		
+		// проверяем статус заказа. выкупить можно CONFIRM, RETURN_ERROR
+		checkStatus(order, getStatusesForReturn());
+		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_PREPARE);
+		
+		List<OrderResponse> responses = service.prepareReturnServices(requests);
+		
+		return converter.convertToReturnCalc(order, requests, responses, Status.RETURN, Status.RETURN_ERROR);
+	}
+	
+	public OrderResponse confirmReturn(long orderId, OrderRequest request) {
+		Order order = findOrder(orderId, Status.RETURN);
+		
+		// проверяем статус заказа. выкупить можно CONFIRM, RETURN_ERROR
+		checkStatus(order, getStatusesForReturn());
+		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_PREPARE);
+		
+		return null;
+	}
+	
+	private List<OrderRequest> returnRequests(Order order, OrderRequest request, String method) {
+		Set<Status> statuses = getStatusesForReturn();
+		List<OrderRequest> requests = operationRequests(order, method, statuses);
+		
+		// добавляем ид сервисов к возврату
+		// перебираем сформированные запросы и сравниваем с имеющимися заказами в ресурсе
+		// потом перебираем сервисы ресурсов и сравниваем с сервисами в запросе
+		// те заказы, сервисов которых нет, удаляем с запроса
+		// у заказов, которые есть, проверяем сервисы по статусу и добавляем к запросу
+		StringBuilder errorMsg = new StringBuilder();
+		for (Iterator<OrderRequest> iterator = requests.iterator(); iterator.hasNext();) {
+			OrderRequest orderRequest = iterator.next();
+			for (ResourceOrder resourceOrder : order.getOrders()) {
+				if (Objects.equals(orderRequest.getOrderId(), new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId())) {
+					for (ServiceItem service : request.getServices()) {
+						for (ResourceService resourceService : resourceOrder.getServices()) {
+							if (Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
+								if (statuses.contains(converter.getLastStatus(resourceService.getStatuses()))) {
+									
+									// устанавливаем ид ресурса и добавляем в запрос
+									service.setId(new IdModel().create(resourceService.getResourceNativeServiceId()).getId());
+									if (orderRequest.getServices() == null) {
+										orderRequest.setServices(new ArrayList<>());
+									}
+									orderRequest.getServices().add(service);
+								} else {
+									errorMsg.append("Service id=").append(service.getId()).append(" status is not ").append(Status.CONFIRM).append("\r\n");
+								}
+								break;
+							}
+						}
+					}
+					break;
+				}
+			}
+			if (orderRequest.getServices() == null) {
+				iterator.remove();
+			}
+		}
+		if (errorMsg.length() > 0) {
+			throw new MethodUnavalaibleException(errorMsg.toString().trim());
+		}
+		return requests;
 	}
 	
 }

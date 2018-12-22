@@ -18,6 +18,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch o.orders as ro "
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
+			+ "left join fetch ss.price as p "
 			+ "where (:orderId is not null or :serviceId is not null) "
 			+ "and ((o.id = :orderId or :orderId is null) or (rs.id = :serviceId or :serviceId is null))";
 	
@@ -25,6 +26,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch o.orders as ro "
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
+			+ "left join fetch ss.price as p "
 			+ "left join fetch o.documents as d "
 			+ "where o.id = :orderId";
 	
