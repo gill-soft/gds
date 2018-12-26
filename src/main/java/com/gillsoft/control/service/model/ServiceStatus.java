@@ -129,6 +129,7 @@ public class ServiceStatus implements Serializable {
 			StatusPrice statusPrice = new StatusPrice();
 			statusPrice.setPrice(price);
 			statusPrice.setStatus(this);
+			this.price = statusPrice;
 		}
 	}
 

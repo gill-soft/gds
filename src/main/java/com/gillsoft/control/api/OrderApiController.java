@@ -77,7 +77,7 @@ public class OrderApiController {
 			response = OrderResponse.class)
 	@PostMapping("/{orderId}/return/confirm")
 	public OrderResponse returnServices(@Validated @PathVariable long orderId, @Validated @RequestBody OrderRequest request) {
-		return null;
+		return controller.confirmReturn(orderId, request);
 	}
 	
 	@ApiOperation(value = "Add new services to selected order and return result order",

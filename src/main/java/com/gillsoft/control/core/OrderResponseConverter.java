@@ -201,7 +201,9 @@ public class OrderResponseConverter {
 								services.add(item);
 								
 								// добавляем статус об ошибке
-								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
+								if (confirmStatus != null) {
+									resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
+								}
 							}
 							break;
 						}
@@ -223,9 +225,11 @@ public class OrderResponseConverter {
 											service.setError(new RestError("Error when " + confirmStatus + " order"));
 										}
 										// добавляем статус
-										resourceService.addStatus(createStatus(created, user,
-												service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
-														service.getError() == null ? null : service.getError().getMessage(), null));
+										if (confirmStatus != null) {
+											resourceService.addStatus(createStatus(created, user,
+													service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
+															service.getError() == null ? null : service.getError().getMessage(), service.getPrice()));
+										}
 										break;
 									}
 								}
@@ -241,15 +245,57 @@ public class OrderResponseConverter {
 	
 	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
 			Status confirmStatus, Status errorStatus) {
+		
+		// обнуляем стоимость, чтобы не переписывать созданную при заказе
+		for (OrderResponse orderResponse : responses) {
+			if (orderResponse.getServices() != null) {
+				for (ServiceItem service : orderResponse.getServices()) {
+					service.setPrice(null);
+				}
+			}
+		}
 		List<ServiceItem> services = joinServices(order, requests, responses, confirmStatus, errorStatus);
 		updateResponse(order, services);
 		return order;
 	}
 	
-	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
-			Status confirmStatus, Status errorStatus) {
+	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		OrderResponse response = new OrderResponse();
-		response.setServices(joinServices(order, requests, responses, confirmStatus, errorStatus));
+		response.setServices(joinServices(order, requests, responses, null, null));
+		recalcReturn(response);
+		return convertResponse(order, response);
+	}
+	
+	private void recalcReturn(OrderResponse response) {
+		for (ServiceItem service : response.getServices()) {
+			service.setPrice(dataController.recalculateReturn(service.getPrice()));
+		}
+	}
+	
+	public OrderResponse convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
+		
+		// пересчитываем стоимости возвратов
+		for (OrderResponse orderResponse : returnResponses) {
+			if (orderResponse.getServices() != null) {
+				for (ServiceItem service : orderResponse.getServices()) {
+					Price price = service.getPrice();
+					if (price == null) {
+						for (OrderResponse calcResponse : calcResponses) {
+							if (calcResponse.getServices() != null) {
+								Stream<ServiceItem> finded = calcResponse.getServices().stream().filter(s -> Objects.equals(s.getId(), service.getId()));
+								if (finded != null) {
+									price = finded.findFirst().get().getPrice();
+									break;
+								}
+							}
+						}
+					}
+					service.setPrice(dataController.recalculateReturn(price));
+				}
+			}
+		}
+		OrderResponse response = new OrderResponse();
+		response.setServices(joinServices(order, requests, returnResponses, Status.RETURN, Status.RETURN_ERROR));
 		return convertResponse(order, response);
 	}
 	

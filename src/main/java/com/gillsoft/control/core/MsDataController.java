@@ -168,6 +168,10 @@ public class MsDataController {
 		return price;// TODO Calculator.calculateResource(price, getUser(), currency);
 	}
 	
+	public Price recalculateReturn(Price price) {
+		return price;// TODO
+	}
+	
 	public Collection<com.gillsoft.model.Commission> getCommissions(Segment segment) {
 		User user = getUser();
 		if (user != null) {

@@ -243,7 +243,8 @@ public class OrderController {
 				return;
 			}
 		}
-		throw new MethodUnavalaibleException("Order status is not " + Status.NEW);
+		throw new MethodUnavalaibleException("Order status is not one of "
+				+ String.join(", ", statuses.stream().map(s -> s.name()).collect(Collectors.toSet())));
 	}
 	
 	private boolean isStatus(Set<Status> statuses, ResourceOrder resourceOrder) {
@@ -476,23 +477,34 @@ public class OrderController {
 	public OrderResponse calcReturn(long orderId, OrderRequest request) {
 		Order order = findOrder(orderId, Status.RETURN);
 		
-		// проверяем статус заказа. выкупить можно CONFIRM, RETURN_ERROR
+		// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
 		checkStatus(order, getStatusesForReturn());
 		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_PREPARE);
 		
 		List<OrderResponse> responses = service.prepareReturnServices(requests);
 		
-		return converter.convertToReturnCalc(order, requests, responses, Status.RETURN, Status.RETURN_ERROR);
+		return converter.convertToReturnCalc(order, requests, responses);
 	}
 	
 	public OrderResponse confirmReturn(long orderId, OrderRequest request) {
 		Order order = findOrder(orderId, Status.RETURN);
 		
-		// проверяем статус заказа. выкупить можно CONFIRM, RETURN_ERROR
+		// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
 		checkStatus(order, getStatusesForReturn());
-		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_PREPARE);
+		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_CONFIRM);
 		
-		return null;
+		// получаем стоимости возврата на случай, если они не будут возвращены в самом возврате
+		List<OrderResponse> calcResponses = service.prepareReturnServices(requests);
+		
+		// возвращаем сервисы
+		List<OrderResponse> returnResponses = service.returnServices(requests);
+		OrderResponse response = converter.convertToReturn(order, requests, returnResponses, calcResponses);
+		try {
+			manager.returnServices(order);
+		} catch (ManageException e) {
+			LOGGER.error("Return services error in db", e);
+		}
+		return response;
 	}
 	
 	private List<OrderRequest> returnRequests(Order order, OrderRequest request, String method) {
