@@ -229,8 +229,9 @@ public class OrderController {
 	private Set<Status> getStatusesForCancel() {
 		Set<Status> statuses = new HashSet<>();
 		statuses.add(Status.NEW);
-		statuses.add(Status.CONFIRM_ERROR);
+		statuses.add(Status.NEW_ERROR);
 		statuses.add(Status.CONFIRM);
+		statuses.add(Status.CONFIRM_ERROR);
 		statuses.add(Status.BOOKING);
 		statuses.add(Status.BOOKING_ERROR);
 		statuses.add(Status.CANCEL_ERROR);

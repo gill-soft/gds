@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.Status;
+import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -46,6 +47,14 @@ public interface MsDataService {
 	 * @return Список комиссий.
 	 */
 	public List<Commission> getAllCommissions();
+	
+	/**
+	 * Возвращает список всех существующих условий возвратов с родетельскими
+	 * объектами, к которым принадлежит условие.
+	 * 
+	 * @return Список условий возврата.
+	 */
+	public List<ReturnCondition> getAllReturnConditions();
 	
 	/**
 	 * Проверяет доступна ли операция по переводу позиций заказа в указанный

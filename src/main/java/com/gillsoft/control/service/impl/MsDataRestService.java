@@ -27,6 +27,7 @@ import com.gillsoft.model.ResponseError;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.User;
 
 @Service
@@ -37,6 +38,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final Object synch = new Object();
 	
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
+	
+	private static final String ALL_RETURN_CONDITIONS = "condition/all_with_parents";
 	
 	private static final String GET_USER = "user/by_name_with_parents/{0}";
 	
@@ -119,6 +122,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	public boolean isOrderAvailable(Order order, Status newStatus) {
 		// TODO Auto-generated method stub
 		return true;
+	}
+
+	@Override
+	public List<ReturnCondition> getAllReturnConditions() {
+		return getResult(ALL_RETURN_CONDITIONS, null, new ParameterizedTypeReference<List<ReturnCondition>>() { });
 	}
 
 }

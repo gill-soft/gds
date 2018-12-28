@@ -262,14 +262,10 @@ public class OrderResponseConverter {
 	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		OrderResponse response = new OrderResponse();
 		response.setServices(joinServices(order, requests, responses, null, null));
-		recalcReturn(response);
-		return convertResponse(order, response);
-	}
-	
-	private void recalcReturn(OrderResponse response) {
 		for (ServiceItem service : response.getServices()) {
-			service.setPrice(dataController.recalculateReturn(service.getPrice()));
+			service.setPrice(dataController.recalculateReturn(getSegment(order, service), service.getPrice()));
 		}
+		return convertResponse(order, response);
 	}
 	
 	public OrderResponse convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
@@ -290,13 +286,37 @@ public class OrderResponseConverter {
 							}
 						}
 					}
-					service.setPrice(dataController.recalculateReturn(price));
+					service.setPrice(dataController.recalculateReturn(getSegment(order, service), price));
 				}
 			}
 		}
 		OrderResponse response = new OrderResponse();
 		response.setServices(joinServices(order, requests, returnResponses, Status.RETURN, Status.RETURN_ERROR));
 		return convertResponse(order, response);
+	}
+	
+	/*
+	 * Возвращает сегмент рейса, по переданному сервису.
+	 */
+	private Segment getSegment(Order order, ServiceItem service) {
+		String serviceId = null;
+		IdModel model = new IdModel().create(service.getId());
+		if (model != null) {
+			serviceId = new IdModel().create(service.getId()).getId();
+		}
+		for (ServiceItem item : order.getResponse().getServices()) {
+			String itemId = new IdModel().create(item.getId()).getId();
+			if (Objects.equals(itemId, service.getId())
+					|| Objects.equals(itemId, serviceId)) {
+				if (item.getSegment() != null
+						&& order.getResponse().getSegments() != null) {
+					return order.getResponse().getSegments().get(item.getSegment().getId());
+				} else {
+					return null;
+				}
+			}
+		}
+		return null;
 	}
 	
 	private void updateResponse(Order order, List<ServiceItem> services) {
