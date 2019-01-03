@@ -3,7 +3,6 @@ package com.gillsoft.control.core;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,12 +73,8 @@ public class MsDataController {
 			return null;
 		}
 		String userName = authentication.getName();
-//		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
-//				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 1800000l);
-		Resource resource = new Resource();
-		resource.setId(200);
-		resource.setHost("http://localhost:8080/matrix");
-		return Collections.singletonList(resource);
+		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
+				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 1800000l);
 	}
 	
 	public ResourceParams createResourceParams(long resourceId) {
@@ -236,7 +231,7 @@ public class MsDataController {
 				entities.add(parent);
 			}
 			if (segment != null) {
-				// TODO add segment object's ids
+				// TODO add segment object's ids which mapping in system
 			}
 			return entities;
 		}

@@ -66,6 +66,9 @@ public class OrderController {
 	@Autowired
 	private OrderDAOManager manager;
 	
+	@Autowired
+	private OperationLocker locker;
+	
 	public OrderResponse create(OrderRequest request) {
 		
 		// проверяем параметры запроса
@@ -288,69 +291,105 @@ public class OrderController {
 	}
 	
 	public OrderResponse booking(long orderId) {
-		Order order = findOrder(orderId, Status.BOOKING);
-		
-		// проверяем статус заказа. выкупить можно NEW, RESERV_ERROR
-		Set<Status> statuses = getStatusesForBooking();
-		checkStatus(order, statuses);
-		
-		List<OrderRequest> requests = operationRequests(order, Method.ORDER_BOOKING, statuses);
-		
-		// подтверждаем в ресурсах
-		List<OrderResponse> responses = service.booking(requests);
-		
-		// преобразовываем и сохраняем
-		order = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
 		try {
-			manager.booking(order);
-		} catch (ManageException e) {
-			LOGGER.error("Booking order error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+		
+			Order order = findOrder(orderId, Status.BOOKING);
+			
+			// проверяем статус заказа. выкупить можно NEW, RESERV_ERROR
+			Set<Status> statuses = getStatusesForBooking();
+			checkStatus(order, statuses);
+			
+			List<OrderRequest> requests = operationRequests(order, Method.ORDER_BOOKING, statuses);
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+						
+			// подтверждаем в ресурсах
+			List<OrderResponse> responses = service.booking(requests);
+			
+			// преобразовываем и сохраняем
+			order = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
+			try {
+				manager.booking(order);
+			} catch (ManageException e) {
+				LOGGER.error("Booking order error in db", e);
+			}
+			return converter.getResponse(order);
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return converter.getResponse(order);
 	}
 	
 	public OrderResponse confirm(long orderId) {
-		Order order = findOrder(orderId, Status.CONFIRM);
-		
-		// проверяем статус заказа. выкупить можно NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-		Set<Status> statuses = getStatusesForConfirm();
-		checkStatus(order, statuses);
-		
-		List<OrderRequest> requests = operationRequests(order, Method.ORDER_CONFIRM, statuses);
-		
-		// подтверждаем в ресурсах
-		List<OrderResponse> responses = service.confirm(requests);
-		
-		// преобразовываем и сохраняем
-		order = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
 		try {
-			manager.confirm(order);
-		} catch (ManageException e) {
-			LOGGER.error("Confirm order error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+			
+			Order order = findOrder(orderId, Status.CONFIRM);
+			
+			// проверяем статус заказа. выкупить можно NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+			Set<Status> statuses = getStatusesForConfirm();
+			checkStatus(order, statuses);
+			
+			List<OrderRequest> requests = operationRequests(order, Method.ORDER_CONFIRM, statuses);
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+			
+			// подтверждаем в ресурсах
+			List<OrderResponse> responses = service.confirm(requests);
+			
+			// преобразовываем и сохраняем
+			order = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
+			try {
+				manager.confirm(order);
+			} catch (ManageException e) {
+				LOGGER.error("Confirm order error in db", e);
+			}
+			return converter.getResponse(order);
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return converter.getResponse(order);
 	}
 	
 	public OrderResponse cancel(long orderId) {
-		Order order = findOrder(orderId, Status.CANCEL);
-
-		// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR
-		Set<Status> statuses = getStatusesForCancel();
-		checkStatus(order, statuses);
-		
-		List<OrderRequest> requests = operationRequests(order, Method.ORDER_CANCEL, statuses);
-		
-		// подтверждаем в ресурсах
-		List<OrderResponse> responses = service.cancel(requests);
-		
-		// преобразовываем и сохраняем
-		order = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
 		try {
-			manager.cancel(order);
-		} catch (ManageException e) {
-			LOGGER.error("Cancel order error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+		
+			Order order = findOrder(orderId, Status.CANCEL);
+
+			// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR
+			Set<Status> statuses = getStatusesForCancel();
+			checkStatus(order, statuses);
+			
+			List<OrderRequest> requests = operationRequests(order, Method.ORDER_CANCEL, statuses);
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+			
+			// подтверждаем в ресурсах
+			List<OrderResponse> responses = service.cancel(requests);
+			
+			// преобразовываем и сохраняем
+			order = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
+			try {
+				manager.cancel(order);
+			} catch (ManageException e) {
+				LOGGER.error("Cancel order error in db", e);
+			}
+			return converter.getResponse(order);
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return converter.getResponse(order);
 	}
 	
 	public OrderResponse getOrder(long orderId) {
@@ -400,36 +439,60 @@ public class OrderController {
 	}
 	
 	public OrderResponse addService(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId, Status.NEW);
-		
-		// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-		checkStatus(order, getStatusesForConfirm());
-		
-		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
-		Order newOrder = createInResource(request);
-		order = converter.joinOrders(order, newOrder);
 		try {
-			order = manager.addServices(order);
-		} catch (ManageException e) {
-			LOGGER.error("Add services to order error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+		
+			Order order = findOrder(orderId, Status.NEW);
+			
+			// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+			checkStatus(order, getStatusesForConfirm());
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+			
+			// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
+			Order newOrder = createInResource(request);
+			order = converter.joinOrders(order, newOrder);
+			try {
+				order = manager.addServices(order);
+			} catch (ManageException e) {
+				LOGGER.error("Add services to order error in db", e);
+			}
+			return converter.getResponse(order);
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return converter.getResponse(order);
 	}
 	
 	public OrderResponse removeService(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId, Status.NEW);
-
-		// проверяем статус заказа. удалить из заказа можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-		checkStatus(order, getStatusesForConfirm());
-		
-		// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
-		order = converter.removeServices(order, request.getServices());
 		try {
-			order = manager.removeServices(order);
-		} catch (ManageException e) {
-			LOGGER.error("Remove services from order error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+		
+			Order order = findOrder(orderId, Status.NEW);
+	
+			// проверяем статус заказа. удалить из заказа можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
+			checkStatus(order, getStatusesForConfirm());
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+			
+			// создаем заказ в ресурсах, объединяем с имеющимся и сохраняем 
+			order = converter.removeServices(order, request.getServices());
+			try {
+				order = manager.removeServices(order);
+			} catch (ManageException e) {
+				LOGGER.error("Remove services from order error in db", e);
+			}
+			return converter.getResponse(order);
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return converter.getResponse(order);
 	}
 	
 	private Order getOrderDocuments(long orderId) {
@@ -488,24 +551,36 @@ public class OrderController {
 	}
 	
 	public OrderResponse confirmReturn(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId, Status.RETURN);
-		
-		// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
-		checkStatus(order, getStatusesForReturn());
-		List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_CONFIRM);
-		
-		// получаем стоимости возврата на случай, если они не будут возвращены в самом возврате
-		List<OrderResponse> calcResponses = service.prepareReturnServices(requests);
-		
-		// возвращаем сервисы
-		List<OrderResponse> returnResponses = service.returnServices(requests);
-		OrderResponse response = converter.convertToReturn(order, requests, returnResponses, calcResponses);
 		try {
-			manager.returnServices(order);
-		} catch (ManageException e) {
-			LOGGER.error("Return services error in db", e);
+			// блокировка заказа
+			String lockId = locker.lock(orderId);
+		
+			Order order = findOrder(orderId, Status.RETURN);
+			
+			// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
+			checkStatus(order, getStatusesForReturn());
+			List<OrderRequest> requests = returnRequests(order, request, Method.ORDER_RETURN_CONFIRM);
+			
+			// получаем стоимости возврата на случай, если они не будут возвращены в самом возврате
+			List<OrderResponse> calcResponses = service.prepareReturnServices(requests);
+			
+			// проверка блокировки
+			locker.checkLock(orderId, lockId);
+						
+			// возвращаем сервисы
+			List<OrderResponse> returnResponses = service.returnServices(requests);
+			OrderResponse response = converter.convertToReturn(order, requests, returnResponses, calcResponses);
+			try {
+				manager.returnServices(order);
+			} catch (ManageException e) {
+				LOGGER.error("Return services error in db", e);
+			}
+			return response;
+		} finally {
+			
+			// разблокировка заказа
+			locker.unlock(orderId);
 		}
-		return response;
 	}
 	
 	private List<OrderRequest> returnRequests(Order order, OrderRequest request, String method) {

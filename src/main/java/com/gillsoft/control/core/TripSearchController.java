@@ -69,7 +69,7 @@ public class TripSearchController {
 	private static Logger LOGGER = LogManager.getLogger(TripSearchController.class);
 	
 	@Autowired
-    @Qualifier("MemoryCacheHandler")
+    @Qualifier("RedisMemoryCache")
 	private CacheHandler cache;
 	
 	@Autowired
@@ -221,10 +221,10 @@ public class TripSearchController {
 					// проверяем маппинг и формируем запрос на каждый ресурс
 					for (String[] pairs : searchRequest.getLocalityPairs()) {
 						Set<String> fromIds = new HashSet<>();// mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[0]));
-						fromIds.add("76");
+						fromIds.add("10269");
 						if (fromIds != null) {
 							Set<String> toIds = new HashSet<>();// mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[1]));
-							toIds.add("75");
+							toIds.add("5726");
 							if (toIds != null) {
 								TripSearchRequest resourceSearchRequest = new TripSearchRequest();
 								resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());

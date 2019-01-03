@@ -25,6 +25,14 @@ public class RestControllerAdvice {
 		return e.createRestError();
 	}
 	
+	@ExceptionHandler(OperationLockedException.class)
+	@ResponseStatus(HttpStatus.LOCKED)
+	@ResponseBody
+	public RestError lockExceptions(OperationLockedException e) {
+		LOGGER.error("Operation locked exception: " + e.getMessage());
+		return e.createRestError();
+	}
+	
 	@ExceptionHandler(RequestValidateException.class)
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	@ResponseBody
