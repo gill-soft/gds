@@ -81,7 +81,8 @@ public class OrderResponseConverter {
 					for (ServiceItem item : orderResponse.getServices()) {
 						if (item.getError() == null) {
 							Segment segment = null;
-							if (item.getSegment() != null) {
+							if (item.getSegment() != null
+									&& result.getSegments() != null) {
 								setSegment(result.getSegments(), item);
 								segment = result.getSegments().get(item.getSegment().getId());
 							}

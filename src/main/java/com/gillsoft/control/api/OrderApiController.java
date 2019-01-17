@@ -1,5 +1,8 @@
 package com.gillsoft.control.api;
 
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.OrderController;
+import com.gillsoft.control.service.model.Order;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 
@@ -99,6 +103,19 @@ public class OrderApiController {
 	@GetMapping("/{orderId}/document")
 	public OrderResponse getDocuments(@Validated @PathVariable long orderId) {
 		return controller.getDocuments(orderId);
+	}
+	
+	@ApiOperation(value = "Returns the pdf document of selected order",
+			responseContainer = "List", response = OrderResponse.class)
+	@GetMapping("/first/{count}")
+	public List<Order> getOrders(@Validated @PathVariable int count) {
+		return controller.getOrders(count);
+	}
+	
+	@ApiOperation(value = "Report statuses with selected ids")
+	@PostMapping("/report")
+	public void reportStatuses(@RequestBody Set<Long> ids) {
+		controller.reportStatuses(ids);
 	}
 	
 }

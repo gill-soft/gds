@@ -1,5 +1,8 @@
 package com.gillsoft.control.service;
 
+import java.util.List;
+import java.util.Set;
+
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
@@ -25,5 +28,9 @@ public interface OrderDAOManager {
 	public Order removeServices(Order order) throws ManageException;
 	
 	public Order getDocuments(OrderParams params) throws ManageException;
+	
+	public List<Order> getOrders(OrderParams params) throws ManageException;
+	
+	public void reportStatuses(Set<Long> ids) throws ManageException;
 
 }

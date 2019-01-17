@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.NoDataFoundException;
+import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.OrderDAOManager;
@@ -626,6 +627,31 @@ public class OrderController {
 			throw new MethodUnavalaibleException(errorMsg.toString().trim());
 		}
 		return requests;
+	}
+	
+	public List<Order> getOrders(int count) {
+		
+		// проверяем период выборки - не больше одного дня
+		if (count > 1000) {
+			throw new RequestValidateException("To many rows by request.");
+		}
+		OrderParams params = new OrderParams();
+		params.setCount(count);
+		try {
+			return manager.getOrders(params);
+		} catch (ManageException e) {
+			LOGGER.error("Get orders error in db", e);
+			throw new ApiException(e);
+		}
+	}
+	
+	public void reportStatuses(Set<Long> ids) {
+		try {
+			manager.reportStatuses(ids);
+		} catch (ManageException e) {
+			LOGGER.error("Report statuses error in db", e);
+			throw new ApiException(e);
+		}
 	}
 	
 }

@@ -1,5 +1,8 @@
 package com.gillsoft.control.service.impl;
 
+import java.util.List;
+import java.util.Set;
+
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +32,17 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "left join fetch ss.price as p "
 			+ "left join fetch o.documents as d "
 			+ "where o.id = :orderId";
+	
+	private final static String GET_ORDERS = "from Order as o "
+			+ "join fetch o.orders as ro "
+			+ "join fetch ro.services as rs "
+			+ "join fetch rs.statuses as ss "
+			+ "left join fetch ss.price as p "
+			+ "where ss.reported is false";
+	
+	private final static String REPORT_STATUSES = "update ServiceStatus ss "
+			+ "set ss.reported = true "
+			+ "where ss.id in (:ids)";
 	
 	@Autowired
 	protected SessionFactory sessionFactory;
@@ -115,6 +129,30 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getSingleResult();
 		} catch (Exception e) {
 			throw new ManageException("Error when get order documents", e);
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	@Transactional(readOnly = true)
+	@Override
+	public List<Order> getOrders(OrderParams params) throws ManageException {
+		try {
+			return sessionFactory.getCurrentSession().createQuery(GET_ORDERS, Order.class)
+					.setMaxResults(params.getCount())
+					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
+		} catch (Exception e) {
+			throw new ManageException("Error when get orders", e);
+		}
+	}
+
+	@Transactional
+	@Override
+	public void reportStatuses(Set<Long> ids) throws ManageException {
+		try {
+			sessionFactory.getCurrentSession().createQuery(REPORT_STATUSES)
+					.setParameter("ids", ids).executeUpdate();
+		} catch (Exception e) {
+			throw new ManageException("Error when report statuses", e);
 		}
 	}
 

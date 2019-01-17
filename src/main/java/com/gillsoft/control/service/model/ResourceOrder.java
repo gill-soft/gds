@@ -21,8 +21,13 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 @Entity
 @Table(name = "resource_orders")
+@JsonInclude(Include.NON_NULL)
 public class ResourceOrder implements Serializable {
 
 	private static final long serialVersionUID = -770634921856730159L;
@@ -45,6 +50,7 @@ public class ResourceOrder implements Serializable {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+	@JsonIgnore
 	private Order parent;
 
 	public long getId() {

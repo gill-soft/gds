@@ -21,10 +21,14 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.gillsoft.model.response.OrderResponse;
 
 @Entity
 @Table(name = "orders")
+@JsonInclude(Include.NON_NULL)
 public class Order implements Serializable {
 
 	private static final long serialVersionUID = -3584245107941218642L;
@@ -48,6 +52,7 @@ public class Order implements Serializable {
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
+	@JsonIgnore
 	private Set<OrderDocument> documents;
 
 	public long getId() {

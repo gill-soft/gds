@@ -22,10 +22,14 @@ import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.gillsoft.model.Price;
 
 @Entity
 @Table(name = "service_statuses")
+@JsonInclude(Include.NON_NULL)
 public class ServiceStatus implements Serializable {
 
 	private static final long serialVersionUID = 7197097579192677781L;
@@ -53,12 +57,15 @@ public class ServiceStatus implements Serializable {
 	
 	@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_service_id", nullable = false)
+	@JsonIgnore
 	private ResourceService parent;
 	
 	@OneToOne(fetch = FetchType.LAZY, mappedBy = "status", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
 	private StatusPrice price;
+	
+	private boolean reported;
 
 	public long getId() {
 		return id;
@@ -131,6 +138,14 @@ public class ServiceStatus implements Serializable {
 			statusPrice.setStatus(this);
 			this.price = statusPrice;
 		}
+	}
+
+	public boolean isReported() {
+		return reported;
+	}
+
+	public void setReported(boolean reported) {
+		this.reported = reported;
 	}
 
 }

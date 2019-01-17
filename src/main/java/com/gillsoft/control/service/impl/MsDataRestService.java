@@ -59,7 +59,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		String auth = Config.getMsLogin() + ":" + Config.getMsPassword();
 		byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes());
 		String authHeader = "Basic " + new String(encodedAuth);
-		headers.add("Authorization", authHeader);
+		headers.add(HttpHeaders.AUTHORIZATION, authHeader);
 		return headers;
 	}
 
