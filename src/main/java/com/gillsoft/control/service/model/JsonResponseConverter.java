@@ -12,6 +12,9 @@ public class JsonResponseConverter implements AttributeConverter<OrderResponse, 
 
 	@Override
 	public String convertToDatabaseColumn(OrderResponse response) {
+		if (response == null) {
+			return null;
+		}
 		try {
 			return StringUtil.objectToJsonString(response);
 		} catch (JsonProcessingException e) {
@@ -21,6 +24,9 @@ public class JsonResponseConverter implements AttributeConverter<OrderResponse, 
 
 	@Override
 	public OrderResponse convertToEntityAttribute(String value) {
+		if (value == null) {
+			return null;
+		}
 		try {
 			return StringUtil.jsonStringToObject(OrderResponse.class, value);
 		} catch (IOException e) {

@@ -631,14 +631,14 @@ public class OrderController {
 	
 	public List<Order> getOrders(int count) {
 		
-		// проверяем период выборки - не больше одного дня
+		// возвращать не больше 1000 заказов
 		if (count > 1000) {
 			throw new RequestValidateException("To many rows by request.");
 		}
 		OrderParams params = new OrderParams();
 		params.setCount(count);
 		try {
-			return manager.getOrders(params);
+			return converter.addPrice(manager.getOrders(params));
 		} catch (ManageException e) {
 			LOGGER.error("Get orders error in db", e);
 			throw new ApiException(e);

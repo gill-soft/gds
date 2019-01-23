@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -392,18 +393,22 @@ public class OrderResponseConverter {
 				if (diff == 0) {
 					return 0;
 				}
-				return diff > 0 ? 1 : -1;
+				return diff > 0 ? -1 : 1;
 			}
 		});
 		sorted.addAll(statuses);
 		long statusId = 0;
 		for (ServiceStatus serviceStatus : sorted) {
-			if (serviceStatus.getStatus() == status
-					|| (statusId != 0 && statusId > serviceStatus.getId())) {
+			if (serviceStatus.getStatus() == status) {
 				if (serviceStatus.getPrice() != null) {
 					return serviceStatus.getPrice().getPrice();
 				}
 				statusId = serviceStatus.getId();
+			}
+			if (statusId != 0 && statusId > serviceStatus.getId()) {
+				if (serviceStatus.getPrice() != null) {
+					return serviceStatus.getPrice().getPrice();
+				}
 			}
 		}
 		return null;
@@ -602,6 +607,25 @@ public class OrderResponseConverter {
 			response.setDocuments(null);
 		}
 		return response;
+	}
+	
+	/**
+	 * Проставляет стоимость статусам, у которых ее нет
+	 */
+	public List<Order> addPrice(List<Order> orders) {
+		for (Order order : orders) {
+			for (ResourceOrder resourceOrder : order.getOrders()) {
+				for (ResourceService resourceService : resourceOrder.getServices()) {
+					Set<ServiceStatus> statuses = new HashSet<>(resourceService.getStatuses());
+					for (ServiceStatus serviceStatus : statuses) {
+						if (serviceStatus.getPrice() == null) {
+							serviceStatus.setPrice(getStatusPrice(statuses, serviceStatus.getStatus()));
+						}
+					}
+				}
+			}
+		}
+		return orders;
 	}
 
 }
