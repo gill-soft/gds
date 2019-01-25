@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -220,11 +219,9 @@ public class TripSearchController {
 					
 					// проверяем маппинг и формируем запрос на каждый ресурс
 					for (String[] pairs : searchRequest.getLocalityPairs()) {
-						Set<String> fromIds = new HashSet<>();// mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[0]));
-						fromIds.add("10269");
+						Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[0]));
 						if (fromIds != null) {
-							Set<String> toIds = new HashSet<>();// mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[1]));
-							toIds.add("5726");
+							Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[1]));
 							if (toIds != null) {
 								TripSearchRequest resourceSearchRequest = new TripSearchRequest();
 								resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
@@ -374,54 +371,63 @@ public class TripSearchController {
 			}
 			TripSearchResponse response = initSearch(searchRequests);
 			
-			// получаем результат сразу же так как он уже в кэше
-			response = getSearchResult(response.getSearchId());
-			
-			if (response.getSegments() != null) {
-				final Collection<Segment> segments = response.getSegments().values();
-					
-				// оставляем в запросе только указанный рейс
+			TripSearchResponse result = new TripSearchResponse();
+			result.setSegments(new HashMap<>());
+			result.setVehicles(new HashMap<>());
+			result.setOrganisations(new HashMap<>());
+			result.setLocalities(new HashMap<>());
+			do {
+				// получаем результат сразу же так как он уже в кэше
+				response = getSearchResult(response.getSearchId());
 				if (response.getSegments() != null) {
-					response.setTripContainers(null);
-					response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
-					response.getSegments().values().forEach(segment -> {
-						segment.setRoute(null);
-						segment.setSeats(null);
-					});
+					final Collection<Segment> segments = response.getSegments().values();
+						
+					// оставляем в запросе только указанный рейс
+					if (response.getSegments() != null) {
+						response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
+						response.getSegments().values().forEach(segment -> {
+							segment.setRoute(null);
+							segment.setSeats(null);
+						});
+						result.getSegments().putAll(response.getSegments());
+					}
+						
+					// перезаливаем словари
+					if (response.getVehicles() != null) {
+						response.getVehicles().keySet().removeIf(key -> {
+							for (Segment segment : segments) {
+								if (segment.getVehicle() != null
+										&& Objects.equals(key, segment.getVehicle().getId())) {
+									return false;
+								}
+							}; return true;});
+						result.getVehicles().putAll(response.getVehicles());
+					}
+					if (response.getOrganisations() != null) {
+						response.getOrganisations().keySet().removeIf(key -> {
+							for (Segment segment : segments) {
+								if ((segment.getCarrier() != null
+										&& Objects.equals(key, segment.getCarrier().getId()))
+										|| (segment.getInsurance() != null
+												&& Objects.equals(key, segment.getInsurance().getId()))) {
+									return false;
+								}
+							}; return true;});
+						result.getOrganisations().putAll(response.getOrganisations());
+					}
+					if (response.getLocalities() != null) {
+						response.getLocalities().keySet().removeIf(key -> {
+							for (Segment segment : segments) {
+								if (Objects.equals(key, segment.getDeparture().getId())
+										|| Objects.equals(key, segment.getArrival().getId())) {
+									return false;
+								}
+							}; return true;});
+						result.getLocalities().putAll(response.getLocalities());
+					}
 				}
-					
-				// перезаливаем словари
-				if (response.getVehicles() != null) {
-					response.getVehicles().keySet().removeIf(key -> {
-						for (Segment segment : segments) {
-							if (segment.getVehicle() != null
-									&& Objects.equals(key, segment.getVehicle().getId())) {
-								return false;
-							}
-						}; return true;});
-				}
-				if (response.getOrganisations() != null) {
-					response.getOrganisations().keySet().removeIf(key -> {
-						for (Segment segment : segments) {
-							if ((segment.getCarrier() != null
-									&& Objects.equals(key, segment.getCarrier().getId()))
-									|| (segment.getInsurance() != null
-											&& Objects.equals(key, segment.getInsurance().getId()))) {
-								return false;
-							}
-						}; return true;});
-				}
-				if (response.getLocalities() != null) {
-					response.getLocalities().keySet().removeIf(key -> {
-						for (Segment segment : segments) {
-							if (Objects.equals(key, segment.getDeparture().getId())
-									|| Objects.equals(key, segment.getArrival().getId())) {
-								return false;
-							}
-						}; return true;});
-				}
-				return response;
-			}
+			} while (response.getSearchId() != null);
+			return result;
 		} catch (Exception e) {
 			LOGGER.error("Error when search selected trips", e);
 		}

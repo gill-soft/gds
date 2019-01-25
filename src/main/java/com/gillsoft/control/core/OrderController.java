@@ -117,12 +117,8 @@ public class OrderController {
 		TripSearchResponse search = searchController.search(request,
 				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
 		if (search != null) {
-			if (search.getVehicles() != null) {
-				response.getVehicles().putAll(search.getVehicles());
-			}
-			if (search.getOrganisations() != null) {
-				response.getOrganisations().putAll(search.getOrganisations());
-			}
+			response.getVehicles().putAll(search.getVehicles());
+			response.getOrganisations().putAll(search.getOrganisations());
 			response.getLocalities().putAll(search.getLocalities());
 			response.getSegments().putAll(search.getSegments());
 		}
