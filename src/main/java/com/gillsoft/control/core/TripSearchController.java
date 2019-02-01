@@ -44,6 +44,7 @@ import com.gillsoft.model.Seat;
 import com.gillsoft.model.SeatsScheme;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.Tariff;
+import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
@@ -85,6 +86,9 @@ public class TripSearchController {
 	
 	@Autowired
 	private TripSearchMapping tripSearchMapping;
+	
+	@Autowired
+	private FilterController filter;
 	
 	/**
 	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
@@ -187,6 +191,12 @@ public class TripSearchController {
 						
 						// обновляем мапингом рейсы
 						tripSearchMapping.updateSegments(request, searchResponse, result);
+						
+						// применяем фильтр
+						filter.apply(result.getSegments());
+						
+						// удаляем неиспользуемые данныеы
+						updateResponse(result, null);
 					}
 				}
 			}
@@ -380,7 +390,6 @@ public class TripSearchController {
 				// получаем результат сразу же так как он уже в кэше
 				response = getSearchResult(response.getSearchId());
 				if (response.getSegments() != null) {
-					final Collection<Segment> segments = response.getSegments().values();
 						
 					// оставляем в запросе только указанный рейс
 					if (response.getSegments() != null) {
@@ -391,40 +400,7 @@ public class TripSearchController {
 						});
 						result.getSegments().putAll(response.getSegments());
 					}
-						
-					// перезаливаем словари
-					if (response.getVehicles() != null) {
-						response.getVehicles().keySet().removeIf(key -> {
-							for (Segment segment : segments) {
-								if (segment.getVehicle() != null
-										&& Objects.equals(key, segment.getVehicle().getId())) {
-									return false;
-								}
-							}; return true;});
-						result.getVehicles().putAll(response.getVehicles());
-					}
-					if (response.getOrganisations() != null) {
-						response.getOrganisations().keySet().removeIf(key -> {
-							for (Segment segment : segments) {
-								if ((segment.getCarrier() != null
-										&& Objects.equals(key, segment.getCarrier().getId()))
-										|| (segment.getInsurance() != null
-												&& Objects.equals(key, segment.getInsurance().getId()))) {
-									return false;
-								}
-							}; return true;});
-						result.getOrganisations().putAll(response.getOrganisations());
-					}
-					if (response.getLocalities() != null) {
-						response.getLocalities().keySet().removeIf(key -> {
-							for (Segment segment : segments) {
-								if (Objects.equals(key, segment.getDeparture().getId())
-										|| Objects.equals(key, segment.getArrival().getId())) {
-									return false;
-								}
-							}; return true;});
-						result.getLocalities().putAll(response.getLocalities());
-					}
+					updateResponse(response, result);
 				}
 			} while (response.getSearchId() != null);
 			return result;
@@ -432,6 +408,71 @@ public class TripSearchController {
 			LOGGER.error("Error when search selected trips", e);
 		}
 		return null;
+	}
+	
+	private void updateResponse(TripSearchResponse response, TripSearchResponse result) {
+		final Collection<Segment> segments = response.getSegments().values();
+		
+		// перезаливаем словари
+		if (response.getVehicles() != null) {
+			response.getVehicles().keySet().removeIf(key -> {
+				for (Segment segment : segments) {
+					if (segment.getVehicle() != null
+							&& Objects.equals(key, segment.getVehicle().getId())) {
+						return false;
+					}
+				}; return true;});
+			if (result != null) {
+				result.getVehicles().putAll(response.getVehicles());
+			}
+		}
+		if (response.getOrganisations() != null) {
+			response.getOrganisations().keySet().removeIf(key -> {
+				for (Segment segment : segments) {
+					if ((segment.getCarrier() != null
+							&& Objects.equals(key, segment.getCarrier().getId()))
+							|| (segment.getInsurance() != null
+									&& Objects.equals(key, segment.getInsurance().getId()))) {
+						return false;
+					}
+				}; return true;});
+			if (result != null) {
+				result.getOrganisations().putAll(response.getOrganisations());
+			}
+		}
+		if (response.getLocalities() != null) {
+			response.getLocalities().keySet().removeIf(key -> {
+				for (Segment segment : segments) {
+					if (Objects.equals(key, segment.getDeparture().getId())
+							|| Objects.equals(key, segment.getArrival().getId())) {
+						return false;
+					}
+				}; return true;});
+			if (result != null) {
+				result.getLocalities().putAll(response.getLocalities());
+			}
+		}
+		if (response.getTripContainers() != null) {
+			for (TripContainer container : response.getTripContainers()) {
+				if (container.getTrips() != null) {
+					for (Trip trip : container.getTrips()) {
+						if (!response.getSegments().containsKey(trip.getId())) {
+							trip.setId(null);
+						}
+						if (!response.getSegments().containsKey(trip.getBackId())) {
+							trip.setBackId(null);
+						}
+						if (trip.getSegments() != null) {
+							trip.getSegments().removeIf(id -> !response.getSegments().containsKey(id));
+							if (trip.getSegments().isEmpty()) {
+								trip.setSegments(null);
+							}
+						}
+					}
+					container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
+				}
+			}
+		}
 	}
 
 }

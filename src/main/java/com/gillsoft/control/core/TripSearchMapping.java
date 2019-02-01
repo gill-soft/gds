@@ -196,10 +196,10 @@ public class TripSearchMapping {
 			Segment segment = entry.getValue();
 			
 			// устанавливаем ид пунктов с маппинга
-			segment.setDeparture(new Locality(result.getLocalities().get(
-					getKey(resourceId, segment.getDeparture().getId())).getId()));
-			segment.setArrival(new Locality(result.getLocalities().get(
-					getKey(resourceId, segment.getArrival().getId())).getId()));
+			segment.setDeparture(result.getLocalities().get(
+					getKey(resourceId, segment.getDeparture().getId())));
+			segment.setArrival(result.getLocalities().get(
+					getKey(resourceId, segment.getArrival().getId())));
 			
 			setTimeInWay(segment, segment.getDeparture().getId(), segment.getArrival().getId());
 			
@@ -213,30 +213,30 @@ public class TripSearchMapping {
 				mappingObjects(request, vehicles, result.getVehicles(), MapType.BUS,
 						(mapping, lang) -> createVehicle(mapping, lang), null);
 			}
-			// устанавливаем ид транспорта с маппинга
+			// устанавливаем транспорт с маппинга
 			String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
 			if (result.getVehicles().containsKey(vehicleKey)) {
-				segment.setVehicle(new Vehicle(result.getVehicles().get(vehicleKey).getId()));
+				segment.setVehicle(result.getVehicles().get(vehicleKey));
 			}
 			// если перевозчика нет, то добавляем его с маппинга по уникальному номеру рейса
 			if (segment.getCarrier() == null
 					&& !result.getOrganisations().containsKey(tripNumber + "_carrier")) {
 				addOrganisationByTripNumber(tripNumber + "_carrier", result, request, MapType.CARRIER);
 			}
-			// устанавливаем ид перевозчика с маппинга
+			// устанавливаем перевозчика с маппинга
 			String carrierKey = segment.getCarrier() != null ? getKey(resourceId, segment.getCarrier().getId()) : tripNumber + "_carrier";
 			if (result.getOrganisations().containsKey(carrierKey)) {
-				segment.setCarrier(new Organisation(result.getOrganisations().get(carrierKey).getId()));
+				segment.setCarrier(result.getOrganisations().get(carrierKey));
 			}
 			// если страховой нет, то добавляем её с маппинга по уникальному номеру рейса
 			if (segment.getInsurance() == null
 					&& !result.getOrganisations().containsKey(tripNumber + "_insurance")) {
 				addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.INSURANCE);
 			}
-			// устанавливаем ид страховой с маппинга
+			// устанавливаем страховую с маппинга
 			String insuranceKey = segment.getInsurance() != null ? getKey(resourceId, segment.getInsurance().getId()) : tripNumber + "_insurance";
 			if (result.getOrganisations().containsKey(insuranceKey)) {
-				segment.setInsurance(new Organisation(result.getOrganisations().get(insuranceKey).getId()));
+				segment.setInsurance(result.getOrganisations().get(insuranceKey));
 			}
 			// TODO мапинг тарифа
 			
@@ -367,6 +367,17 @@ public class TripSearchMapping {
 	 * Словарям поиска проставляет ид маппинга и убирает ид с самих объектов.
 	 */
 	public void updateResultDictionaries(TripSearchResponse result) {
+		if (result.getSegments().isEmpty()) {
+			result.setSegments(null);
+		} else {
+			for (Segment segment : result.getSegments().values()) {
+				segment.setDeparture(new Locality(segment.getDeparture().getId()));
+				segment.setArrival(new Locality(segment.getArrival().getId()));
+				segment.setVehicle(segment.getVehicle() != null ? new Vehicle(segment.getVehicle().getId()) : null);
+				segment.setCarrier(segment.getCarrier() != null ? new Organisation(segment.getCarrier().getId()) : null);
+				segment.setInsurance(segment.getInsurance() != null ? new Organisation(segment.getInsurance().getId()) : null);
+			}
+		}
 		if (result.getLocalities() != null) {
 			if (result.getLocalities().isEmpty()) {
 				result.setLocalities(null);
@@ -396,9 +407,6 @@ public class TripSearchMapping {
 					return v;
 				}, (v1, v2) -> v1)));
 			}
-		}
-		if (result.getSegments().isEmpty()) {
-			result.setSegments(null);
 		}
 		if (result.getTripContainers().isEmpty()) {
 			result.setTripContainers(null);

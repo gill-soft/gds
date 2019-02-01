@@ -5,6 +5,7 @@ import java.util.List;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.Status;
 import com.gillsoft.ms.entity.ReturnCondition;
+import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -47,6 +48,14 @@ public interface MsDataService {
 	 * @return Список комиссий.
 	 */
 	public List<Commission> getAllCommissions();
+	
+	/**
+	 * Возвращает список всех существующих фильтров с родетельскими объектами, к
+	 * которым принадлежит фильтр.
+	 * 
+	 * @return Список комиссий.
+	 */
+	public List<ServiceFilter> getAllFilters();
 	
 	/**
 	 * Возвращает список всех существующих условий возвратов с родетельскими

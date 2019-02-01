@@ -30,12 +30,12 @@ public class AllCommissionsUpdateTask implements Runnable, Serializable {
 		MsDataService service = ContextProvider.getBean(MsDataService.class);
 		MsDataController dataController = ContextProvider.getBean(MsDataController.class);
 		try {
-			Map<Long, List<BaseEntity>> commissions = dataController.toMap(getCachedList(service));
-			if (commissions == null) {
-				commissions = (Map<Long, List<BaseEntity>>) dataController.getCache().read(params);
+			Map<Long, List<BaseEntity>> entities = dataController.toMap(getCachedList(service));
+			if (entities == null) {
+				entities = (Map<Long, List<BaseEntity>>) dataController.getCache().read(params);
 			}
 			params.put(MemoryCacheHandler.UPDATE_TASK, this);
-			dataController.getCache().write(commissions, params);
+			dataController.getCache().write(entities, params);
 		} catch (IOCacheException e) {
 		}
 	}

@@ -43,6 +43,7 @@ import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
+import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.User;
 
 @Component
@@ -56,6 +57,8 @@ public class MsDataController {
 	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
 	
 	private static final String ALL_RETURN_CONDITIONS_KEY = "all.return.conditions";
+	
+	private static final String ALL_FILTERS_KEY = "all.filters";
 	
 	private static final String USER_KEY = "user.";
 	
@@ -105,6 +108,15 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllReturnConditionsKey(),
 				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 1800000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<Long, List<CodeEntity>> getAllFilters() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllFiltersKey(),
+				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 1800000l);
 	}
 	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {
@@ -220,6 +232,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<ServiceFilter> getFilters() {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return getFilters(entities);
+		}
+		return null;
+	}
+	
 	private List<BaseEntity> getParentEntities(Segment segment) {
 		User user = getUser();
 		if (user != null) {
@@ -258,6 +278,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<ServiceFilter> getFilters(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllFilters());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(e -> (ServiceFilter) e).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
 	public Collection<CodeEntity> getCodeEntities(List<BaseEntity> entities, Map<Long, List<CodeEntity>> childs) {
 		if (childs != null) {
 			
@@ -280,15 +308,15 @@ public class MsDataController {
 				// выбираем сущности, у которых все паренты есть в переданном списке
 				Map<String, CodeEntity> result = new HashMap<>();
 				Set<Long> entityIds = entities.stream().map(BaseEntity::getId).collect(Collectors.toSet());
-				for (CodeEntity commission : mappedChilds.values()) {
-					Set<Long> parentIds = commission.getParents().stream().map(BaseEntity::getId).collect(Collectors.toSet());
+				for (CodeEntity child : mappedChilds.values()) {
+					Set<Long> parentIds = child.getParents().stream().map(BaseEntity::getId).collect(Collectors.toSet());
 					if (entityIds.containsAll(parentIds)) {
 						
 						// берем сущности с одинаковым кодом и оставляем только те, у которых больше веса всех родителей
-						BaseEntity compared = result.get(commission.getCode());
+						BaseEntity compared = result.get(child.getCode());
 						if (compared == null
-								|| getWeight(commission) > getWeight(compared)) {
-							result.put(commission.getCode(), commission);
+								|| getWeight(child) > getWeight(compared)) {
+							result.put(child.getCode(), child);
 						}
 					}
 				}
@@ -341,6 +369,10 @@ public class MsDataController {
 	
 	public static String getAllReturnConditionsKey() {
 		return ALL_RETURN_CONDITIONS_KEY;
+	}
+	
+	public static String getAllFiltersKey() {
+		return ALL_FILTERS_KEY;
 	}
 	
 	public static String getUserCacheKey(String userName) {
