@@ -43,7 +43,7 @@ public class ResourceService implements Serializable {
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
-	private Set<ServiceStatus> statuses;
+	private Set<ServiceStatusEntity> statuses;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_order_id", nullable = false)
@@ -66,15 +66,15 @@ public class ResourceService implements Serializable {
 		this.resourceNativeServiceId = resourceNativeServiceId;
 	}
 
-	public Set<ServiceStatus> getStatuses() {
+	public Set<ServiceStatusEntity> getStatuses() {
 		return statuses;
 	}
 
-	public void setStatuses(Set<ServiceStatus> statuses) {
+	public void setStatuses(Set<ServiceStatusEntity> statuses) {
 		this.statuses = statuses;
 	}
 	
-	public void addStatus(ServiceStatus status) {
+	public void addStatus(ServiceStatusEntity status) {
 		if (statuses == null) {
 			statuses = new HashSet<>();
 		}

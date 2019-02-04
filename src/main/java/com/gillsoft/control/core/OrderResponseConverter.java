@@ -25,14 +25,14 @@ import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderDocument;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
-import com.gillsoft.control.service.model.ServiceStatus;
-import com.gillsoft.control.service.model.Status;
+import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
+import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.User;
@@ -75,7 +75,7 @@ public class OrderResponseConverter {
 					
 					// сервисы ресурса для сохранения
 					currRequest.getServices().forEach(s -> {
-						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), s, Status.NEW_ERROR,
+						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), s, ServiceStatus.NEW_ERROR,
 								orderResponse.getError().getMessage()));
 					});
 				} else {
@@ -94,9 +94,9 @@ public class OrderResponseConverter {
 							} else if (segment != null) {
 								item.setPrice(segment.getPrice());
 							}
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, Status.NEW, null));
+							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW, null));
 						} else {
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, Status.NEW_ERROR,
+							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW_ERROR,
 									item.getError().getMessage()));
 						}
 						result.getServices().add(item);
@@ -107,7 +107,7 @@ public class OrderResponseConverter {
 		return order;
 	}
 	
-	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service, Status statusType, String error) {
+	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service, ServiceStatus statusType, String error) {
 		ResourceService resourceService = new ResourceService();
 		if (service.getId() == null
 				|| service.getId().isEmpty()) {
@@ -124,8 +124,8 @@ public class OrderResponseConverter {
 		return resourceService;
 	}
 	
-	private ServiceStatus createStatus(Date created, User user, Status statusType, String error, Price price) {
-		ServiceStatus status = new ServiceStatus();
+	private ServiceStatusEntity createStatus(Date created, User user, ServiceStatus statusType, String error, Price price) {
+		ServiceStatusEntity status = new ServiceStatusEntity();
 		status.setCreated(created);
 		status.setStatus(statusType);
 		status.setUserId(user.getId());
@@ -160,7 +160,7 @@ public class OrderResponseConverter {
 						for (ResourceService resourceService : resourceOrder.getServices()) {
 							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
 								service.setId(String.valueOf(resourceService.getId()));
-								Status status = getLastStatus(resourceService.getStatuses());
+								ServiceStatus status = getLastStatus(resourceService.getStatuses());
 								service.setStatus(status.name());
 								
 								// устанавливаем стоимость с указанного статуса
@@ -178,7 +178,7 @@ public class OrderResponseConverter {
 	}
 	
 	public List<ServiceItem> joinServices(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
-			Status confirmStatus, Status errorStatus) {
+			ServiceStatus confirmStatus, ServiceStatus errorStatus) {
 		List<ServiceItem> services = new ArrayList<>();
 		Date created = new Date();
 		User user = dataController.getUser();
@@ -246,7 +246,7 @@ public class OrderResponseConverter {
 	}
 	
 	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
-			Status confirmStatus, Status errorStatus) {
+			ServiceStatus confirmStatus, ServiceStatus errorStatus) {
 		
 		// обнуляем стоимость, чтобы не переписывать созданную при заказе
 		for (OrderResponse orderResponse : responses) {
@@ -293,7 +293,7 @@ public class OrderResponseConverter {
 			}
 		}
 		OrderResponse response = new OrderResponse();
-		response.setServices(joinServices(order, requests, returnResponses, Status.RETURN, Status.RETURN_ERROR));
+		response.setServices(joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR));
 		return convertResponse(order, response);
 	}
 	
@@ -376,19 +376,19 @@ public class OrderResponseConverter {
 	/**
 	 * Возвращает актуальный статус позиции.
 	 */
-	public Status getLastStatus(Set<ServiceStatus> statuses) {
-		return statuses.stream().max(Comparator.comparing(ServiceStatus::getId)).get().getStatus();
+	public ServiceStatus getLastStatus(Set<ServiceStatusEntity> statuses) {
+		return statuses.stream().max(Comparator.comparing(ServiceStatusEntity::getId)).get().getStatus();
 	}
 	
 	/**
 	 * Возвращает стоимость указанного статуса или стоимость с предыдущего
 	 * статуса, если она отсутствует.
 	 */
-	public Price getStatusPrice(Set<ServiceStatus> statuses, Status status) {
-		SortedSet<ServiceStatus> sorted = new TreeSet<>(new Comparator<ServiceStatus>() {
+	public Price getStatusPrice(Set<ServiceStatusEntity> statuses, ServiceStatus status) {
+		SortedSet<ServiceStatusEntity> sorted = new TreeSet<>(new Comparator<ServiceStatusEntity>() {
 
 			@Override
-			public int compare(ServiceStatus o1, ServiceStatus o2) {
+			public int compare(ServiceStatusEntity o1, ServiceStatusEntity o2) {
 				long diff = o1.getId() - o2.getId();
 				if (diff == 0) {
 					return 0;
@@ -398,7 +398,7 @@ public class OrderResponseConverter {
 		});
 		sorted.addAll(statuses);
 		long statusId = 0;
-		for (ServiceStatus serviceStatus : sorted) {
+		for (ServiceStatusEntity serviceStatus : sorted) {
 			if (serviceStatus.getStatus() == status) {
 				if (serviceStatus.getPrice() != null) {
 					return serviceStatus.getPrice().getPrice();
@@ -515,7 +515,7 @@ public class OrderResponseConverter {
 					for (ResourceService resourceService : resourceOrder.getServices()) {
 						
 						// добавляем статус об удалении позиции
-						resourceService.addStatus(createStatus(created, user, Status.REMOVE, null, null));
+						resourceService.addStatus(createStatus(created, user, ServiceStatus.REMOVE, null, null));
 
 						// удаляем сервисы из заказа
 						for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {
@@ -616,8 +616,8 @@ public class OrderResponseConverter {
 		for (Order order : orders) {
 			for (ResourceOrder resourceOrder : order.getOrders()) {
 				for (ResourceService resourceService : resourceOrder.getServices()) {
-					Set<ServiceStatus> statuses = new HashSet<>(resourceService.getStatuses());
-					for (ServiceStatus serviceStatus : statuses) {
+					Set<ServiceStatusEntity> statuses = new HashSet<>(resourceService.getStatuses());
+					for (ServiceStatusEntity serviceStatus : statuses) {
 						if (serviceStatus.getPrice() == null) {
 							serviceStatus.setPrice(getStatusPrice(statuses, serviceStatus.getStatus()));
 						}

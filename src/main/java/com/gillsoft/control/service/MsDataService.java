@@ -3,12 +3,12 @@ package com.gillsoft.control.service;
 import java.util.List;
 
 import com.gillsoft.control.service.model.Order;
-import com.gillsoft.control.service.model.Status;
-import com.gillsoft.ms.entity.ReturnCondition;
-import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ReturnCondition;
+import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.User;
 
 public interface MsDataService {
@@ -76,6 +76,6 @@ public interface MsDataService {
 	 *            Статус, в который необходимо перевести заказ.
 	 * @return true - если операция доступна текущему пользователю.
 	 */
-	public boolean isOrderAvailable(Order order, Status newStatus);
+	public boolean isOrderAvailable(Order order, ServiceStatus newStatus);
 	
 }

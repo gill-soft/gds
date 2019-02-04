@@ -31,11 +31,11 @@ import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.commission.Calculator;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.Order;
-import com.gillsoft.control.service.model.Status;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
+import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.ms.entity.BaseEntity;
@@ -347,7 +347,7 @@ public class MsDataController {
 		return converted;
 	}
 	
-	public boolean isOrderAvailable(Order order, Status newStatus) {
+	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
 		return msService.isOrderAvailable(order, newStatus);
 	}
 	

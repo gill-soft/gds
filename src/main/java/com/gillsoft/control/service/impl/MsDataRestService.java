@@ -22,8 +22,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.Order;
-import com.gillsoft.control.service.model.Status;
 import com.gillsoft.model.ResponseError;
+import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -122,7 +122,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	}
 
 	@Override
-	public boolean isOrderAvailable(Order order, Status newStatus) {
+	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
 		// TODO Auto-generated method stub
 		return true;
 	}

@@ -26,11 +26,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.gillsoft.model.Price;
+import com.gillsoft.model.ServiceStatus;
 
 @Entity
 @Table(name = "service_statuses")
 @JsonInclude(Include.NON_NULL)
-public class ServiceStatus implements Serializable {
+public class ServiceStatusEntity implements Serializable {
 
 	private static final long serialVersionUID = 7197097579192677781L;
 	
@@ -43,7 +44,7 @@ public class ServiceStatus implements Serializable {
 	
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
-	private Status status;
+	private ServiceStatus status;
 	
 	@Column(name = "user_id", nullable = false)
 	private long userId;
@@ -83,11 +84,11 @@ public class ServiceStatus implements Serializable {
 		this.created = created;
 	}
 
-	public Status getStatus() {
+	public ServiceStatus getStatus() {
 		return status;
 	}
 
-	public void setStatus(Status status) {
+	public void setStatus(ServiceStatus status) {
 		this.status = status;
 	}
 

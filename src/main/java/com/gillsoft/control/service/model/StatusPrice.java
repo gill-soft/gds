@@ -33,7 +33,7 @@ public class StatusPrice implements Serializable {
 	@OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "status_id", nullable = false)
 	@JsonIgnore
-	private ServiceStatus status;
+	private ServiceStatusEntity status;
 
 	public long getId() {
 		return id;
@@ -51,11 +51,11 @@ public class StatusPrice implements Serializable {
 		this.price = price;
 	}
 
-	public ServiceStatus getStatus() {
+	public ServiceStatusEntity getStatus() {
 		return status;
 	}
 
-	public void setStatus(ServiceStatus status) {
+	public void setStatus(ServiceStatusEntity status) {
 		this.status = status;
 	}
 

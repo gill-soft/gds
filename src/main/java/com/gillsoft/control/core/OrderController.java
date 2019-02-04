@@ -30,10 +30,10 @@ import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
-import com.gillsoft.control.service.model.Status;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.ServiceItem;
+import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.response.TripSearchResponse;
@@ -173,7 +173,7 @@ public class OrderController {
 		return newRequest;
 	}
 	
-	private List<OrderRequest> operationRequests(Order order, String method, Set<Status> statuses) {
+	private List<OrderRequest> operationRequests(Order order, String method, Set<ServiceStatus> statuses) {
 		List<Resource> resources = getResources();
 		List<OrderRequest> requests = new ArrayList<>();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
@@ -203,42 +203,42 @@ public class OrderController {
 		return requests;
 	}
 	
-	private Set<Status> getStatusesForBooking() {
-		Set<Status> statuses = new HashSet<>();
-		statuses.add(Status.NEW);
-		statuses.add(Status.BOOKING_ERROR);
+	private Set<ServiceStatus> getStatusesForBooking() {
+		Set<ServiceStatus> statuses = new HashSet<>();
+		statuses.add(ServiceStatus.NEW);
+		statuses.add(ServiceStatus.BOOKING_ERROR);
 		return statuses;
 	}
 	
-	private Set<Status> getStatusesForConfirm() {
-		Set<Status> statuses = new HashSet<>();
-		statuses.add(Status.NEW);
-		statuses.add(Status.BOOKING);
-		statuses.add(Status.BOOKING_ERROR);
-		statuses.add(Status.CONFIRM_ERROR);
+	private Set<ServiceStatus> getStatusesForConfirm() {
+		Set<ServiceStatus> statuses = new HashSet<>();
+		statuses.add(ServiceStatus.NEW);
+		statuses.add(ServiceStatus.BOOKING);
+		statuses.add(ServiceStatus.BOOKING_ERROR);
+		statuses.add(ServiceStatus.CONFIRM_ERROR);
 		return statuses;
 	}
 	
-	private Set<Status> getStatusesForReturn() {
-		Set<Status> statuses = new HashSet<>();
-		statuses.add(Status.CONFIRM);
-		statuses.add(Status.RETURN_ERROR);
+	private Set<ServiceStatus> getStatusesForReturn() {
+		Set<ServiceStatus> statuses = new HashSet<>();
+		statuses.add(ServiceStatus.CONFIRM);
+		statuses.add(ServiceStatus.RETURN_ERROR);
 		return statuses;
 	}
 	
-	private Set<Status> getStatusesForCancel() {
-		Set<Status> statuses = new HashSet<>();
-		statuses.add(Status.NEW);
-		statuses.add(Status.NEW_ERROR);
-		statuses.add(Status.CONFIRM);
-		statuses.add(Status.CONFIRM_ERROR);
-		statuses.add(Status.BOOKING);
-		statuses.add(Status.BOOKING_ERROR);
-		statuses.add(Status.CANCEL_ERROR);
+	private Set<ServiceStatus> getStatusesForCancel() {
+		Set<ServiceStatus> statuses = new HashSet<>();
+		statuses.add(ServiceStatus.NEW);
+		statuses.add(ServiceStatus.NEW_ERROR);
+		statuses.add(ServiceStatus.CONFIRM);
+		statuses.add(ServiceStatus.CONFIRM_ERROR);
+		statuses.add(ServiceStatus.BOOKING);
+		statuses.add(ServiceStatus.BOOKING_ERROR);
+		statuses.add(ServiceStatus.CANCEL_ERROR);
 		return statuses;
 	}
 	
-	private void checkStatus(Order order, Set<Status> statuses) {
+	private void checkStatus(Order order, Set<ServiceStatus> statuses) {
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			if (isStatus(statuses, resourceOrder)) {
 				return;
@@ -248,7 +248,7 @@ public class OrderController {
 				+ String.join(", ", statuses.stream().map(s -> s.name()).collect(Collectors.toSet())));
 	}
 	
-	private boolean isStatus(Set<Status> statuses, ResourceOrder resourceOrder) {
+	private boolean isStatus(Set<ServiceStatus> statuses, ResourceOrder resourceOrder) {
 		
 		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
 		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(converter.getLastStatus(s.getStatuses())));
@@ -292,10 +292,10 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 		
-			Order order = findOrder(orderId, Status.BOOKING);
+			Order order = findOrder(orderId, ServiceStatus.BOOKING);
 			
 			// проверяем статус заказа. выкупить можно NEW, RESERV_ERROR
-			Set<Status> statuses = getStatusesForBooking();
+			Set<ServiceStatus> statuses = getStatusesForBooking();
 			checkStatus(order, statuses);
 			
 			List<OrderRequest> requests = operationRequests(order, Method.ORDER_BOOKING, statuses);
@@ -307,7 +307,7 @@ public class OrderController {
 			List<OrderResponse> responses = service.booking(requests);
 			
 			// преобразовываем и сохраняем
-			order = converter.convertToConfirm(order, requests, responses, Status.BOOKING, Status.BOOKING_ERROR);
+			order = converter.convertToConfirm(order, requests, responses, ServiceStatus.BOOKING, ServiceStatus.BOOKING_ERROR);
 			try {
 				manager.booking(order);
 			} catch (ManageException e) {
@@ -326,10 +326,10 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 			
-			Order order = findOrder(orderId, Status.CONFIRM);
+			Order order = findOrder(orderId, ServiceStatus.CONFIRM);
 			
 			// проверяем статус заказа. выкупить можно NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-			Set<Status> statuses = getStatusesForConfirm();
+			Set<ServiceStatus> statuses = getStatusesForConfirm();
 			checkStatus(order, statuses);
 			
 			List<OrderRequest> requests = operationRequests(order, Method.ORDER_CONFIRM, statuses);
@@ -341,7 +341,7 @@ public class OrderController {
 			List<OrderResponse> responses = service.confirm(requests);
 			
 			// преобразовываем и сохраняем
-			order = converter.convertToConfirm(order, requests, responses, Status.CONFIRM, Status.CONFIRM_ERROR);
+			order = converter.convertToConfirm(order, requests, responses, ServiceStatus.CONFIRM, ServiceStatus.CONFIRM_ERROR);
 			try {
 				manager.confirm(order);
 			} catch (ManageException e) {
@@ -360,10 +360,10 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 		
-			Order order = findOrder(orderId, Status.CANCEL);
+			Order order = findOrder(orderId, ServiceStatus.CANCEL);
 
 			// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR
-			Set<Status> statuses = getStatusesForCancel();
+			Set<ServiceStatus> statuses = getStatusesForCancel();
 			checkStatus(order, statuses);
 			
 			List<OrderRequest> requests = operationRequests(order, Method.ORDER_CANCEL, statuses);
@@ -375,7 +375,7 @@ public class OrderController {
 			List<OrderResponse> responses = service.cancel(requests);
 			
 			// преобразовываем и сохраняем
-			order = converter.convertToConfirm(order, requests, responses, Status.CANCEL, Status.CANCEL_ERROR);
+			order = converter.convertToConfirm(order, requests, responses, ServiceStatus.CANCEL, ServiceStatus.CANCEL_ERROR);
 			try {
 				manager.cancel(order);
 			} catch (ManageException e) {
@@ -404,11 +404,11 @@ public class OrderController {
 		return converter.getService(converter.getResponse(order), serviceId);
 	}
 	
-	private Order findOrder(long orderId, Status status) {
+	private Order findOrder(long orderId, ServiceStatus status) {
 		return findOrder(orderId, status, "Operation is unavailable on order for this user");
 	}
 	
-	private Order findOrder(long orderId, Status status, String unavailableMessage) {
+	private Order findOrder(long orderId, ServiceStatus status, String unavailableMessage) {
 		Order order = findOrder(orderId);
 		if (!dataController.isOrderAvailable(order, status)) {
 			throw new NoDataFoundException(unavailableMessage);
@@ -440,7 +440,7 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 		
-			Order order = findOrder(orderId, Status.NEW);
+			Order order = findOrder(orderId, ServiceStatus.NEW);
 			
 			// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
 			checkStatus(order, getStatusesForConfirm());
@@ -469,7 +469,7 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 		
-			Order order = findOrder(orderId, Status.NEW);
+			Order order = findOrder(orderId, ServiceStatus.NEW);
 	
 			// проверяем статус заказа. удалить из заказа можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
 			checkStatus(order, getStatusesForConfirm());
@@ -536,7 +536,7 @@ public class OrderController {
 	}
 	
 	public OrderResponse calcReturn(long orderId, OrderRequest request) {
-		Order order = findOrder(orderId, Status.RETURN);
+		Order order = findOrder(orderId, ServiceStatus.RETURN);
 		
 		// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
 		checkStatus(order, getStatusesForReturn());
@@ -552,7 +552,7 @@ public class OrderController {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
 		
-			Order order = findOrder(orderId, Status.RETURN);
+			Order order = findOrder(orderId, ServiceStatus.RETURN);
 			
 			// проверяем статус заказа. вернуть можно CONFIRM, RETURN_ERROR
 			checkStatus(order, getStatusesForReturn());
@@ -581,7 +581,7 @@ public class OrderController {
 	}
 	
 	private List<OrderRequest> returnRequests(Order order, OrderRequest request, String method) {
-		Set<Status> statuses = getStatusesForReturn();
+		Set<ServiceStatus> statuses = getStatusesForReturn();
 		List<OrderRequest> requests = operationRequests(order, method, statuses);
 		
 		// добавляем ид сервисов к возврату
@@ -606,7 +606,7 @@ public class OrderController {
 									}
 									orderRequest.getServices().add(service);
 								} else {
-									errorMsg.append("Service id=").append(service.getId()).append(" status is not ").append(Status.CONFIRM).append("\r\n");
+									errorMsg.append("Service id=").append(service.getId()).append(" status is not ").append(ServiceStatus.CONFIRM).append("\r\n");
 								}
 								break;
 							}
