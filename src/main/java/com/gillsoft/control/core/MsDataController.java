@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +32,9 @@ import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.commission.Calculator;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.ResourceOrder;
+import com.gillsoft.control.service.model.ResourceService;
+import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Price;
@@ -41,6 +45,7 @@ import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
@@ -59,6 +64,8 @@ public class MsDataController {
 	private static final String ALL_RETURN_CONDITIONS_KEY = "all.return.conditions";
 	
 	private static final String ALL_FILTERS_KEY = "all.filters";
+	
+	private static final String ALL_ORDERS_ACCESS_KEY = "all.orders.access";
 	
 	private static final String USER_KEY = "user.";
 	
@@ -119,10 +126,19 @@ public class MsDataController {
 				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 1800000l);
 	}
 	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<Long, List<CodeEntity>> getAllOrdersAccess() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllOrdersAccessKey(),
+				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 1800000l);
+	}
+	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {
 		if (entities != null) {
 			
-			// entity id -> list of commissions
+			// entity id -> list of entities
 			Map<Long, List<BaseEntity>> grouping = new ConcurrentHashMap<>();
 			entities.forEach(entity -> {
 				entity.setParents(new CopyOnWriteArraySet<>(entity.getParents()));
@@ -148,7 +164,12 @@ public class MsDataController {
 		}
 		String userName = authentication.getName();
 		return (User) getFromCache(getUserCacheKey(userName),
-				new UserUpdateTask(userName), () -> msService.getUser(userName), 600000l);
+				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 600000l);
+	}
+	
+	public User getUser(long id) {
+		return (User) getFromCache(getUserCacheKey(id),
+				new UserByIdUpdateTask(id), () -> msService.getUser(id), 600000l);
 	}
 	
 	private Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
@@ -240,8 +261,19 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<OrderAccess> getOrdersAccess(User user) {
+		List<BaseEntity> entities = getParentEntities(user, null);
+		if (entities != null) {
+			return getOrdersAccess(entities);
+		}
+		return null;
+	}
+	
 	private List<BaseEntity> getParentEntities(Segment segment) {
-		User user = getUser();
+		return getParentEntities(getUser(), segment);
+	}
+	
+	private List<BaseEntity> getParentEntities(User user, Segment segment) {
 		if (user != null) {
 			List<BaseEntity> entities = new ArrayList<>();
 			entities.add(user);
@@ -282,6 +314,14 @@ public class MsDataController {
 		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllFilters());
 		if (codeEntities != null) {
 			return codeEntities.stream().map(e -> (ServiceFilter) e).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<OrderAccess> getOrdersAccess(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllOrdersAccess());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(e -> (OrderAccess) e).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -348,7 +388,91 @@ public class MsDataController {
 	}
 	
 	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
-		return msService.isOrderAvailable(order, newStatus);
+		
+		// список пользователей заказа
+		Set<Long> users = new HashSet<>();
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
+					users.add(statusEntity.getUserId());
+				}
+			}
+		}
+		// результат
+		boolean available = false;
+		
+		// текущий пользователь
+		User curr = getUser();
+		
+		// список сущностей иерархии пользователя
+		List<BaseEntity> userEntities = getParentEntities(curr, null);
+		
+		// список доступов к заказу текущего пользователя
+		List<OrderAccess> access = getAvalaibleOrdersAccess(curr, userEntities);
+		for (Long id : users) {
+			
+			// для сервисов принадлежащих текущему пользователю
+			if (curr.getId() == id) {
+				
+				// если доступов нет, то все разрешено
+				if (access == null
+						|| access.isEmpty()) {
+					available = true;
+				} else {
+					available = isServiceStatusAvalaible(order, newStatus, access, id);
+				}
+			// для сервисов других пользователей
+			} else {
+				// получаем статусы, у которых есть дети из списка userEntities
+				List<OrderAccess> currUserAccess = getAvalaibleOrdersAccess(getUser(id), userEntities);
+				available = isServiceStatusAvalaible(order, newStatus, currUserAccess, id);
+			}
+		}
+		return available;
+	}
+	
+	private List<OrderAccess> getAvalaibleOrdersAccess(User user, List<BaseEntity> userEntities) {
+		List<OrderAccess> userAccess = new ArrayList<>();
+		List<OrderAccess> access = getOrdersAccess(user);
+		if (access != null) {
+			for (OrderAccess orderAccess : access) {
+				
+				// если дети доступного статуса содержат хоть какую-нибудь сущность пользователя
+				if (orderAccess.getChilds() != null
+						&& orderAccess.getChilds().stream().anyMatch(c -> userEntities.stream().anyMatch(e -> c.getId() == e.getId()))) {
+					userAccess.add(orderAccess);
+				}
+			}
+		}
+		return userAccess;
+	}
+	
+	private boolean isServiceStatusAvalaible(Order order, ServiceStatus newStatus, List<OrderAccess> access, long userId) {
+		boolean available = false;
+		
+		// если доступы есть, то проверяем статус сервисов
+		// пользователя и статус, в который хотим перевести
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
+					if (statusEntity.getUserId() == userId) {
+						if (isPresentStatus(access, newStatus)) {
+							available = true;
+						} else {
+							
+							// проставляем сервису статус UNAVAILABLE, чтобы пользователь не мог его обрабатывать
+							statusEntity.setPrevStatus(statusEntity.getStatus());
+							statusEntity.setStatus(ServiceStatus.UNAVAILABLE);
+						}
+					}
+				}
+			}
+		}
+		return available;
+	}
+	
+	private boolean isPresentStatus(List<OrderAccess> access, ServiceStatus status) {
+		return access.stream().anyMatch(a -> a.getAvailableStatus() == status);
 	}
 	
 	private int getWeight(BaseEntity entity) {
@@ -375,8 +499,16 @@ public class MsDataController {
 		return ALL_FILTERS_KEY;
 	}
 	
+	public static String getAllOrdersAccessKey() {
+		return ALL_ORDERS_ACCESS_KEY;
+	}
+	
 	public static String getUserCacheKey(String userName) {
 		return USER_KEY + userName;
+	}
+	
+	public static String getUserCacheKey(long id) {
+		return USER_KEY + id;
 	}
 	
 	private interface CacheObjectGetter {

@@ -15,7 +15,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
+import javax.persistence.PrePersist;
+import javax.persistence.PreRemove;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
@@ -65,6 +69,9 @@ public class ServiceStatusEntity implements Serializable {
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
 	private StatusPrice price;
+	
+	@Transient
+	private ServiceStatus prevStatus;
 	
 	private boolean reported;
 
@@ -147,6 +154,23 @@ public class ServiceStatusEntity implements Serializable {
 
 	public void setReported(boolean reported) {
 		this.reported = reported;
+	}
+
+	public ServiceStatus getPrevStatus() {
+		return prevStatus;
+	}
+
+	public void setPrevStatus(ServiceStatus prevStatus) {
+		this.prevStatus = prevStatus;
+	}
+
+	@PreUpdate
+	@PrePersist
+	@PreRemove
+	public void prepareUpdate() {
+		if (prevStatus != null) {
+			status = prevStatus;
+		}
 	}
 
 }

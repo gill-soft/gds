@@ -302,7 +302,7 @@ public class OrderController {
 			
 			// проверка блокировки
 			locker.checkLock(orderId, lockId);
-						
+			
 			// подтверждаем в ресурсах
 			List<OrderResponse> responses = service.booking(requests);
 			
@@ -390,7 +390,7 @@ public class OrderController {
 	}
 	
 	public OrderResponse getOrder(long orderId) {
-		Order order = findOrder(orderId, null, "Order is unavailable");
+		Order order = findOrder(orderId, ServiceStatus.VIEW, "Order is unavailable");
 		return converter.getResponse(order);
 	}
 	
@@ -398,7 +398,7 @@ public class OrderController {
 		OrderParams params = new OrderParams();
 		params.setServiceId(serviceId);
 		Order order = findOrder(params);
-		if (!dataController.isOrderAvailable(order, null)) {
+		if (!dataController.isOrderAvailable(order, ServiceStatus.VIEW)) {
 			throw new NoDataFoundException("Order is unavailable");
 		}
 		return converter.getService(converter.getResponse(order), serviceId);
@@ -512,7 +512,7 @@ public class OrderController {
 		
 		// проверяем билеты в заказе
 		Order order = getOrderDocuments(orderId);
-		if (!dataController.isOrderAvailable(order, null)) {
+		if (!dataController.isOrderAvailable(order, ServiceStatus.VIEW)) {
 			throw new NoDataFoundException("Order is unavailable");
 		}
 		if (order.getDocuments() != null

@@ -2,9 +2,8 @@ package com.gillsoft.control.service;
 
 import java.util.List;
 
-import com.gillsoft.control.service.model.Order;
-import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
@@ -31,6 +30,16 @@ public interface MsDataService {
 	 *         принадлежит.
 	 */
 	public User getUser(String userName);
+	
+	/**
+	 * Находит и возвращает данные о пользователе по его наименованию.
+	 * 
+	 * @param id
+	 *            Ид пользователя.
+	 * @return Найденный пользователь с иерархией организаций, к которым он
+	 *         принадлежит.
+	 */
+	public User getUser(long id);
 	
 	/**
 	 * Возвращает организацию, к которой принадлежит пользователь.
@@ -66,16 +75,11 @@ public interface MsDataService {
 	public List<ReturnCondition> getAllReturnConditions();
 	
 	/**
-	 * Проверяет доступна ли операция по переводу позиций заказа в указанный
-	 * статус newStatus для текущего пользователя. Если newStatus = null, то
-	 * проверяется доступен ли заказ пользователю для поиска.
+	 * Возвращает список всех условий доступов к заказу с родетельскими
+	 * объектами, к которым принадлежит условие доступа.
 	 * 
-	 * @param order
-	 *            Заказ.
-	 * @param newStatus
-	 *            Статус, в который необходимо перевести заказ.
-	 * @return true - если операция доступна текущему пользователю.
+	 * @return Список условий доступа.
 	 */
-	public boolean isOrderAvailable(Order order, ServiceStatus newStatus);
+	public List<OrderAccess> getAllOrdersAccess();
 	
 }

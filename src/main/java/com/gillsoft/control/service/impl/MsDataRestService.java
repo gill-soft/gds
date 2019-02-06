@@ -21,10 +21,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
-import com.gillsoft.control.service.model.Order;
 import com.gillsoft.model.ResponseError;
-import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
@@ -44,7 +43,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String ALL_FILTERS = "filter/all_with_parents";
 	
-	private static final String GET_USER = "user/by_name_with_parents/{0}";
+	private static final String ALL_ORDERS_ACCESS = "order_access/all_with_sub_main";
+	
+	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
+	
+	private static final String GET_USER = "user/{0}";
 	
 	private static final String GET_USER_ORGANISATION = "user/{0}/organisation";
 	
@@ -73,7 +76,16 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 
 	@Override
 	public User getUser(String userName) {
-		return getResultByUser(userName, GET_USER, new ParameterizedTypeReference<User>() { });
+		return getResultByUser(userName, GET_USER_BY_NAME, new ParameterizedTypeReference<User>() { });
+	}
+	
+	@Override
+	public User getUser(long id) {
+		User user = getResultByUser(String.valueOf(id), GET_USER, new ParameterizedTypeReference<User>() { });
+		if (user != null) {
+			return getUser(user.getLogin());
+		}
+		return null;
 	}
 	
 	@Override
@@ -86,8 +98,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		return getResult(ALL_COMMISSIONS, null, new ParameterizedTypeReference<List<Commission>>() { });
 	}
 	
-	private <T> T getResultByUser(String userName, String method, ParameterizedTypeReference<T> type) {
-		return getResult(MessageFormat.format(method, userName), null, type);
+	private <T> T getResultByUser(String userIdentifier, String method, ParameterizedTypeReference<T> type) {
+		return getResult(MessageFormat.format(method, userIdentifier), null, type);
 	}
 	
 	private <T> T getResult(String method, MultiValueMap<String, String> params, ParameterizedTypeReference<T> type) {
@@ -122,12 +134,6 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	}
 
 	@Override
-	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	@Override
 	public List<ReturnCondition> getAllReturnConditions() {
 		return getResult(ALL_RETURN_CONDITIONS, null, new ParameterizedTypeReference<List<ReturnCondition>>() { });
 	}
@@ -135,6 +141,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<ServiceFilter> getAllFilters() {
 		return getResult(ALL_FILTERS, null, new ParameterizedTypeReference<List<ServiceFilter>>() { });
+	}
+
+	@Override
+	public List<OrderAccess> getAllOrdersAccess() {
+		return getResult(ALL_ORDERS_ACCESS, null, new ParameterizedTypeReference<List<OrderAccess>>() { });
 	}
 
 }
