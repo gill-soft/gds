@@ -269,13 +269,33 @@ public class TripSearchController {
 		Route route = response.getRoute();
 		if (route.getPath() != null) {
 			for (RoutePoint point : route.getPath()) {
-				localities.put(point.getLocality().getId(), point.getLocality());
+				if (point.getLocality() != null) {
+					if (point.getLocality().getId() != null) {
+						localities.put(point.getLocality().getId(), point.getLocality());
+					}
+					if (point.getLocality().getParent() != null
+							&& point.getLocality().getParent().getId() != null) {
+						localities.put(point.getLocality().getParent().getId(), point.getLocality().getParent());
+					}
+				}
 			}
-			Map<String, Locality> mapped = new HashMap<>();
-			tripSearchMapping.mappingGeo(requests.get(0), localities, mapped);
-			for (RoutePoint point : route.getPath()) {
-				point.setLocality(mapped.get(tripSearchMapping.getKey(
-						requests.get(0).getParams().getResource().getId(), point.getLocality().getId())));
+			if (!localities.isEmpty()) {
+				Map<String, Locality> mapped = new HashMap<>();
+				tripSearchMapping.mappingGeo(requests.get(0), localities, mapped);
+				long resourceId = requests.get(0).getParams().getResource().getId();
+				for (RoutePoint point : route.getPath()) {
+					if (point.getLocality() != null) {
+						Locality parent = point.getLocality().getParent();
+						if (mapped.containsKey(tripSearchMapping.getKey(resourceId, point.getLocality().getId()))) {
+							point.setLocality(mapped.get(tripSearchMapping.getKey(resourceId, point.getLocality().getId())));
+						}
+						if (parent != null
+								&& mapped.containsKey(tripSearchMapping.getKey(resourceId, parent.getId()))) {
+							parent = mapped.get(tripSearchMapping.getKey(resourceId, parent.getId()));
+						}
+						point.getLocality().setParent(parent);
+					}
+				}
 			}
 		}
 		return route;

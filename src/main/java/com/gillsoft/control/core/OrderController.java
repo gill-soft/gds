@@ -71,8 +71,6 @@ public class OrderController {
 	private OperationLocker locker;
 	
 	public OrderResponse create(OrderRequest request) {
-		
-		// проверяем параметры запроса
 			
 		// заказ для сохранения
 		return saveOrder(createInResource(request));

@@ -21,8 +21,10 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.Address;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
+import com.gillsoft.model.Name;
 import com.gillsoft.model.Organisation;
 import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Segment;
@@ -111,8 +113,23 @@ public class TripSearchMapping {
 			// чтобы от разных ресурсов не пересекались ид
 			if (mappings == null) {
 				if (object.getValue() != null) {
-					idSetter.set(resourceId, object.getKey(), object.getValue());
-					result.put(getKey(resourceId, object.getKey()), object.getValue());
+					T value = object.getValue();
+					idSetter.set(resourceId, object.getKey(), value);
+					result.put(getKey(resourceId, object.getKey()), value);
+					
+					// удаляем данные на языках, которые не запрашиваются
+					if (value instanceof Name) {
+						Name name = (Name) value;
+						if (name.getName(request.getLang()) != null) {
+							name.getName().keySet().removeIf(l -> l != request.getLang());
+						}
+					}
+					if (value instanceof Address) {
+						Address address = (Address) value;
+						if (address.getAddress(request.getLang()) != null) {
+							address.getAddress().keySet().removeIf(l -> l != request.getLang());
+						}
+					}
 				}
 			} else {
 				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang()));
