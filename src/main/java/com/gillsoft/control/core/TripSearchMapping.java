@@ -92,6 +92,13 @@ public class TripSearchMapping {
 		mappingObjects(request, objects, result, MapType.GEO,
 				(mapping, lang) -> localityController.createLocality(mapping, lang),
 				(resourceId, id, l) -> l.setId(getKey(resourceId, id)));
+		for (Locality locality : result.values()) {
+			Locality parent = null;
+			while ((parent = locality.getParent()) != null) {
+				removeUnselectedLang(request, parent);
+				locality = parent;
+			}
+		}
 	}
 	
 	/**
@@ -118,21 +125,27 @@ public class TripSearchMapping {
 					result.put(getKey(resourceId, object.getKey()), value);
 					
 					// удаляем данные на языках, которые не запрашиваются
-					if (value instanceof Name) {
-						Name name = (Name) value;
-						if (name.getName(request.getLang()) != null) {
-							name.getName().keySet().removeIf(l -> l != request.getLang());
-						}
-					}
-					if (value instanceof Address) {
-						Address address = (Address) value;
-						if (address.getAddress(request.getLang()) != null) {
-							address.getAddress().keySet().removeIf(l -> l != request.getLang());
-						}
-					}
+					removeUnselectedLang(request, value);
 				}
 			} else {
 				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang()));
+			}
+		}
+	}
+	
+	private <T> void removeUnselectedLang(LangRequest request, T value) {
+		if (request.getLang() != null) {
+			if (value instanceof Name) {
+				Name name = (Name) value;
+				if (name.getName(request.getLang()) != null) {
+					name.getName().keySet().removeIf(l -> l != request.getLang());
+				}
+			}
+			if (value instanceof Address) {
+				Address address = (Address) value;
+				if (address.getAddress(request.getLang()) != null) {
+					address.getAddress().keySet().removeIf(l -> l != request.getLang());
+				}
 			}
 		}
 	}

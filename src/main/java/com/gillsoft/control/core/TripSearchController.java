@@ -441,7 +441,9 @@ public class TripSearchController {
 							&& Objects.equals(key, segment.getVehicle().getId())) {
 						return false;
 					}
-				}; return true;});
+				};
+				return true;
+			});
 			if (result != null) {
 				result.getVehicles().putAll(response.getVehicles());
 			}
@@ -455,7 +457,9 @@ public class TripSearchController {
 									&& Objects.equals(key, segment.getInsurance().getId()))) {
 						return false;
 					}
-				}; return true;});
+				};
+				return true;
+			});
 			if (result != null) {
 				result.getOrganisations().putAll(response.getOrganisations());
 			}
@@ -467,7 +471,19 @@ public class TripSearchController {
 							|| Objects.equals(key, segment.getArrival().getId())) {
 						return false;
 					}
-				}; return true;});
+					// проверяем маршрут
+					if (segment.getRoute() != null
+							&& segment.getRoute().getPath() != null) {
+						for (RoutePoint point : segment.getRoute().getPath()) {
+							if (point.getLocality() != null
+									&& Objects.equals(key, point.getLocality().getId())) {
+								return false;
+							}
+						}
+					}
+				};
+				return true;
+			});
 			if (result != null) {
 				result.getLocalities().putAll(response.getLocalities());
 			}

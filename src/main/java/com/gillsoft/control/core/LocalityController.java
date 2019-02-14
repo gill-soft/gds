@@ -125,6 +125,8 @@ public class LocalityController {
 			locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
 			locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
 			locality.setDetails(mapping.getAttributes().get("DETAILS"));
+			locality.setType(mapping.getAttributes().get("TYPE"));
+			locality.setSubtype(mapping.getAttributes().get("SUBTYPE"));
 		}
 		locality.setParent(mapping.getParent() != null ? new Locality(String.valueOf(mapping.getParent().getId())): null);
 		return locality;
