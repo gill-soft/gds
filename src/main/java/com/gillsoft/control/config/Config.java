@@ -24,6 +24,10 @@ private static Properties properties;
 		return properties.getProperty("resuorce.agregator.url");
 	}
 	
+	public static String getSegmentsConnectionUrl() {
+		return properties.getProperty("segments.connection.url");
+	}
+	
 	public static String getMsUrl() {
 		return properties.getProperty("ms.url");
 	}

@@ -1,10 +1,10 @@
 package com.gillsoft.control.core;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,7 +29,7 @@ import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorTripSearchService;
-import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.control.service.model.SearchRequestContainer;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
@@ -82,13 +82,16 @@ public class TripSearchController {
 	private ResourceInfoController infoController;
 	
 	@Autowired
-	private MappingService mappingService;
+	private SearchRequestController requestController;
 	
 	@Autowired
 	private TripSearchMapping tripSearchMapping;
 	
 	@Autowired
 	private FilterController filter;
+	
+	@Autowired
+	private ConnectionsController connectionsController;
 	
 	/**
 	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
@@ -98,17 +101,17 @@ public class TripSearchController {
 		// проверяем параметры запроса
 		validateSearchRequest(request);
 		
-		return initSearch(createSearchRequest(request));
+		return initSearch(requestController.createSearchRequest(request));
 	}
 	
 	/**
 	 * Запускает поиск по запросам к конкретным ресурсам.
 	 */
-	public TripSearchResponse initSearch(List<TripSearchRequest> requests) {
+	public TripSearchResponse initSearch(SearchRequestContainer requestContainer) {
 		
 		// проверяем ответ и записываем в память запросы под ид поиска
-		TripSearchResponse response = checkResponse(null, service.initSearch(requests));
-		putRequestToCache(response.getSearchId(), requests);
+		TripSearchResponse response = checkResponse(null, service.initSearch(requestContainer.getRequests()));
+		putRequestToCache(response.getSearchId(), requestContainer);
 		return response;
 	}
 	
@@ -128,31 +131,30 @@ public class TripSearchController {
 		}
 	}
 	
-	private void putRequestToCache(String searchId, List<TripSearchRequest> requests) {
+	private void putRequestToCache(String searchId, SearchRequestContainer requestContainer) {
 		if (searchId != null) {
 			Map<String, Object> params = new HashMap<>();
 			params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
 			params.put(MemoryCacheHandler.TIME_TO_LIVE, 60000l);
 			try {
-				cache.write(requests, params);
+				cache.write(requestContainer, params);
 			} catch (IOCacheException e) {
 			}
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
 	public TripSearchResponse getSearchResult(String searchId) {
 		
 		// получает запросы поиска с памяти по ид поиска и проверяем их
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
-		List<TripSearchRequest> requests = null;
+		SearchRequestContainer requestContainer = null;
 		try {
-			requests = (List<TripSearchRequest>) cache.read(params);
+			requestContainer = (SearchRequestContainer) cache.read(params);
 		} catch (ClassCastException | IOCacheException e) {
 			LOGGER.error("Empty request by searchId: " + searchId, e);
 		}
-		if (requests == null) {
+		if (requestContainer == null) {
 			LOGGER.error("Too late for getting result by searchId: " + searchId);
 			throw new ApiException(new ResponseError("Too late for getting result or invalid searchId."));
 		}
@@ -160,21 +162,27 @@ public class TripSearchController {
 		if (response.getError() != null) {
 			throw new ApiException(response.getError());
 		}
-		// добавляем в кэш запрос под новым searchId, для получения остального результата
-		putRequestToCache(response.getSearchId(), requests);
+		TripSearchResponse result = response;
 		if (response.getResult() != null
 				&& !response.getResult().isEmpty()) {
 			
-			TripSearchResponse result = new TripSearchResponse();
-			result.setId(requests.get(0).getId().split(";")[0]);
+			result = new TripSearchResponse();
+			result.setId(requestContainer.getRequests().get(0).getId().split(";")[0]);
 			result.setSearchId(response.getSearchId());
-			
-			// создаем словари ответа
 			tripSearchMapping.createDictionaries(result);
 			
+			TripSearchResponse transfersResult = null; // результат стыковок
+			if (requestContainer.getOriginRequest().isUseTranfers()) {
+				if (requestContainer.getResponse() == null) {
+					transfersResult = new TripSearchResponse();
+					tripSearchMapping.createDictionaries(transfersResult);
+				} else {
+					transfersResult = requestContainer.getResponse();
+				}
+			}
 			for (TripSearchResponse searchResponse : response.getResult()) {
 				
-				Stream<TripSearchRequest> stream = requests.stream().filter(r -> r.getId().equals(searchResponse.getId()));
+				Stream<TripSearchRequest> stream = requestContainer.getRequests().stream().filter(r -> r.getId().equals(searchResponse.getId()));
 				if (stream != null) {
 					
 					// запрос, по которому получен результат
@@ -185,26 +193,42 @@ public class TripSearchController {
 						
 						// логируем ошибки, если есть
 						logError(searchResponse);
-						
-						// мапим словари
-						tripSearchMapping.mapDictionaries(request, searchResponse, result);
-						
-						// обновляем мапингом рейсы
-						tripSearchMapping.updateSegments(request, searchResponse, result);
-						
-						// применяем фильтр
-						filter.apply(result.getSegments());
-						
-						// удаляем неиспользуемые данныеы
-						updateResponse(result, null);
+						prepareResult(request, searchResponse, request.isUseTranfers() ? transfersResult : result);
 					}
 				}
 			}
+			if (requestContainer.getOriginRequest().isUseTranfers()) {
+				
+				// сохранение промежуточного результата
+				requestContainer.setResponse(transfersResult);
+				
+				// создаем сегменты и добавляем в результат
+				connectionsController.createConnections(transfersResult, requestContainer);
+				
+				// удаляем неиспользуемые данные
+				updateResponse(transfersResult, result);
+			}
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
-			return result;
 		}
-		return response;
+		// добавляем в кэш запрос под новым searchId, для получения остального результата
+		putRequestToCache(response.getSearchId(), requestContainer);
+		return result;
+	}
+	
+	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
+		
+		// мапим словари
+		tripSearchMapping.mapDictionaries(request, searchResponse, result);
+		
+		// обновляем мапингом рейсы
+		tripSearchMapping.updateSegments(request, searchResponse, result);
+		
+		// применяем фильтр
+		filter.apply(result.getSegments());
+		
+		// удаляем неиспользуемые данные
+		updateResponse(result, null);
 	}
 	
 	private void logError(TripSearchResponse searchResponse) {
@@ -220,45 +244,6 @@ public class TripSearchController {
 		}
 	}
 	
-	private List<TripSearchRequest> createSearchRequest(TripSearchRequest searchRequest) {
-		List<Resource> resources = dataController.getUserResources();
-		if (resources != null) {
-			List<TripSearchRequest> request = new ArrayList<>();
-			for (Resource resource : resources) {
-				if (infoController.isMethodAvailable(resource, Method.SEARCH, MethodType.POST)) {
-					
-					// проверяем маппинг и формируем запрос на каждый ресурс
-					for (String[] pairs : searchRequest.getLocalityPairs()) {
-						Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[0]));
-						if (fromIds != null) {
-							Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pairs[1]));
-							if (toIds != null) {
-								TripSearchRequest resourceSearchRequest = new TripSearchRequest();
-								resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
-								resourceSearchRequest.setParams(resource.createParams());
-								resourceSearchRequest.setDates(searchRequest.getDates());
-								resourceSearchRequest.setBackDates(searchRequest.getBackDates());
-								resourceSearchRequest.setCurrency(searchRequest.getCurrency());
-								resourceSearchRequest.setLocalityPairs(new ArrayList<>());
-								resourceSearchRequest.setLang(searchRequest.getLang());
-								request.add(resourceSearchRequest);
-								for (String fromId : fromIds) {
-									for (String toId : toIds) {
-										resourceSearchRequest.getLocalityPairs().add(new String[] { fromId, toId });
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			if (request.isEmpty()) {
-				throw new MethodUnavalaibleException("Method is unavailable");
-			}
-			return request;
-		}
-		throw new ResourceUnavailableException("User does not has available resources");
-	}
 	
 	public Route getRoute(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
@@ -390,16 +375,16 @@ public class TripSearchController {
 	public TripSearchResponse search(OrderRequest request, Set<String> tripIds) { 
 		try {
 			// создаем поиски
-			List<TripSearchRequest> searchRequests = new ArrayList<>();
+			SearchRequestContainer requestContainer = new SearchRequestContainer();
 			for (String tripId : tripIds) {
 				TripIdModel model = new TripIdModel().create(tripId);
 				model.getRequest().setId(StringUtil.generateUUID());
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
 				model.getRequest().setLang(request.getLang());
 				model.getRequest().setCurrency(request.getCurrency());
-				searchRequests.add(model.getRequest());
+				requestContainer.add(model.getRequest());
 			}
-			TripSearchResponse response = initSearch(searchRequests);
+			TripSearchResponse response = initSearch(requestContainer);
 			
 			TripSearchResponse result = new TripSearchResponse();
 			result.setSegments(new HashMap<>());
@@ -412,14 +397,11 @@ public class TripSearchController {
 				if (response.getSegments() != null) {
 						
 					// оставляем в запросе только указанный рейс
-					if (response.getSegments() != null) {
-						response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
-						response.getSegments().values().forEach(segment -> {
-							segment.setRoute(null);
-							segment.setSeats(null);
-						});
-						result.getSegments().putAll(response.getSegments());
-					}
+					response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
+					response.getSegments().values().forEach(segment -> {
+						segment.setRoute(null);
+						segment.setSeats(null);
+					});
 					updateResponse(response, result);
 				}
 			} while (response.getSearchId() != null);
@@ -433,6 +415,42 @@ public class TripSearchController {
 	private void updateResponse(TripSearchResponse response, TripSearchResponse result) {
 		final Collection<Segment> segments = response.getSegments().values();
 		
+		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
+		
+		if (response.getTripContainers() != null) {
+			for (TripContainer container : response.getTripContainers()) {
+				if (container.getTrips() != null) {
+					for (Trip trip : container.getTrips()) {
+						if (!response.getSegments().containsKey(trip.getId())) {
+							trip.setId(null);
+						} else {
+							resultSegmentIds.add(trip.getId());
+						}
+						if (!response.getSegments().containsKey(trip.getBackId())) {
+							trip.setBackId(null);
+						} else {
+							resultSegmentIds.add(trip.getBackId());
+						}
+						if (trip.getSegments() != null) {
+							if (trip.getSegments().removeIf(id -> !response.getSegments().containsKey(id))) {
+								trip.setSegments(null);
+							} else {
+								resultSegmentIds.addAll(trip.getSegments());
+							}
+						}
+					}
+					container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
+				}
+			}
+			if (result != null) {
+				result.setTripContainers(response.getTripContainers());
+			}
+		}
+		// перезаливаем рейсы
+		response.getSegments().keySet().removeIf(key -> !resultSegmentIds.contains(key));
+		if (result != null) {
+			result.getSegments().putAll(response.getSegments());
+		}
 		// перезаливаем словари
 		if (response.getVehicles() != null) {
 			response.getVehicles().keySet().removeIf(key -> {
@@ -486,27 +504,6 @@ public class TripSearchController {
 			});
 			if (result != null) {
 				result.getLocalities().putAll(response.getLocalities());
-			}
-		}
-		if (response.getTripContainers() != null) {
-			for (TripContainer container : response.getTripContainers()) {
-				if (container.getTrips() != null) {
-					for (Trip trip : container.getTrips()) {
-						if (!response.getSegments().containsKey(trip.getId())) {
-							trip.setId(null);
-						}
-						if (!response.getSegments().containsKey(trip.getBackId())) {
-							trip.setBackId(null);
-						}
-						if (trip.getSegments() != null) {
-							trip.getSegments().removeIf(id -> !response.getSegments().containsKey(id));
-							if (trip.getSegments().isEmpty()) {
-								trip.setSegments(null);
-							}
-						}
-					}
-					container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
-				}
 			}
 		}
 	}

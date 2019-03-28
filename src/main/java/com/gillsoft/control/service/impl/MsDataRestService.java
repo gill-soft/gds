@@ -35,8 +35,6 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static Logger LOGGER = LogManager.getLogger(MsDataRestService.class);
 	
-	private static final Object synch = new Object();
-	
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
 	private static final String ALL_RETURN_CONDITIONS = "condition/all_with_parents";
@@ -124,7 +122,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public RestTemplate getTemplate() {
 		if (template == null) {
-			synchronized (synch) {
+			synchronized (MsDataRestService.class) {
 				if (template == null) {
 					template = createTemplate(Config.getMsUrl());
 				}

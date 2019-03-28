@@ -183,13 +183,16 @@ public class MsDataController {
 				
 				// синхронизация по ключу кэша
 				synchronized (cacheKey.intern()) {
-					object = objectGetter.forCache();
-					params.put(MemoryCacheHandler.IGNORE_AGE, true);
-					params.put(MemoryCacheHandler.UPDATE_DELAY, updateDelay);
-					params.put(MemoryCacheHandler.UPDATE_TASK, updateTask);
-					try {
-						cache.write(object, params);
-					} catch (IOCacheException writeException) {
+					object = cache.read(params);
+					if (object == null) {
+						object = objectGetter.forCache();
+						params.put(MemoryCacheHandler.IGNORE_AGE, true);
+						params.put(MemoryCacheHandler.UPDATE_DELAY, updateDelay);
+						params.put(MemoryCacheHandler.UPDATE_TASK, updateTask);
+						try {
+							cache.write(object, params);
+						} catch (IOCacheException writeException) {
+						}
 					}
 					return object;
 				}

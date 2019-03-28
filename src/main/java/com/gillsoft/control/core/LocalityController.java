@@ -100,35 +100,54 @@ public class LocalityController {
 	
 	public void addLocality(Mapping mapping, Lang lang, Map<String, Locality> localities) {
 		if (!localities.containsKey(String.valueOf(mapping.getId()))) {
-			localities.put(String.valueOf(mapping.getId()), createLocality(mapping, lang));
+			localities.put(String.valueOf(mapping.getId()), createFullLocality(mapping, lang, null));
 			if (mapping.getParent() != null) {
 				addLocality(mapping.getParent(), lang, localities);
 			}
 		}
 	}
 	
-	public Locality createLocality(Mapping mapping, Lang lang) {
+	public Locality createFullLocality(Mapping mapping, Lang lang, Locality original) {
+		Locality locality = createLocality(mapping, lang, original);
+		locality.setParent(mapping.getParent() != null ? new Locality(String.valueOf(mapping.getParent().getId())): null);
+		return locality;
+	}
+	
+	public Locality createLocality(Mapping mapping, Lang lang, Locality original) {
 		Locality locality = new Locality();
 		locality.setId(String.valueOf(mapping.getId()));
-		if (lang == null
-				&& mapping.getLangAttributes() != null) {
-			for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
-				locality.setName(entry.getKey(), entry.getValue().get("NAME"));
-				locality.setAddress(entry.getKey(), entry.getValue().get("ADDRESS"));
-			}
-		} else if (mapping.getAttributes() != null) {
-			locality.setName(lang, mapping.getAttributes().get("NAME"));
-			locality.setAddress(lang, mapping.getAttributes().get("ADDRESS"));
-		}
 		if (mapping.getAttributes() != null) {
+			if (lang == null) {
+				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
+					locality.setName(entry.getKey(), entry.getValue().containsKey("NAME") ?
+							entry.getValue().get("NAME") : (original != null ? original.getName(entry.getKey()) : null));
+					locality.setAddress(entry.getKey(), entry.getValue().containsKey("ADDRESS") ?
+							entry.getValue().get("ADDRESS") : (original != null ? original.getAddress(entry.getKey()) : null));
+				}
+			} else {
+				if (mapping.getAttributes().containsKey("NAME")) {
+					locality.setName(lang, mapping.getAttributes().get("NAME"));
+				} else if (original != null) {
+					locality.setName(original.getName());
+				}
+				if (mapping.getAttributes().containsKey("ADDRESS")) {
+					locality.setAddress(lang, mapping.getAttributes().get("ADDRESS"));
+				} else if (original != null) {
+					locality.setAddress(original.getAddress());
+				}
+			}
 			locality.setLatitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LATITUDE")));
 			locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
 			locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
 			locality.setDetails(mapping.getAttributes().get("DETAILS"));
 			locality.setType(mapping.getAttributes().get("TYPE"));
 			locality.setSubtype(mapping.getAttributes().get("SUBTYPE"));
+			return locality;
 		}
-		locality.setParent(mapping.getParent() != null ? new Locality(String.valueOf(mapping.getParent().getId())): null);
+		if (original != null) {
+			original.setId(String.valueOf(mapping.getId()));
+			return original;
+		}
 		return locality;
 	}
 	

@@ -78,10 +78,10 @@ public class TripSearchMapping {
 		// мапим словари
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
 		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.CARRIER,
-				(mapping, lang) -> createOrganisation(mapping, lang),
+				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
 				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
 		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.BUS,
-				(mapping, lang) -> createVehicle(mapping, lang),
+				(mapping, lang, original) -> createVehicle(mapping, lang, original),
 				(resourceId, id, v) -> v.setId(getKey(resourceId, id)));
 	}
 	
@@ -89,16 +89,45 @@ public class TripSearchMapping {
 	 * Получает мапинг словаря географии ответа и создает словарь из мапинга. Если мапинга нет, то добавляется объект ответа.
 	 */
 	public void mappingGeo(LangRequest request, Map<String, Locality> objects, Map<String, Locality> result) {
+		
+		// родителей тоже нужно попытаться смапить
+		if (objects != null) {
+			long resourceId = request.getParams().getResource().getId();
+			List<Locality> localities = new ArrayList<>(objects.values());
+			for (Locality locality : localities) {
+				if (locality.getParent() != null) {
+					objects.put(locality.getParent().getId(), locality.getParent());
+					locality.setParent(new Locality(getKey(resourceId, locality.getParent().getId())));
+				}
+			}
+		}
 		mappingObjects(request, objects, result, MapType.GEO,
-				(mapping, lang) -> localityController.createLocality(mapping, lang),
-				(resourceId, id, l) -> l.setId(getKey(resourceId, id)));
+				(mapping, lang, original) -> createLocality(mapping, lang, original),
+				(resId, id, l) -> l.setId(getKey(resId, id)));
 		for (Locality locality : result.values()) {
+			if (locality.getParent() != null
+					&& result.containsKey(locality.getParent().getId())) {
+				locality.setParent(result.get(locality.getParent().getId()));
+			}
 			Locality parent = null;
 			while ((parent = locality.getParent()) != null) {
 				removeUnselectedLang(request, parent);
 				locality = parent;
 			}
 		}
+	}
+	
+	/*
+	 * из-за того, что не все возвращаемые пункты ресурса смаплены, необходимо
+	 * проверять маппинг родителей, если они есть
+	 */
+	private Locality createLocality(Mapping mapping, Lang lang, Locality original) {
+		if (original.getParent() == null) {
+			return localityController.createFullLocality(mapping, lang, original);
+		}
+		Locality locality = localityController.createLocality(mapping, lang, original);
+		locality.setParent(original.getParent());
+		return locality;
 	}
 	
 	/**
@@ -128,7 +157,7 @@ public class TripSearchMapping {
 					removeUnselectedLang(request, value);
 				}
 			} else {
-				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang()));
+				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang(), object.getValue()));
 			}
 		}
 	}
@@ -160,58 +189,84 @@ public class TripSearchMapping {
 	/*
 	 * Создает организацию по данным мапинга.
 	 */
-	private Organisation createOrganisation(Mapping mapping, Lang lang) {
-		Organisation organisation = new Organisation();
-		organisation.setId(String.valueOf(mapping.getId()));
-		if (lang == null
-				&& mapping.getLangAttributes() != null) {
-			for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
-				organisation.setName(entry.getKey(), entry.getValue().get("NAME"));
-				organisation.setAddress(entry.getKey(), entry.getValue().get("ADDRESS"));
-			}
-		} else if (mapping.getAttributes() != null) {
-			organisation.setName(lang, mapping.getAttributes().get("NAME"));
-			organisation.setAddress(lang, mapping.getAttributes().get("ADDRESS"));
-		}
+	private Organisation createOrganisation(Mapping mapping, Lang lang, Organisation original) {
 		if (mapping.getAttributes() != null) {
-			organisation.setTradeMark(mapping.getAttributes().get("TRADEMARK"));
+			Organisation organisation = new Organisation();
+			organisation.setId(String.valueOf(mapping.getId()));
+			if (lang == null) {
+				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
+					organisation.setName(entry.getKey(), entry.getValue().containsKey("NAME") ?
+							entry.getValue().get("NAME") : original.getName(entry.getKey()));
+					organisation.setAddress(entry.getKey(), entry.getValue().containsKey("ADDRESS") ?
+							entry.getValue().get("ADDRESS") : original.getAddress(entry.getKey()));
+				}
+			} else {
+				if (mapping.getAttributes().containsKey("NAME")) {
+					organisation.setName(lang, mapping.getAttributes().get("NAME"));
+				} else {
+					organisation.setName(original.getName());
+				}
+				if (mapping.getAttributes().containsKey("ADDRESS")) {
+					organisation.setAddress(lang, mapping.getAttributes().get("ADDRESS"));
+				} else {
+					organisation.setAddress(original.getAddress());
+				}
+			}
+			organisation.setTradeMark(mapping.getAttributes().containsKey("TRADEMARK") ?
+					mapping.getAttributes().get("TRADEMARK") : original.getTradeMark());
 			if (mapping.getAttributes().containsKey("PHONES")) {
 				organisation.setPhones(Arrays.asList(mapping.getAttributes().get("PHONES").split(";")));
+			} else {
+				organisation.setPhones(original.getPhones());
 			}
 			if (mapping.getAttributes().containsKey("EMAILS")) {
 				organisation.setEmails(Arrays.asList(mapping.getAttributes().get("EMAILS").split(";")));
+			} else {
+				organisation.setEmails(original.getEmails());
 			}
+			return organisation;
+		} else {
+			original.setId(String.valueOf(mapping.getId()));
+			return original;
 		}
-		return organisation;
 	}
 	
 	/*
 	 * Создает транспорт по данным мапинга.
 	 */
-	private Vehicle createVehicle(Mapping mapping, Lang lang) {
-		Vehicle vehicle = new Vehicle();
-		vehicle.setId(String.valueOf(mapping.getId()));
-		if (lang == null
-				&& mapping.getLangAttributes() != null) {
-			for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
-				if (entry.getValue().get("MODEL") != null) {
-					vehicle.setModel(entry.getValue().get("MODEL"));
-				}
-			}
-		} else if (mapping.getAttributes() != null) {
-			vehicle.setModel(mapping.getAttributes().get("MODEL"));
-		}
+	private Vehicle createVehicle(Mapping mapping, Lang lang, Vehicle original) {
 		if (mapping.getAttributes() != null) {
+			Vehicle vehicle = new Vehicle();
+			vehicle.setId(String.valueOf(mapping.getId()));
+			if (lang == null) {
+				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
+					if (entry.getValue().containsKey("MODEL")) {
+						vehicle.setModel(entry.getValue().get("MODEL"));
+						break;
+					}
+				}
+			} else {
+				vehicle.setModel(mapping.getAttributes().get("MODEL"));
+			}
+			if (vehicle.getModel() == null) {
+				vehicle.setModel(original.getModel());
+			}
 			if (mapping.getAttributes().containsKey("CAPACITY")) {
 				try {
 					vehicle.setCapacity(Integer.valueOf(mapping.getAttributes().get("CAPACITY")));
 				} catch (NumberFormatException e) {
 					LOGGER.error("Invalid capacity for busmodel id: " + mapping.getId(), e);
 				}
+			} else {
+				vehicle.setCapacity(original.getCapacity());
 			}
-			vehicle.setNumber(mapping.getAttributes().get("NUMBER"));
+			vehicle.setNumber(mapping.getAttributes().containsKey("NUMBER") ?
+					mapping.getAttributes().get("NUMBER") : original.getModel());
+			return vehicle;
+		} else {
+			original.setId(String.valueOf(mapping.getId()));
+			return original;
 		}
-		return vehicle;
 	}
 	
 	/**
@@ -241,7 +296,7 @@ public class TripSearchMapping {
 				Map<String, Vehicle> vehicles = new HashMap<>();
 				vehicles.put(tripNumber, null);
 				mappingObjects(request, vehicles, result.getVehicles(), MapType.BUS,
-						(mapping, lang) -> createVehicle(mapping, lang), null);
+						(mapping, lang, original) -> createVehicle(mapping, lang, original), null);
 			}
 			// устанавливаем транспорт с маппинга
 			String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
@@ -356,7 +411,7 @@ public class TripSearchMapping {
 		Map<String, Organisation> organisations = new HashMap<>();
 		organisations.put(key, null);
 		mappingObjects(request, organisations, result.getOrganisations(), MapType.CARRIER,
-				(mapping, lang) -> createOrganisation(mapping, lang), null);
+				(mapping, lang, original) -> createOrganisation(mapping, lang, original), null);
 	}
 	
 	/*
@@ -445,7 +500,7 @@ public class TripSearchMapping {
 	
 	private interface MapObjectCreator<T> {
 		
-		public T create(Mapping mapping, Lang lang);
+		public T create(Mapping mapping, Lang lang, T original);
 		
 	}
 	
