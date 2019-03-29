@@ -54,7 +54,7 @@ public class ConnectionsController {
 				resources.stream().map(Resource::getId).collect(Collectors.toSet())));
 	}
 	
-	public void createConnections(TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer) {
+	public void connectSegments(TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer) {
 		if (tripSearchResponse.getTripContainers() != null) {
 			
 			// подготавливаем контейнеры

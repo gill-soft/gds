@@ -162,11 +162,10 @@ public class TripSearchController {
 		if (response.getError() != null) {
 			throw new ApiException(response.getError());
 		}
-		TripSearchResponse result = response;
 		if (response.getResult() != null
 				&& !response.getResult().isEmpty()) {
 			
-			result = new TripSearchResponse();
+			TripSearchResponse result = new TripSearchResponse();
 			result.setId(requestContainer.getRequests().get(0).getId().split(";")[0]);
 			result.setSearchId(response.getSearchId());
 			tripSearchMapping.createDictionaries(result);
@@ -199,21 +198,27 @@ public class TripSearchController {
 			}
 			if (requestContainer.getOriginRequest().isUseTranfers()) {
 				
-				// сохранение промежуточного результата
+				// сохранение промежуточного результата без очистки неиспользуемых данных
 				requestContainer.setResponse(transfersResult);
 				
 				// создаем сегменты и добавляем в результат
-				connectionsController.createConnections(transfersResult, requestContainer);
+				connectionsController.connectSegments(transfersResult, requestContainer);
+				
+				// добавляем в кэш запрос под новым searchId, для получения остального результата
+				// делаем это перед очисткой данных так как в дальнейшем поиск может еще продолжаться
+				// и понадобятся предыдущие результаты для создания стыковок
+				putRequestToCache(response.getSearchId(), requestContainer);
 				
 				// удаляем неиспользуемые данные
 				updateResponse(transfersResult, result);
 			}
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
+			return result;
 		}
 		// добавляем в кэш запрос под новым searchId, для получения остального результата
 		putRequestToCache(response.getSearchId(), requestContainer);
-		return result;
+		return response;
 	}
 	
 	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
