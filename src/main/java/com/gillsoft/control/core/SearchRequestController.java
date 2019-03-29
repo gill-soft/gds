@@ -44,6 +44,7 @@ public class SearchRequestController {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			SearchRequestContainer requestContainer = new SearchRequestContainer();
+			requestContainer.setOriginRequest(searchRequest);
 			
 			// проверяем запрос на поиск стыковочных рейсов и делаем пары с учетом стыковок
 			// если в запросе больше одной пары пунктов и несколько дат, то поиск стыковочных рейсов не выполняем
@@ -81,7 +82,7 @@ public class SearchRequestController {
 				resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
 				resourceSearchRequest.setParams(resource.createParams());
 				resourceSearchRequest.setDates(addDays(searchRequest.getDates(), addedDays));
-				resourceSearchRequest.setUseTranfers(searchRequest.isUseTranfers());
+				resourceSearchRequest.setMaxConnections(searchRequest.getMaxConnections());
 				if (!searchRequest.isUseTranfers()) {
 					resourceSearchRequest.setBackDates(searchRequest.getBackDates());
 				}
@@ -114,7 +115,6 @@ public class SearchRequestController {
 	
 	private void addConnectionRequests(TripSearchRequest searchRequest, SearchRequestContainer requestContainer,
 			List<Resource> resources) {
-		requestContainer.setOriginRequest(searchRequest);
 		ConnectionsResponse connections = connectionsController.createConnections(searchRequest, resources);
 		if (connections != null) {
 			requestContainer.setConnections(connections);

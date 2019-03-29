@@ -129,6 +129,11 @@ public class TripSearchController {
 				|| request.getDates().isEmpty()) {
 			throw new RequestValidateException("Empty dates");
 		}
+		if (request.isUseTranfers()
+				&& (request.getLocalityPairs().size() > 1
+						|| request.getDates().size() > 1)) {
+			throw new RequestValidateException("Search with transfers applied only for single pair and date.");
+		}
 	}
 	
 	private void putRequestToCache(String searchId, SearchRequestContainer requestContainer) {
