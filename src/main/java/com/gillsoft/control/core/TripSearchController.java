@@ -144,6 +144,7 @@ public class TripSearchController {
 			try {
 				cache.write(requestContainer, params);
 			} catch (IOCacheException e) {
+				LOGGER.error("Error when write searchId: " + searchId, e);
 			}
 		}
 	}
@@ -176,7 +177,7 @@ public class TripSearchController {
 			tripSearchMapping.createDictionaries(result);
 			
 			TripSearchResponse transfersResult = null; // результат стыковок
-			if (requestContainer.getOriginRequest().isUseTranfers()) {
+			if (isTransfer(requestContainer)) {
 				if (requestContainer.getResponse() == null) {
 					transfersResult = new TripSearchResponse();
 					tripSearchMapping.createDictionaries(transfersResult);
@@ -201,7 +202,7 @@ public class TripSearchController {
 					}
 				}
 			}
-			if (requestContainer.getOriginRequest().isUseTranfers()) {
+			if (isTransfer(requestContainer)) {
 				
 				// сохранение промежуточного результата без очистки неиспользуемых данных
 				requestContainer.setResponse(transfersResult);
@@ -216,6 +217,8 @@ public class TripSearchController {
 				
 				// удаляем неиспользуемые данные
 				updateResponse(transfersResult, result);
+			} else {
+				putRequestToCache(response.getSearchId(), requestContainer);
 			}
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
@@ -224,6 +227,11 @@ public class TripSearchController {
 		// добавляем в кэш запрос под новым searchId, для получения остального результата
 		putRequestToCache(response.getSearchId(), requestContainer);
 		return response;
+	}
+	
+	private boolean isTransfer(SearchRequestContainer requestContainer) {
+		return requestContainer.getOriginRequest() != null
+				&& requestContainer.getOriginRequest().isUseTranfers();
 	}
 	
 	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
@@ -397,10 +405,7 @@ public class TripSearchController {
 			TripSearchResponse response = initSearch(requestContainer);
 			
 			TripSearchResponse result = new TripSearchResponse();
-			result.setSegments(new HashMap<>());
-			result.setVehicles(new HashMap<>());
-			result.setOrganisations(new HashMap<>());
-			result.setLocalities(new HashMap<>());
+			tripSearchMapping.createDictionaries(result);
 			do {
 				// получаем результат сразу же так как он уже в кэше
 				response = getSearchResult(response.getSearchId());
@@ -453,7 +458,7 @@ public class TripSearchController {
 				}
 			}
 			if (result != null) {
-				result.setTripContainers(response.getTripContainers());
+				result.getTripContainers().addAll(response.getTripContainers());
 			}
 		}
 		// перезаливаем рейсы

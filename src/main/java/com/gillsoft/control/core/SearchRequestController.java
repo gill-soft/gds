@@ -58,7 +58,7 @@ public class SearchRequestController {
 					
 					// проверяем маппинг и формируем запрос на каждый ресурс
 					for (String[] pair : searchRequest.getLocalityPairs()) {
-						addSearchRequest(searchRequest, resource, pair, requestContainer, 0);
+						addSearchRequest(searchRequest, resource, pair, requestContainer, 0, null);
 					}
 				}
 			}
@@ -71,7 +71,7 @@ public class SearchRequestController {
 	}
 	
 	public void addSearchRequest(TripSearchRequest searchRequest, Resource resource, String[] pair,
-			SearchRequestContainer requestContainer, int addedDays) {
+			SearchRequestContainer requestContainer, int addedDays, Integer maxConnections) {
 		Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[0]));
 		if (fromIds != null) {
 			Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[1]));
@@ -82,7 +82,7 @@ public class SearchRequestController {
 				resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
 				resourceSearchRequest.setParams(resource.createParams());
 				resourceSearchRequest.setDates(addDays(searchRequest.getDates(), addedDays));
-				resourceSearchRequest.setMaxConnections(searchRequest.getMaxConnections());
+				resourceSearchRequest.setMaxConnections(maxConnections);
 				if (!searchRequest.isUseTranfers()) {
 					resourceSearchRequest.setBackDates(searchRequest.getBackDates());
 				}
@@ -124,7 +124,8 @@ public class SearchRequestController {
 					Resource resource = res.findFirst().get();
 					if (infoController.isMethodAvailable(resource, Method.SEARCH, MethodType.POST)) {
 						addSearchRequest(searchRequest, resource,
-								new String[]{ String.valueOf(pair.getFrom()), String.valueOf(pair.getTo()) }, requestContainer, pair.getAddedDays());
+								new String[]{ String.valueOf(pair.getFrom()), String.valueOf(pair.getTo()) },
+								requestContainer, pair.getAddedDays(), searchRequest.getMaxConnections());
 					}
 				}
 			}
