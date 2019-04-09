@@ -231,7 +231,8 @@ public class TripSearchController {
 	
 	private boolean isTransfer(SearchRequestContainer requestContainer) {
 		return requestContainer.getOriginRequest() != null
-				&& requestContainer.getOriginRequest().isUseTranfers();
+				&& requestContainer.getOriginRequest().isUseTranfers()
+				&& requestContainer.getConnections() != null;
 	}
 	
 	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {

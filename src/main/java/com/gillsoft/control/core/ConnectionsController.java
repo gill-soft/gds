@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +64,8 @@ public class ConnectionsController {
 				TripContainer container = iterator.next();
 				if (container.getError() == null) {
 					iterator.remove();
+				} else {
+					container.setTrips(null);
 				}
 			}
 			if (tripSearchResponse.getSegments() == null) {
@@ -107,8 +110,7 @@ public class ConnectionsController {
 		List<Trip> trips = new ArrayList<>(first.size()); // соединенные в рейсы части маршрута
 		for (String id : first) {
 			Trip trip = new Trip();
-			trip.setSegments(new ArrayList<>());
-			trip.getSegments().add(id);
+			trip.setSegments(Collections.singletonList(id));
 			trips.add(trip);
 		}
 		for (int i = 1; i < segments.size(); i++) {
@@ -120,8 +122,10 @@ public class ConnectionsController {
 				for (Trip trip : trips) {
 					if (isConnected(requestContainer.getConnections().getConnections(), tripSearchResponse,
 							trip.getSegments().get(trip.getSegments().size() - 1), id)) {
-						trip.getSegments().add(id);
-						nextParts.add(trip);
+						Trip newTrip = new Trip();
+						newTrip.setSegments(new ArrayList<>(trip.getSegments()));
+						newTrip.getSegments().add(id);
+						nextParts.add(newTrip);
 					}
 				}
 			}

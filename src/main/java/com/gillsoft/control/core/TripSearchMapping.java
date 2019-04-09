@@ -340,6 +340,9 @@ public class TripSearchMapping {
 		}
 		// объединяем контайнеры по смапленому запросу
 		joinContainers(resourceId, result, searchResponse.getTripContainers());
+		
+		// проставляем ид словарей с маппинга
+		updateDictionaries(result);
 	}
 	
 	/*
@@ -467,34 +470,40 @@ public class TripSearchMapping {
 			if (result.getLocalities().isEmpty()) {
 				result.setLocalities(null);
 			} else {
-				result.setLocalities(result.getLocalities().values().stream().collect(Collectors.toMap(Locality::getId, l -> {
-					l.setId(null);
-					return l;
-				}, (l1, l2) -> l1)));
+				result.getLocalities().values().forEach(l -> l.setId(null));
 			}
 		}
 		if (result.getOrganisations() != null) {
 			if (result.getOrganisations().isEmpty()) {
 				result.setOrganisations(null);
 			} else {
-				result.setOrganisations(result.getOrganisations().values().stream().collect(Collectors.toMap(Organisation::getId, o -> {
-					o.setId(null);
-					return o;
-				}, (o1, o2) -> o1)));
+				result.getOrganisations().values().forEach(o -> o.setId(null));
 			}
 		}
 		if (result.getVehicles() != null) {
 			if (result.getVehicles().isEmpty()) {
 				result.setVehicles(null);
 			} else {
-				result.setVehicles(result.getVehicles().values().stream().collect(Collectors.toMap(Vehicle::getId, v -> {
-					v.setId(null);
-					return v;
-				}, (v1, v2) -> v1)));
+				result.getVehicles().values().forEach(v -> v.setId(null));
 			}
 		}
 		if (result.getTripContainers().isEmpty()) {
 			result.setTripContainers(null);
+		}
+	}
+	
+	private void updateDictionaries(TripSearchResponse result) {
+		if (result.getLocalities() != null
+				&& !result.getLocalities().isEmpty()) {
+			result.setLocalities(result.getLocalities().values().stream().collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
+		}
+		if (result.getOrganisations() != null
+				&& !result.getOrganisations().isEmpty()) {
+			result.setOrganisations(result.getOrganisations().values().stream().collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
+		}
+		if (result.getVehicles() != null
+				&& !result.getVehicles().isEmpty()) {
+			result.setVehicles(result.getVehicles().values().stream().collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
 		}
 	}
 	
