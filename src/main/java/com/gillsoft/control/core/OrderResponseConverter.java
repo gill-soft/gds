@@ -80,13 +80,16 @@ public class OrderResponseConverter {
 					});
 				} else {
 					for (ServiceItem item : orderResponse.getServices()) {
+						
+						// устанавливаем ид сегмента рейса
+						Segment segment = null;
+						if (item.getSegment() != null
+								&& result.getSegments() != null) {
+							setSegment(result.getSegments(), item);
+							segment = result.getSegments().get(item.getSegment().getId());
+						}
 						if (item.getError() == null) {
-							Segment segment = null;
-							if (item.getSegment() != null
-									&& result.getSegments() != null) {
-								setSegment(result.getSegments(), item);
-								segment = result.getSegments().get(item.getSegment().getId());
-							}
+							
 							// пересчитываем стоимость
 							if (item.getPrice() != null) {
 								item.setPrice(dataController.recalculate(
