@@ -1,7 +1,6 @@
 package com.gillsoft.control.core;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -219,6 +218,9 @@ public class TripSearchController {
 				updateResponse(transfersResult, result);
 			} else {
 				putRequestToCache(response.getSearchId(), requestContainer);
+				
+				// удаляем неиспользуемые данные
+				updateResponse(result, null);
 			}
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
@@ -245,9 +247,6 @@ public class TripSearchController {
 		
 		// применяем фильтр
 		filter.apply(result.getSegments());
-		
-		// удаляем неиспользуемые данные
-		updateResponse(result, null);
 	}
 	
 	private void logError(TripSearchResponse searchResponse) {
@@ -429,10 +428,16 @@ public class TripSearchController {
 	}
 	
 	private void updateResponse(TripSearchResponse response, TripSearchResponse result) {
-		final Collection<Segment> segments = response.getSegments().values();
-		
+		if (result != null) {
+			result.getTripContainers().addAll(response.getTripContainers());
+			result.getSegments().putAll(response.getSegments());
+			result.getVehicles().putAll(response.getVehicles());
+			result.getOrganisations().putAll(response.getOrganisations());
+			result.getLocalities().putAll(response.getLocalities());
+			response = result;
+		}
+		Map<String, Segment> segments = response.getSegments();
 		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
-		
 		if (response.getTripContainers() != null) {
 			for (TripContainer container : response.getTripContainers()) {
 				if (container.getTrips() != null) {
@@ -448,7 +453,7 @@ public class TripSearchController {
 							resultSegmentIds.add(trip.getBackId());
 						}
 						if (trip.getSegments() != null) {
-							if (trip.getSegments().removeIf(id -> !response.getSegments().containsKey(id))) {
+							if (trip.getSegments().removeIf(id -> !segments.containsKey(id))) {
 								trip.setSegments(null);
 							} else {
 								resultSegmentIds.addAll(trip.getSegments());
@@ -458,19 +463,14 @@ public class TripSearchController {
 					container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
 				}
 			}
-			if (result != null) {
-				result.getTripContainers().addAll(response.getTripContainers());
-			}
 		}
 		// перезаливаем рейсы
-		response.getSegments().keySet().removeIf(key -> !resultSegmentIds.contains(key));
-		if (result != null) {
-			result.getSegments().putAll(response.getSegments());
-		}
+		segments.keySet().removeIf(key -> !resultSegmentIds.contains(key));
+		
 		// перезаливаем словари
 		if (response.getVehicles() != null) {
 			response.getVehicles().keySet().removeIf(key -> {
-				for (Segment segment : segments) {
+				for (Segment segment : segments.values()) {
 					if (segment.getVehicle() != null
 							&& Objects.equals(key, segment.getVehicle().getId())) {
 						return false;
@@ -478,13 +478,10 @@ public class TripSearchController {
 				};
 				return true;
 			});
-			if (result != null) {
-				result.getVehicles().putAll(response.getVehicles());
-			}
 		}
 		if (response.getOrganisations() != null) {
 			response.getOrganisations().keySet().removeIf(key -> {
-				for (Segment segment : segments) {
+				for (Segment segment : segments.values()) {
 					if ((segment.getCarrier() != null
 							&& Objects.equals(key, segment.getCarrier().getId()))
 							|| (segment.getInsurance() != null
@@ -494,13 +491,10 @@ public class TripSearchController {
 				};
 				return true;
 			});
-			if (result != null) {
-				result.getOrganisations().putAll(response.getOrganisations());
-			}
 		}
 		if (response.getLocalities() != null) {
 			response.getLocalities().keySet().removeIf(key -> {
-				for (Segment segment : segments) {
+				for (Segment segment : segments.values()) {
 					if (Objects.equals(key, segment.getDeparture().getId())
 							|| Objects.equals(key, segment.getArrival().getId())) {
 						return false;
@@ -518,9 +512,6 @@ public class TripSearchController {
 				};
 				return true;
 			});
-			if (result != null) {
-				result.getLocalities().putAll(response.getLocalities());
-			}
 		}
 	}
 
