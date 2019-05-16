@@ -436,11 +436,13 @@ public class MsDataController {
 	
 	private List<OrderAccess> getAvalaibleOrdersAccess(User user, List<BaseEntity> userEntities) {
 		List<OrderAccess> userAccess = new ArrayList<>();
+		
+		// все статусы доступные указанному пользователю (пользователь или его родители есть парентами для статуса доступа)
 		List<OrderAccess> access = getOrdersAccess(user);
 		if (access != null) {
 			for (OrderAccess orderAccess : access) {
 				
-				// если дети доступного статуса содержат хоть какую-нибудь сущность пользователя
+				// если дети доступного статуса содержат хоть какую-нибудь сущность из указанных в userEntities
 				if (orderAccess.getChilds() != null
 						&& orderAccess.getChilds().stream().anyMatch(c -> userEntities.stream().anyMatch(e -> c.getId() == e.getId()))) {
 					userAccess.add(orderAccess);
