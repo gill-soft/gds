@@ -417,6 +417,7 @@ public class TripSearchController {
 						segment.setRoute(null);
 						segment.setSeats(null);
 					});
+					tripSearchMapping.createDictionaries(response);
 					updateResponse(response, result);
 				}
 			} while (response.getSearchId() != null);

@@ -56,18 +56,24 @@ public class TripSearchMapping {
 	public void createDictionaries(TripSearchResponse result) {
 		
 		// resource locality id -> locality from mapping
-		result.setLocalities(new HashMap<>());
-		
-		// resource locality id -> locality from mapping
-		result.setOrganisations(new HashMap<>());
-		
-		// resource locality id -> locality from mapping
-		result.setVehicles(new HashMap<>());
-		
+		if (result.getLocalities() == null) {
+			result.setLocalities(new HashMap<>());
+		}
+		// resource organisation id -> organisation from mapping
+		if (result.getOrganisations() == null) {
+			result.setOrganisations(new HashMap<>());
+		}
+		// resource vehicle id -> vehicle from mapping
+		if (result.getVehicles() == null) {
+			result.setVehicles(new HashMap<>());
+		}
 		// resourceId + ";" + resource segment id -> segment
-		result.setSegments(new HashMap<>());
-		
-		result.setTripContainers(new ArrayList<>());
+		if (result.getSegments() == null) {
+			result.setSegments(new HashMap<>());
+		}
+		if (result.getTripContainers() == null) {
+			result.setTripContainers(new ArrayList<>());
+		}
 	}
 	
 	/**
