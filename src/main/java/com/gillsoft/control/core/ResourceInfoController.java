@@ -61,7 +61,7 @@ public class ResourceInfoController {
 	}
 	
 	protected List<Method> createCachedMethods(ResourceRequest request) {
-		String key = getActiveResourcesCacheKey(request.getParams().getResource().getId());
+		String key = getActiveResourcesCacheKey(Long.parseLong(request.getParams().getResource().getId()));
 		
 		// синхронизируем выгрузку методов по ресурсу
 		synchronized (key.intern()) {

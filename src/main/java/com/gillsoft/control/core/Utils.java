@@ -30,16 +30,16 @@ public class Utils {
 	/**
 	 * Формирует и возвращает разницу времени в HH:mm с учетом таймзон.
 	 */
-	public static String getTimeInRoad(Date start, Date end, long fromMappingId, long toMappingId) {
-		long time = getTimeInRoadInMillis(start, end, fromMappingId, toMappingId);
+	public static String getTimeInWay(Date start, Date end, long fromMappingId, long toMappingId) {
+		long time = getTimeInWayInMillis(start, end, fromMappingId, toMappingId);
 		if (time == 0) {
 			return "";
 		}
-		return String.format("%02d:%02d", (time / 1000 / 60 / 60), ((time / 1000 / 60) % 60));
+		return String.format("%02d:%02d", (int) (time / 1000 / 60 / 60), (int) ((time / 1000 / 60) % 60));
 	}
 
-	public static long getTimeInRoadInMillis(Date start, Date end, long fromMappingId, long toMappingId) {
-		if (end == null) {
+	public static long getTimeInWayInMillis(Date start, Date end, long fromMappingId, long toMappingId) {
+		if (start == null || end == null) {
 			return 0;
 		}
 		int fromOffset = getLocalityOffset(fromMappingId, start);
@@ -47,14 +47,9 @@ public class Utils {
 		return getTime(end).getTimeInMillis() - getTime(start).getTimeInMillis() + (fromOffset - toOffset);
 	}
 	
-	@SuppressWarnings("deprecation")
 	private static Calendar getTime(Date date) {
 		Calendar time = Calendar.getInstance();
-		time.set(Calendar.YEAR, date.getYear());
-		time.set(Calendar.MONTH, date.getMonth());
-		time.set(Calendar.DAY_OF_MONTH, date.getDate());
-		time.set(Calendar.HOUR_OF_DAY, date.getHours());
-		time.set(Calendar.MINUTE, date.getMinutes());
+		time.setTime(date);
 		time.set(Calendar.SECOND, 0);
 		time.set(Calendar.MILLISECOND, 0);
 		return time;

@@ -119,6 +119,12 @@ public class OrderController {
 			response.getOrganisations().putAll(search.getOrganisations());
 			response.getLocalities().putAll(search.getLocalities());
 			response.getSegments().putAll(search.getSegments());
+			response.getSegments().values().forEach(s -> {
+				com.gillsoft.model.Resource resource = search.getResources().get(s.getResource().getId());
+				resource.setId(s.getResource().getId());
+				s.setResource(resource);
+				
+			});
 		}
 		if (response.getVehicles().isEmpty()) {
 			response.setVehicles(null);

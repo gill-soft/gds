@@ -82,7 +82,7 @@ public class LocalityController {
 					LocalityRequest request = stream.findFirst().get();
 					
 					// мапинг ресурса
-					long resourceId = request.getParams().getResource().getId();
+					long resourceId = Long.parseLong(request.getParams().getResource().getId());
 					mappings.putAll(localityResponse.getLocalities().stream()
 							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang()))
 							.filter(map -> map != null).flatMap(maps -> maps.stream()).collect(
@@ -187,7 +187,7 @@ public class LocalityController {
 						resourceIds.addAll(entry.getValue());
 					}
 					// формируем мапинг
-					long resourceId = request.getParams().getResource().getId();
+					long resourceId = Long.parseLong(request.getParams().getResource().getId());
 					Map<String, Set<Long>> mapping = resourceIds.stream().collect(
 							Collectors.toMap(id -> id, id -> {
 								Set<Long> ids = mappingService.getMappingIds(MapType.GEO, resourceId, id);

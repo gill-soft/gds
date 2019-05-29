@@ -285,7 +285,7 @@ public class TripSearchController {
 			if (!localities.isEmpty()) {
 				Map<String, Locality> mapped = new HashMap<>();
 				tripSearchMapping.mappingGeo(requests.get(0), localities, mapped);
-				long resourceId = requests.get(0).getParams().getResource().getId();
+				long resourceId = Long.parseLong(requests.get(0).getParams().getResource().getId());
 				for (RoutePoint point : route.getPath()) {
 					if (point.getLocality() != null) {
 						Locality parent = point.getLocality().getParent();
@@ -434,6 +434,7 @@ public class TripSearchController {
 			result.getSegments().putAll(response.getSegments());
 			result.getVehicles().putAll(response.getVehicles());
 			result.getOrganisations().putAll(response.getOrganisations());
+			result.getResources().putAll(response.getResources());
 			result.getLocalities().putAll(response.getLocalities());
 			response = result;
 		}
@@ -474,6 +475,17 @@ public class TripSearchController {
 				for (Segment segment : segments.values()) {
 					if (segment.getVehicle() != null
 							&& Objects.equals(key, segment.getVehicle().getId())) {
+						return false;
+					}
+				};
+				return true;
+			});
+		}
+		if (response.getResources() != null) {
+			response.getResources().keySet().removeIf(key -> {
+				for (Segment segment : segments.values()) {
+					if (segment.getResource() != null
+							&& Objects.equals(key, segment.getResource().getId())) {
 						return false;
 					}
 				};

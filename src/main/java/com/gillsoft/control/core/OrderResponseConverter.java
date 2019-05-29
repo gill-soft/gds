@@ -65,7 +65,7 @@ public class OrderResponseConverter {
 				
 				// заказы ресурсов для сохранения
 				ResourceOrder resourceOrder = new ResourceOrder();
-				resourceOrder.setResourceId(currRequest.getParams().getResource().getId());
+				resourceOrder.setResourceId(Long.parseLong(currRequest.getParams().getResource().getId()));
 				resourceOrder.setResourceNativeOrderId(
 						new IdModel(resourceOrder.getId(), orderResponse.getOrderId()).asString());
 				order.addResourceOrder(resourceOrder);

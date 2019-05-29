@@ -153,6 +153,10 @@ public class ConnectionsController {
 			String fromSegmentId, String toSegmentId) {
 		Segment fromSegment = tripSearchResponse.getSegments().get(fromSegmentId);
 		Segment toSegment = tripSearchResponse.getSegments().get(toSegmentId);
+		if (toSegment.getDepartureDate() == null
+				|| fromSegment.getArrivalDate() == null) {
+			return false;
+		}
 		for (SegmentConnection connection : connections) {
 			Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
 			Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());

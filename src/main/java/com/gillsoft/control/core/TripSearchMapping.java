@@ -26,6 +26,7 @@ import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Name;
 import com.gillsoft.model.Organisation;
+import com.gillsoft.model.Resource;
 import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.Trip;
@@ -58,6 +59,10 @@ public class TripSearchMapping {
 		// resource locality id -> locality from mapping
 		if (result.getLocalities() == null) {
 			result.setLocalities(new HashMap<>());
+		}
+		// resource resource id -> resource
+		if (result.getResources() == null) {
+			result.setResources(new HashMap<>());
 		}
 		// resource organisation id -> organisation from mapping
 		if (result.getOrganisations() == null) {
@@ -98,7 +103,7 @@ public class TripSearchMapping {
 		
 		// родителей тоже нужно попытаться смапить
 		if (objects != null) {
-			long resourceId = request.getParams().getResource().getId();
+			long resourceId = Long.parseLong(request.getParams().getResource().getId());
 			List<Locality> localities = new ArrayList<>(objects.values());
 			for (Locality locality : localities) {
 				if (locality.getParent() != null) {
@@ -145,7 +150,7 @@ public class TripSearchMapping {
 				|| objects.isEmpty()) {
 			return;
 		}
-		long resourceId = request.getParams().getResource().getId();
+		long resourceId = Long.parseLong(request.getParams().getResource().getId());
 		for (Entry<String, T> object : objects.entrySet()) {
 			
 			// получаем смапленную сущность
@@ -282,9 +287,13 @@ public class TripSearchMapping {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		long resourceId = request.getParams().getResource().getId();
+		long resourceId = Long.parseLong(request.getParams().getResource().getId());
+		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			Segment segment = entry.getValue();
+			
+			// устанавливаем ресурс
+			segment.setResource(new Resource(String.valueOf(resourceId)));
 			
 			// устанавливаем ид пунктов с маппинга
 			segment.setDeparture(result.getLocalities().get(
@@ -451,7 +460,7 @@ public class TripSearchMapping {
 	 */
 	private void setTimeInWay(Segment segment, String from, String to) {
 		try {
-			segment.setTimeInWay(Utils.getTimeInRoad(segment.getDepartureDate(), segment.getArrivalDate(),
+			segment.setTimeInWay(Utils.getTimeInWay(segment.getDepartureDate(), segment.getArrivalDate(),
 					Long.valueOf(from), Long.valueOf(to)));
 		} catch (NumberFormatException e) {
 		}
@@ -470,6 +479,7 @@ public class TripSearchMapping {
 				segment.setVehicle(segment.getVehicle() != null ? new Vehicle(segment.getVehicle().getId()) : null);
 				segment.setCarrier(segment.getCarrier() != null ? new Organisation(segment.getCarrier().getId()) : null);
 				segment.setInsurance(segment.getInsurance() != null ? new Organisation(segment.getInsurance().getId()) : null);
+				// ресурс не проставляем так как там уже как надо
 			}
 		}
 		if (result.getLocalities() != null) {
@@ -484,6 +494,13 @@ public class TripSearchMapping {
 				result.setOrganisations(null);
 			} else {
 				result.getOrganisations().values().forEach(o -> o.setId(null));
+			}
+		}
+		if (result.getResources() != null) {
+			if (result.getResources().isEmpty()) {
+				result.setResources(null);
+			} else {
+				result.getResources().values().forEach(r -> r.setId(null));
 			}
 		}
 		if (result.getVehicles() != null) {
