@@ -350,6 +350,10 @@ public class TripSearchMapping {
 							getKey(resourceId, point.getLocality().getId())).getId()));
 				}
 			}
+			// доавляем ресурс в ид вагона
+			if (segment.getCarriages() != null) {
+				segment.getCarriages().forEach(c -> c.setId(new IdModel(resourceId, c.getId()).asString()));
+			}
 			// добавляем рейсы в результат
 			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 		}
