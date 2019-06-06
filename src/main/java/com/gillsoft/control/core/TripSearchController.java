@@ -319,6 +319,9 @@ public class TripSearchController {
 	public List<Tariff> getTariffs(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
 		TariffsResponse response = checkResponse(requests.get(0), service.getTariffs(requests).get(0));
+		if (response.getTariffs() != null) {
+			response.getTariffs().forEach(t -> tripSearchMapping.applyLang(t, lang)); 
+		}
 		return response.getTariffs();
 	}
 
@@ -339,6 +342,9 @@ public class TripSearchController {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
 		requests.get(0).setTariffId(tariffId);
 		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
+		if (response.getConditions() != null) {
+			response.getConditions().forEach(c -> tripSearchMapping.applyLang(c, lang)); 
+		}
 		return response.getConditions();
 	}
 	

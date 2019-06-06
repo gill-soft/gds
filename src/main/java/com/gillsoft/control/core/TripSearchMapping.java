@@ -27,8 +27,10 @@ import com.gillsoft.model.Locality;
 import com.gillsoft.model.Name;
 import com.gillsoft.model.Organisation;
 import com.gillsoft.model.Resource;
+import com.gillsoft.model.ReturnCondition;
 import com.gillsoft.model.RoutePoint;
 import com.gillsoft.model.Segment;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
@@ -342,6 +344,7 @@ public class TripSearchMapping {
 			
 			// начисление сборов
 			segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+			applyLang(segment.getPrice().getTariff(), request.getLang());
 			
 			// мапинг пунктов маршрута
 			if (segment.getRoute() != null) {
@@ -362,6 +365,35 @@ public class TripSearchMapping {
 		
 		// проставляем ид словарей с маппинга
 		updateDictionaries(result);
+	}
+	
+	public void applyLang(Tariff tariff, Lang lang) {
+		if (lang != null) {
+			if (tariff.getDescription() != null
+					&& tariff.getDescription().get(lang) != null) {
+				tariff.getDescription().keySet().removeIf(k -> k != lang);
+			}
+			if (tariff.getName() != null
+					&& tariff.getName().get(lang) != null) {
+				tariff.getName().keySet().removeIf(k -> k != lang);
+			}
+			if (tariff.getReturnConditions() != null) {
+				tariff.getReturnConditions().forEach(r -> applyLang(r, lang));
+			}
+		}
+	}
+	
+	public void applyLang(ReturnCondition returnCondition, Lang lang) {
+		if (lang != null) {
+			if (returnCondition.getTitle() != null
+					&& returnCondition.getTitle().get(lang) != null) {
+				returnCondition.getTitle().keySet().removeIf(k -> k != lang);
+			}
+			if (returnCondition.getDescription() != null
+					&& returnCondition.getDescription().get(lang) != null) {
+				returnCondition.getDescription().keySet().removeIf(k -> k != lang);
+			}
+		}
 	}
 	
 	/*
