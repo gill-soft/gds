@@ -32,6 +32,7 @@ import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.PaymentMethod;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
@@ -325,7 +326,7 @@ public class OrderController {
 		}
 	}
 	
-	public OrderResponse confirm(long orderId) {
+	public OrderResponse confirm(long orderId, PaymentMethod paymentMethod) {
 		try {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
@@ -346,6 +347,9 @@ public class OrderController {
 			
 			// преобразовываем и сохраняем
 			order = converter.convertToConfirm(order, requests, responses, ServiceStatus.CONFIRM, ServiceStatus.CONFIRM_ERROR);
+			if (paymentMethod != null) {
+				order.setPayment(paymentMethod);
+			}
 			try {
 				manager.confirm(order);
 			} catch (ManageException e) {

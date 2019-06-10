@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.OrderController;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.model.PaymentMethod;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 
@@ -37,9 +38,9 @@ public class OrderApiController {
 	
 	@ApiOperation(value = "Confirm selected order and return it",
 			response = OrderResponse.class)
-	@PostMapping("/{orderId}/confirm")
-	public OrderResponse confirm(@Validated @PathVariable long orderId) {
-		return controller.confirm(orderId);
+	@PostMapping("/{orderId}/confirm/{payment}")
+	public OrderResponse confirm(@Validated @PathVariable long orderId, @PathVariable PaymentMethod payment) {
+		return controller.confirm(orderId, payment);
 	}
 	
 	@ApiOperation(value = "Cacnel selected order and return it",

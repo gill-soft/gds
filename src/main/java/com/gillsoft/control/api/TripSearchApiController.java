@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.TripSearchController;
@@ -96,7 +95,7 @@ public class TripSearchApiController {
 			response = ReturnCondition.class, responseContainer="List")
 	@GetMapping("/trip/{tripId}/conditions/{tariffId}/{lang}")
 	public List<ReturnCondition> getReturnConditions(@Validated @PathVariable String tripId,
-			@Validated @RequestParam("tariffId") String tariffId,
+			@Validated @PathVariable("tariffId") String tariffId,
 			@PathVariable(required = false) Lang lang) {
 		return controller.getConditions(tripId, tariffId, lang);
 	}

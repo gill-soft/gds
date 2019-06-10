@@ -8,6 +8,8 @@ import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -24,6 +26,7 @@ import org.hibernate.annotations.FetchMode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.gillsoft.model.PaymentMethod;
 import com.gillsoft.model.response.OrderResponse;
 
 @Entity
@@ -39,6 +42,10 @@ public class Order implements Serializable {
 	
 	@Column(nullable = false)
 	private Date created;
+	
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private PaymentMethod payment = PaymentMethod.NON_CASH;
 	
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
@@ -69,6 +76,14 @@ public class Order implements Serializable {
 
 	public void setCreated(Date created) {
 		this.created = created;
+	}
+
+	public PaymentMethod getPayment() {
+		return payment;
+	}
+
+	public void setPayment(PaymentMethod payment) {
+		this.payment = payment;
 	}
 
 	public Set<ResourceOrder> getOrders() {
