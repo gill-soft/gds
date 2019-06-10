@@ -179,13 +179,15 @@ public class TripSearchMapping {
 		if (request.getLang() != null) {
 			if (value instanceof Name) {
 				Name name = (Name) value;
-				if (name.getName(request.getLang()) != null) {
+				if (name.getName() != null
+						&& name.getName().get(request.getLang()) != null) {
 					name.getName().keySet().removeIf(l -> l != request.getLang());
 				}
 			}
 			if (value instanceof Address) {
 				Address address = (Address) value;
-				if (address.getAddress(request.getLang()) != null) {
+				if (address.getAddress() != null
+						&& address.getAddress().get(request.getLang()) != null) {
 					address.getAddress().keySet().removeIf(l -> l != request.getLang());
 				}
 			}
