@@ -51,6 +51,9 @@ public class OrderResponseConverter {
 		Date created = new Date();
 		Order order = new Order();
 		order.setCreated(created);
+		
+		// по умолчанию время на выкуп 20 минут
+		Date expire = new Date(System.currentTimeMillis() + 1200000l);
 		order.setResponse(result);
 		
 		User user = dataController.getUser();
@@ -90,6 +93,14 @@ public class OrderResponseConverter {
 						}
 						if (item.getError() == null) {
 							
+							// проверяем время на выкуп
+							if (item.getExpire() == null) {
+								item.setExpire(expire);
+							}
+							// проверяем возможность аннулирования заказа
+							if (item.getCanceled() == null) {
+								item.setCanceled(true);
+							}
 							// пересчитываем стоимость
 							if (item.getPrice() != null) {
 								item.setPrice(dataController.recalculate(
@@ -157,6 +168,12 @@ public class OrderResponseConverter {
 		
 		// ид сервисов
 		for (ServiceItem service : response.getServices()) {
+			if (service.getExpire() != null) {
+				service.setExpire(convertUTCDateToUserTimeZone(service.getExpire()));
+			}
+			if (service.getTimeToCancel() != null) {
+				service.setTimeToCancel(convertUTCDateToUserTimeZone(service.getTimeToCancel()));
+			}
 			if (service.getId() != null) {
 				out:
 					for (ResourceOrder resourceOrder : order.getOrders()) {
@@ -178,6 +195,14 @@ public class OrderResponseConverter {
 			}
 		}
 		return response;
+	}
+	
+	private Date convertUTCDateToUserTimeZone(Date date) {
+		String timeZone = dataController.getUserTimeZone();
+		if (timeZone != null) {
+			return new Date(date.getTime() + Utils.getOffset(timeZone, date.getTime()));
+		}
+		return date;
 	}
 	
 	public List<ServiceItem> joinServices(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
@@ -346,6 +371,19 @@ public class OrderResponseConverter {
 	}
 	
 	private void updateServiceData(ServiceItem service, ServiceItem newData) {
+		
+		// проверяем возможность аннулирования заказа
+		if (newData.getTimeToCancel() != null) {
+			service.setCanceled(true);
+			service.setTimeToCancel(newData.getTimeToCancel());
+		} else if (!service.getCanceled()
+				&& newData.getCanceled()) {
+			service.setCanceled(true);
+		}
+		if (service.getCanceled()
+				&& service.getTimeToCancel() == null) {
+			service.setTimeToCancel(new Date(System.currentTimeMillis() + 1200000l));
+		}
 		if (newData.getExpire() != null) {
 			service.setExpire(newData.getExpire());
 		}

@@ -100,40 +100,42 @@ public class FilterController {
 	
 	private boolean isRemove(Segment segment, List<ServiceFilter> filters) {
 		boolean remove = false;
-		for (ServiceFilter filter : filters) {
-			boolean currFilter = false;
-			String[] name = filter.getFilteredField().split("\\.");
-			Object value = segment;
-			for (int i = 1; i < name.length; i++) {
-				Field field = fields.get(getKey(name, i));
-				if (field == null) {
-					currFilter = true;
-					break;
+		if (filters != null) {
+			for (ServiceFilter filter : filters) {
+				boolean currFilter = false;
+				String[] name = filter.getFilteredField().split("\\.");
+				Object value = segment;
+				for (int i = 1; i < name.length; i++) {
+					Field field = fields.get(getKey(name, i));
+					if (field == null) {
+						currFilter = true;
+						break;
+					}
+					try {
+						value = field.get(value);
+					} catch (IllegalArgumentException | IllegalAccessException e) {
+						LOGGER.error("Can not get value of field " + name[0], e);
+						currFilter = true;
+						break;
+					}
+					if (value == null) {
+						currFilter = true;
+						break;
+					}
 				}
-				try {
-					value = field.get(value);
-				} catch (IllegalArgumentException | IllegalAccessException e) {
-					LOGGER.error("Can not get value of field " + name[0], e);
-					currFilter = true;
-					break;
+				if (value != null) {
+					boolean accepted = isAccepted(value.toString().toLowerCase(), filter);
+					switch (filter.getFilterType()) {
+					case INCLUDE:
+						currFilter = !accepted;
+						break;
+					case EXCLUDE:
+						currFilter = accepted;
+						break;
+					}
 				}
-				if (value == null) {
-					currFilter = true;
-					break;
-				}
+				remove = remove || currFilter;
 			}
-			if (value != null) {
-				boolean accepted = isAccepted(value.toString().toLowerCase(), filter);
-				switch (filter.getFilterType()) {
-				case INCLUDE:
-					currFilter = !accepted;
-					break;
-				case EXCLUDE:
-					currFilter = accepted;
-					break;
-				}
-			}
-			remove = remove || currFilter;
 		}
 		return remove;
 	}

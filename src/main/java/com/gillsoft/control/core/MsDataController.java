@@ -42,6 +42,7 @@ import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.request.ResourceParams;
+import com.gillsoft.ms.entity.AttributeValue;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
@@ -165,6 +166,18 @@ public class MsDataController {
 		String userName = authentication.getName();
 		return (User) getFromCache(getUserCacheKey(userName),
 				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 600000l);
+	}
+	
+	public String getUserTimeZone() {
+		User user = getUser();
+		if (user.getAttributeValues() != null) {
+			for (AttributeValue value : user.getAttributeValues()) {
+				if (value.getAttribute().getName().equals("timezone")) {
+					return value.getValue();
+				}
+			}
+		}
+		return null;
 	}
 	
 	public User getUser(long id) {
