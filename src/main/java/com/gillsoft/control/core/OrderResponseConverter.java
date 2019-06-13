@@ -165,14 +165,17 @@ public class OrderResponseConverter {
 	
 	private OrderResponse convertResponse(Order order, OrderResponse response) {
 		response.setOrderId(String.valueOf(order.getId()));
-		
-		// ид сервисов
 		for (ServiceItem service : response.getServices()) {
 			if (service.getExpire() != null) {
 				service.setExpire(convertUTCDateToUserTimeZone(service.getExpire()));
 			}
 			if (service.getTimeToCancel() != null) {
-				service.setTimeToCancel(convertUTCDateToUserTimeZone(service.getTimeToCancel()));
+				if (service.getTimeToCancel().getTime() < System.currentTimeMillis() + 60000) {
+					service.setCanceled(false);
+					service.setTimeToCancel(null);
+				} else {
+					service.setTimeToCancel(convertUTCDateToUserTimeZone(service.getTimeToCancel()));
+				}
 			}
 			if (service.getId() != null) {
 				out:
