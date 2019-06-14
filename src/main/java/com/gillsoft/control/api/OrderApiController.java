@@ -45,9 +45,9 @@ public class OrderApiController {
 	
 	@ApiOperation(value = "Cacnel selected order and return it",
 			response = OrderResponse.class)
-	@PostMapping("/{orderId}/cancel")
-	public OrderResponse cancel(@Validated @PathVariable long orderId) {
-		return controller.cancel(orderId);
+	@PostMapping("/{orderId}/cancel/{cancelReason}")
+	public OrderResponse cancel(@Validated @PathVariable long orderId, @PathVariable String cancelReason) {
+		return controller.cancel(orderId, cancelReason);
 	}
 	
 	@ApiOperation(value = "Returns the information about selected order",

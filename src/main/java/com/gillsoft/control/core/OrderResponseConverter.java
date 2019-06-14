@@ -165,6 +165,8 @@ public class OrderResponseConverter {
 	
 	private OrderResponse convertResponse(Order order, OrderResponse response) {
 		response.setOrderId(String.valueOf(order.getId()));
+		response.setPayment(order.getPayment());
+		response.setCancelReason(order.getCancelReason());
 		for (ServiceItem service : response.getServices()) {
 			if (service.getExpire() != null) {
 				service.setExpire(convertUTCDateToUserTimeZone(service.getExpire()));

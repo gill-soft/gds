@@ -363,7 +363,7 @@ public class OrderController {
 		}
 	}
 	
-	public OrderResponse cancel(long orderId) {
+	public OrderResponse cancel(long orderId, String reason) {
 		try {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
@@ -384,6 +384,7 @@ public class OrderController {
 			
 			// преобразовываем и сохраняем
 			order = converter.convertToConfirm(order, requests, responses, ServiceStatus.CANCEL, ServiceStatus.CANCEL_ERROR);
+			order.setCancelReason(reason);
 			try {
 				manager.cancel(order);
 			} catch (ManageException e) {

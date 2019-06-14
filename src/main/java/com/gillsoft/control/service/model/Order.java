@@ -47,6 +47,9 @@ public class Order implements Serializable {
 	@Enumerated(EnumType.STRING)
 	private PaymentMethod payment = PaymentMethod.NON_CASH;
 	
+	@Column(name="cancel_reason", nullable = true)
+	private String cancelReason;
+	
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
@@ -84,6 +87,14 @@ public class Order implements Serializable {
 
 	public void setPayment(PaymentMethod payment) {
 		this.payment = payment;
+	}
+
+	public String getCancelReason() {
+		return cancelReason;
+	}
+
+	public void setCancelReason(String cancelReason) {
+		this.cancelReason = cancelReason;
 	}
 
 	public Set<ResourceOrder> getOrders() {
