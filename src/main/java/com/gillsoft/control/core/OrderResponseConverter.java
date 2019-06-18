@@ -28,6 +28,7 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
@@ -191,6 +192,7 @@ public class OrderResponseConverter {
 								// устанавливаем стоимость с указанного статуса
 								Price price = getStatusPrice(resourceService.getStatuses(), status);
 								if (price != null) {
+									price.setSource(service.getPrice());
 									service.setPrice(price);
 								}
 								break out;
@@ -263,7 +265,8 @@ public class OrderResponseConverter {
 										if (confirmStatus != null) {
 											resourceService.addStatus(createStatus(created, user,
 													service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
-															service.getError() == null ? null : service.getError().getMessage(), service.getPrice()));
+													service.getError() == null ? null : service.getError().getMessage(),
+													service.getPrice()));
 										}
 										break;
 									}
@@ -289,51 +292,82 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		List<ServiceItem> services = joinServices(order, requests, responses, confirmStatus, errorStatus);
-		updateResponse(order, services);
+		updateResponse(order, joinServices(order, requests, responses, confirmStatus, errorStatus));
 		return order;
 	}
 	
 	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		OrderResponse response = new OrderResponse();
 		response.setServices(joinServices(order, requests, responses, null, null));
+		response = convertResponse(order, response);
 		for (ServiceItem service : response.getServices()) {
-			service.setPrice(dataController.recalculateReturn(getSegment(order, service), service.getPrice()));
+			if (service.getError() == null) {
+				Segment segment = getSegment(order, service);
+				service.setPrice(dataController.recalculateReturn(segment,
+						getDepartureTimeZone(order, segment), service.getPrice().getSource(), service.getPrice()));
+			}
 		}
-		return convertResponse(order, response);
+		return response;
 	}
 	
-	public OrderResponse convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
-		
-		// пересчитываем стоимости возвратов
+	public Order convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
+
+		// проверяем стоимости возвратов
 		for (OrderResponse orderResponse : returnResponses) {
 			if (orderResponse.getServices() != null) {
 				for (ServiceItem service : orderResponse.getServices()) {
-					Price price = service.getPrice();
-					if (price == null) {
-						for (OrderResponse calcResponse : calcResponses) {
-							if (calcResponse.getServices() != null) {
-								Stream<ServiceItem> finded = calcResponse.getServices().stream().filter(s -> Objects.equals(s.getId(), service.getId()));
-								if (finded != null) {
-									price = finded.findFirst().get().getPrice();
-									break;
+					if (service.getError() == null) {
+						Price price = service.getPrice();
+						if (price == null) {
+							for (OrderResponse calcResponse : calcResponses) {
+								if (calcResponse.getServices() != null) {
+									Stream<ServiceItem> finded = calcResponse.getServices().stream().filter(s -> Objects.equals(s.getId(), service.getId()));
+									if (finded != null) {
+										service.setPrice(finded.findFirst().get().getPrice());
+										break;
+									}
 								}
 							}
 						}
 					}
-					service.setPrice(dataController.recalculateReturn(getSegment(order, service), price));
 				}
 			}
 		}
-		OrderResponse response = new OrderResponse();
-		response.setServices(joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR));
-		return convertResponse(order, response);
+		// устанавливаем суммы возвратов
+		convertToReturnCalc(order, requests, returnResponses);
+		
+		// добавляем статусы возврата к заказу
+		joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR);
+		return order;
 	}
 	
 	/*
 	 * Возвращает сегмент рейса, по переданному сервису.
 	 */
 	private Segment getSegment(Order order, ServiceItem service) {
+		ServiceItem orderService = getOrderService(order, service);
+		if (orderService != null
+				&& orderService.getSegment() != null
+				&& order.getResponse().getSegments() != null) {
+			return order.getResponse().getSegments().get(orderService.getSegment().getId());
+		}
+		return null;
+	}
+	
+	private String getDepartureTimeZone(Order order, Segment segment) {
+		if (segment != null) {
+			Locality departure = order.getResponse().getLocalities().get(segment.getDeparture().getId());
+			while (departure != null
+					&& departure.getTimezone() == null
+					&& departure.getParent() != null) {
+				departure = order.getResponse().getLocalities().get(departure.getParent().getId());
+			}
+			return departure.getTimezone();
+		}
+		return null;
+	}
+	
+	private ServiceItem getOrderService(Order order, ServiceItem service) {
 		String serviceId = null;
 		IdModel model = new IdModel().create(service.getId());
 		if (model != null) {
@@ -343,22 +377,13 @@ public class OrderResponseConverter {
 			String itemId = new IdModel().create(item.getId()).getId();
 			if (Objects.equals(itemId, service.getId())
 					|| Objects.equals(itemId, serviceId)) {
-				if (item.getSegment() != null
-						&& order.getResponse().getSegments() != null) {
-					return order.getResponse().getSegments().get(item.getSegment().getId());
-				} else {
-					return null;
-				}
+				return item;
 			}
 		}
 		return null;
 	}
 	
 	private void updateResponse(Order order, List<ServiceItem> services) {
-		OrderResponse response = new OrderResponse();
-		response.setOrderId(String.valueOf(order.getId()));
-		response.setServices(new ArrayList<>());
-		
 		for (ServiceItem dbItem : order.getResponse().getServices()) {
 			for (ServiceItem service : services) {
 				if (Objects.equals(dbItem.getId(), service.getId())) {

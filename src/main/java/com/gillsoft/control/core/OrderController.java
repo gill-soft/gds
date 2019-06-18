@@ -575,13 +575,13 @@ public class OrderController {
 						
 			// возвращаем сервисы
 			List<OrderResponse> returnResponses = service.returnServices(requests);
-			OrderResponse response = converter.convertToReturn(order, requests, returnResponses, calcResponses);
+			order = converter.convertToReturn(order, requests, returnResponses, calcResponses);
 			try {
 				manager.returnServices(order);
 			} catch (ManageException e) {
 				LOGGER.error("Return services error in db", e);
 			}
-			return response;
+			return converter.getResponse(order);
 		} finally {
 			
 			// разблокировка заказа

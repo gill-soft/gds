@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -240,7 +241,7 @@ public class MsDataController {
 		return Calculator.calculateResource(price, getUser(), currency);
 	}
 	
-	public Price recalculateReturn(Segment segment, Price price) {
+	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
@@ -250,7 +251,8 @@ public class MsDataController {
 				price.getTariff().getReturnConditions().addAll(conditions);
 			}
 		}
-		return price;// TODO
+		return Calculator.calculateReturn(price, getUser(), price.getCurrency(),
+				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate());// TODO
 	}
 	
 	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {
