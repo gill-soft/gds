@@ -112,7 +112,7 @@ public class Utils {
 		Mapping mapping = getMapping(mappingId);
 		if (mapping != null
 				&& mapping.getAttributes() != null) {
-			return mapping.getAttributes().get("TIMEZONE");
+			return mapping.getAttributes().get("TIME_ZONE");
 		}
 		return null;
 	}

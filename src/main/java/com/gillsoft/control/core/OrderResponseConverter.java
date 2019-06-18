@@ -238,9 +238,7 @@ public class OrderResponseConverter {
 								services.add(item);
 								
 								// добавляем статус об ошибке
-								if (confirmStatus != null) {
-									resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
-								}
+								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
 							}
 							break;
 						}
@@ -262,12 +260,10 @@ public class OrderResponseConverter {
 											service.setError(new RestError("Error when " + confirmStatus + " order"));
 										}
 										// добавляем статус
-										if (confirmStatus != null) {
-											resourceService.addStatus(createStatus(created, user,
-													service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
-													service.getError() == null ? null : service.getError().getMessage(),
-													service.getPrice()));
-										}
+										resourceService.addStatus(createStatus(created, user,
+												service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
+												service.getError() == null ? null : service.getError().getMessage(),
+												service.getPrice()));
 										break;
 									}
 								}
@@ -298,7 +294,9 @@ public class OrderResponseConverter {
 	
 	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		OrderResponse response = new OrderResponse();
-		response.setServices(joinServices(order, requests, responses, null, null));
+		
+		// добавляем статусы возврата к заказу
+		response.setServices(joinServices(order, requests, responses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR));
 		response = convertResponse(order, response);
 		for (ServiceItem service : response.getServices()) {
 			if (service.getError() == null) {
@@ -335,9 +333,6 @@ public class OrderResponseConverter {
 		}
 		// устанавливаем суммы возвратов
 		convertToReturnCalc(order, requests, returnResponses);
-		
-		// добавляем статусы возврата к заказу
-		joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR);
 		return order;
 	}
 	
@@ -357,27 +352,35 @@ public class OrderResponseConverter {
 	private String getDepartureTimeZone(Order order, Segment segment) {
 		if (segment != null) {
 			Locality departure = order.getResponse().getLocalities().get(segment.getDeparture().getId());
-			while (departure != null
-					&& departure.getTimezone() == null
+			String timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(departure.getId()));
+			while (timeZone == null
 					&& departure.getParent() != null) {
-				departure = order.getResponse().getLocalities().get(departure.getParent().getId());
+				departure = departure.getParent();
+				timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(departure.getId()));
 			}
-			return departure.getTimezone();
+			return timeZone;
 		}
 		return null;
 	}
 	
-	private ServiceItem getOrderService(Order order, ServiceItem service) {
-		String serviceId = null;
-		IdModel model = new IdModel().create(service.getId());
-		if (model != null) {
-			serviceId = new IdModel().create(service.getId()).getId();
+	private long getMappingId(String id) {
+		try {
+			return Long.parseLong(id);
+		} catch (NumberFormatException e) {
+			return -1;
 		}
-		for (ServiceItem item : order.getResponse().getServices()) {
-			String itemId = new IdModel().create(item.getId()).getId();
-			if (Objects.equals(itemId, service.getId())
-					|| Objects.equals(itemId, serviceId)) {
-				return item;
+	}
+	
+	private ServiceItem getOrderService(Order order, ServiceItem service) {
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				if (Objects.equals(String.valueOf(resourceService.getId()), service.getId())) {
+					for (ServiceItem item : order.getResponse().getServices()) {
+						if (Objects.equals(item.getId(), resourceService.getResourceNativeServiceId())) {
+							return item;
+						}
+					}
+				}
 			}
 		}
 		return null;
