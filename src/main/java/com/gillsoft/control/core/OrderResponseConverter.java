@@ -238,19 +238,21 @@ public class OrderResponseConverter {
 								services.add(item);
 								
 								// добавляем статус об ошибке
-								resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
+								if (confirmStatus != null) {
+									resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
+								}
 							}
 							break;
 						}
 					}
 				} else {
-					
 					// формируем ответ
 					for (ResourceOrder resourceOrder : order.getOrders()) {
 						if (Objects.equals(currRequest.getOrderId(), new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId())) {
 							for (ServiceItem service : orderResponse.getServices()) {
 								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (Objects.equals(service.getId(), new IdModel().create(resourceService.getResourceNativeServiceId()).getId())) {
+									if (Objects.equals(service.getId(), new IdModel().create(resourceService.getResourceNativeServiceId()).getId())
+											|| Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
 										service.setId(resourceService.getResourceNativeServiceId());
 										services.add(service);
 										
@@ -260,10 +262,12 @@ public class OrderResponseConverter {
 											service.setError(new RestError("Error when " + confirmStatus + " order"));
 										}
 										// добавляем статус
-										resourceService.addStatus(createStatus(created, user,
-												service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
-												service.getError() == null ? null : service.getError().getMessage(),
-												service.getPrice()));
+										if (confirmStatus != null) {
+											resourceService.addStatus(createStatus(created, user,
+													service.getConfirmed() != null && service.getConfirmed() ? confirmStatus : errorStatus,
+													service.getError() == null ? null : service.getError().getMessage(),
+													service.getPrice()));
+										}
 										break;
 									}
 								}
@@ -294,15 +298,13 @@ public class OrderResponseConverter {
 	
 	public OrderResponse convertToReturnCalc(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		OrderResponse response = new OrderResponse();
-		
-		// добавляем статусы возврата к заказу
-		response.setServices(joinServices(order, requests, responses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR));
+		response.setServices(joinServices(order, requests, responses, null, null));
 		response = convertResponse(order, response);
 		for (ServiceItem service : response.getServices()) {
 			if (service.getError() == null) {
 				Segment segment = getSegment(order, service);
 				service.setPrice(dataController.recalculateReturn(segment,
-						getDepartureTimeZone(order, segment), service.getPrice().getSource(), service.getPrice()));
+						getDepartureTimeZone(order, segment), service.getPrice(), service.getPrice().getSource()));
 			}
 		}
 		return response;
@@ -333,6 +335,9 @@ public class OrderResponseConverter {
 		}
 		// устанавливаем суммы возвратов
 		convertToReturnCalc(order, requests, returnResponses);
+		
+		// добавляем статусы возврата к заказу
+		joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR);
 		return order;
 	}
 	

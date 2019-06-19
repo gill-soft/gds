@@ -245,11 +245,12 @@ public class MsDataController {
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
-			if (price.getTariff().getReturnConditions() == null) {
+//			if (price.getTariff().getReturnConditions() == null) {
 				price.getTariff().setReturnConditions(conditions);
-			} else {
-				price.getTariff().getReturnConditions().addAll(conditions);
-			}
+//			} else {
+//				price.getTariff().getReturnConditions().forEach(c -> c.setId("-1"));
+//				price.getTariff().getReturnConditions().addAll(conditions);
+//			}
 		}
 		return Calculator.calculateReturn(price, getUser(), price.getCurrency(),
 				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate());// TODO
@@ -394,6 +395,7 @@ public class MsDataController {
 		converted.setVatCalcType(CalcType.valueOf(commission.getVatCalcType().name()));
 		converted.setType(ValueType.valueOf(commission.getVatType().name()));
 		converted.setCurrency(Currency.valueOf(commission.getCurrency().name()));
+		converted.setName(getValue("name", commission));
 		return converted;
 	}
 	
@@ -402,7 +404,26 @@ public class MsDataController {
 		converted.setId(String.valueOf(returnCondition.getId()));
 		converted.setMinutesBeforeDepart(returnCondition.getActiveTime());
 		converted.setReturnPercent(returnCondition.getValue());
+		converted.setTitle(getValue("name", returnCondition));
 		return converted;
+	}
+	
+	private String getValue(String name, BaseEntity entity) {
+		AttributeValue value = getAttributeValue(name, entity);
+		if (value != null) {
+			return value.getValue();
+		}
+		return null;
+	}
+	
+	private AttributeValue getAttributeValue(String name, BaseEntity entity) {
+		for (AttributeValue value : entity.getAttributeValues()) {
+			if (value.getAttribute() != null
+					&& name.equals(value.getAttribute().getName())) {
+				return value;
+			}
+		}
+		return null;
 	}
 	
 	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
