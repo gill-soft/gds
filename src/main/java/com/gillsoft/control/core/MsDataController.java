@@ -252,8 +252,9 @@ public class MsDataController {
 //				price.getTariff().getReturnConditions().addAll(conditions);
 //			}
 		}
-		return Calculator.calculateReturn(price, getUser(), price.getCurrency(),
-				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate());// TODO
+		price.getSource().setReturned(Calculator.calculateReturn(price, getUser(), price.getCurrency(),
+				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));// TODO
+		return price.getSource();
 	}
 	
 	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {

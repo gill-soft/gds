@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -464,18 +462,8 @@ public class OrderResponseConverter {
 	 * статуса, если она отсутствует.
 	 */
 	public Price getStatusPrice(Set<ServiceStatusEntity> statuses, ServiceStatus status) {
-		SortedSet<ServiceStatusEntity> sorted = new TreeSet<>(new Comparator<ServiceStatusEntity>() {
-
-			@Override
-			public int compare(ServiceStatusEntity o1, ServiceStatusEntity o2) {
-				long diff = o1.getId() - o2.getId();
-				if (diff == 0) {
-					return 0;
-				}
-				return diff > 0 ? -1 : 1;
-			}
-		});
-		sorted.addAll(statuses);
+		List<ServiceStatusEntity> sorted = new ArrayList<>(statuses);
+		sorted.sort((s1, s2) -> s1.getId() > s2.getId() ? -1 : 1);
 		long statusId = 0;
 		for (ServiceStatusEntity serviceStatus : sorted) {
 			if (serviceStatus.getStatus() == status) {
