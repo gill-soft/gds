@@ -2,12 +2,14 @@ package com.gillsoft.control.core;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.logging.log4j.Logger;
 
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.response.Response;
 import com.gillsoft.util.ContextProvider;
 
@@ -37,6 +39,14 @@ public class Utils {
 		}
 		return String.format("%02d:%02d", (int) (time / 1000 / 60 / 60), (int) ((time / 1000 / 60) % 60));
 	}
+	
+	public static String getTimeInWay(Date start, Date end, String fromTimeZone, String toTimeZone) {
+		long time = getTimeInWayInMillis(start, end, fromTimeZone, toTimeZone);
+		if (time == 0) {
+			return "";
+		}
+		return String.format("%02d:%02d", (int) (time / 1000 / 60 / 60), (int) ((time / 1000 / 60) % 60));
+	}
 
 	public static long getTimeInWayInMillis(Date start, Date end, long fromMappingId, long toMappingId) {
 		if (start == null || end == null) {
@@ -44,6 +54,15 @@ public class Utils {
 		}
 		int fromOffset = getLocalityOffset(fromMappingId, start);
 		int toOffset = getLocalityOffset(toMappingId, start);
+		return getTime(end).getTimeInMillis() - getTime(start).getTimeInMillis() + (fromOffset - toOffset);
+	}
+	
+	public static long getTimeInWayInMillis(Date start, Date end, String fromTimeZone, String toTimeZone) {
+		if (start == null || end == null) {
+			return 0;
+		}
+		int fromOffset = getOffset(getTimeZone(fromTimeZone), start.getTime());
+		int toOffset = getOffset(getTimeZone(toTimeZone), end.getTime());
 		return getTime(end).getTimeInMillis() - getTime(start).getTimeInMillis() + (fromOffset - toOffset);
 	}
 	
@@ -134,6 +153,29 @@ public class Utils {
 			return TimeZone.getTimeZone(zoneName);
 		} else {
 			return TimeZone.getDefault();
+		}
+	}
+	
+	public static String getLocalityTimeZone(Map<String, Locality> localities, String localityId) {
+		if (localityId != null) {
+			Locality locality = localities.get(localityId);
+			String timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(localityId));
+			while (timeZone == null
+					&& locality.getParent() != null) {
+				timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(locality.getParent().getId()));
+				locality = localities.containsKey(locality.getParent().getId()) ?
+						localities.get(locality.getParent().getId()) : locality.getParent();
+			}
+			return timeZone;
+		}
+		return null;
+	}
+	
+	public static long getMappingId(String id) {
+		try {
+			return Long.parseLong(id);
+		} catch (NumberFormatException e) {
+			return -1;
 		}
 	}
 

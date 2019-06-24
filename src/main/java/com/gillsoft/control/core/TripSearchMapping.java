@@ -305,8 +305,6 @@ public class TripSearchMapping {
 			segment.setArrival(result.getLocalities().get(
 					getKey(resourceId, segment.getArrival().getId())));
 			
-			setTimeInWay(segment, segment.getDeparture().getId(), segment.getArrival().getId());
-			
 			String tripNumber = mappingService.getResourceTripNumber(segment, resourceId);
 			
 			// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
@@ -367,6 +365,11 @@ public class TripSearchMapping {
 		
 		// проставляем ид словарей с маппинга
 		updateDictionaries(result);
+		
+		// проставляем время в пути
+		for (Segment segment : result.getSegments().values()) {
+			setTimeInWay(result.getLocalities(), segment);
+		}
 	}
 	
 	public void applyLang(Tariff tariff, Lang lang) {
@@ -496,10 +499,11 @@ public class TripSearchMapping {
 	/*
 	 * Время в пути с учетом таймзон
 	 */
-	private void setTimeInWay(Segment segment, String from, String to) {
+	private void setTimeInWay(Map<String, Locality> localities, Segment segment) {
 		try {
 			segment.setTimeInWay(Utils.getTimeInWay(segment.getDepartureDate(), segment.getArrivalDate(),
-					Long.valueOf(from), Long.valueOf(to)));
+					Utils.getLocalityTimeZone(localities, segment.getDeparture().getId()),
+					Utils.getLocalityTimeZone(localities, segment.getArrival().getId())));
 		} catch (NumberFormatException e) {
 		}
 	}

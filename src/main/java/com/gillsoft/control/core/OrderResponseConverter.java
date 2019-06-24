@@ -26,7 +26,6 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
-import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
@@ -354,24 +353,9 @@ public class OrderResponseConverter {
 	
 	private String getDepartureTimeZone(Order order, Segment segment) {
 		if (segment != null) {
-			Locality departure = order.getResponse().getLocalities().get(segment.getDeparture().getId());
-			String timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(departure.getId()));
-			while (timeZone == null
-					&& departure.getParent() != null) {
-				departure = departure.getParent();
-				timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(departure.getId()));
-			}
-			return timeZone;
+			return Utils.getLocalityTimeZone(order.getResponse().getLocalities(), segment.getDeparture().getId());
 		}
 		return null;
-	}
-	
-	private long getMappingId(String id) {
-		try {
-			return Long.parseLong(id);
-		} catch (NumberFormatException e) {
-			return -1;
-		}
 	}
 	
 	private ServiceItem getOrderService(Order order, ServiceItem service) {
