@@ -673,6 +673,26 @@ public class OrderResponseConverter {
 							serviceStatus.setPrice(getStatusPrice(statuses, serviceStatus.getStatus()));
 						}
 					}
+					// меняем статусы отмены
+					List<ServiceStatusEntity> sorted = new ArrayList<>(statuses);
+					sorted.sort((s1, s2) -> s1.getId() > s2.getId() ? -1 : 1);
+					for (int i = 0; i < sorted.size(); i++) {
+						ServiceStatusEntity statusEntity = sorted.get(i);
+						if (statusEntity.getStatus() == ServiceStatus.CANCEL) {
+							for (int j = i + 1; j < sorted.size(); j++) {
+								ServiceStatusEntity prevStatusEntity = sorted.get(j);
+								try {
+									ServiceStatus newStatus = ServiceStatus.valueOf(ServiceStatus.CANCEL + "_" + prevStatusEntity.getStatus());
+									if (newStatus != null) {
+										statusEntity.setStatus(newStatus);
+										break;
+									}
+								} catch (Exception e) {
+								}
+							}
+							break;
+						}
+					}
 				}
 			}
 		}

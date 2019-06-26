@@ -40,7 +40,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "left join fetch ss.price as p "
 			+ "where ss.reported is false";
 	
-	private final static String REPORT_STATUSES = "update ServiceStatus ss "
+	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "
 			+ "set ss.reported = true "
 			+ "where ss.id in (:ids)";
 	
