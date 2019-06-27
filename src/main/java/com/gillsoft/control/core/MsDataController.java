@@ -220,6 +220,7 @@ public class MsDataController {
 	}
 	
 	public Price recalculate(Segment segment, Price price, Currency currency) {
+		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		List<com.gillsoft.model.Commission> commissions = getCommissions(segment);
 		if (commissions != null) {
@@ -242,6 +243,8 @@ public class MsDataController {
 	}
 	
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
+		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
+		resourcePrice = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice));
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
@@ -305,6 +308,7 @@ public class MsDataController {
 			if (segment != null) {
 				// TODO add segment object's ids which mapping in system
 			}
+			// TODO add ids of price tariff and commissions
 			return entities;
 		}
 		return null;
