@@ -8,6 +8,7 @@ import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.User;
 
 public interface MsDataService {
@@ -73,6 +74,14 @@ public interface MsDataService {
 	 * @return Список условий возврата.
 	 */
 	public List<ReturnCondition> getAllReturnConditions();
+	
+	/**
+	 * Возвращает список всех существующих макетов билетов с родетельскими
+	 * объектами, к которым принадлежит макет.
+	 * 
+	 * @return Список макетов билетов.
+	 */
+	public List<TicketLayout> getAllTicketLayouts();
 	
 	/**
 	 * Возвращает список всех условий доступов к заказу с родетельскими

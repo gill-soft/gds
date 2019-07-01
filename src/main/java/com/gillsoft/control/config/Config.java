@@ -28,6 +28,10 @@ private static Properties properties;
 		return properties.getProperty("segments.connection.url");
 	}
 	
+	public static String getPrintTicketUrl() {
+		return properties.getProperty("print.ticket.url");
+	}
+	
 	public static String getMsUrl() {
 		return properties.getProperty("ms.url");
 	}

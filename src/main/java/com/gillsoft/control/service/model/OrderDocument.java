@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.gillsoft.model.DocumentType;
+import com.gillsoft.model.ServiceStatus;
 
 @Entity
 @Table(name = "documents")
@@ -33,6 +34,10 @@ public class OrderDocument implements Serializable {
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private DocumentType type;
+	
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private ServiceStatus status;
 	
 	@Lob
 	@Column(nullable = false)
@@ -64,6 +69,14 @@ public class OrderDocument implements Serializable {
 
 	public void setType(DocumentType type) {
 		this.type = type;
+	}
+
+	public ServiceStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(ServiceStatus status) {
+		this.status = status;
 	}
 
 	public String getBase64() {

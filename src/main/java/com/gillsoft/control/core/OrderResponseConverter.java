@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
@@ -42,6 +44,8 @@ public class OrderResponseConverter {
 	
 	@Autowired
 	private MsDataController dataController;
+	
+	private LocalityController localityController;
 	
 	public Order convertToNewOrder(OrderRequest createRequest, OrderResponse result, OrderResponse response) {
 		
@@ -438,7 +442,24 @@ public class OrderResponseConverter {
 	 * Возвращает актуальный статус позиции.
 	 */
 	public ServiceStatus getLastStatus(Set<ServiceStatusEntity> statuses) {
-		return statuses.stream().max(Comparator.comparing(ServiceStatusEntity::getId)).get().getStatus();
+		return getLastStatusEntity(statuses).getStatus();
+	}
+	
+	public ServiceStatus getLastNotErrorStatus(Set<ServiceStatusEntity> statuses) {
+		return getLastNotErrorStatusEntity(statuses).getStatus();
+	}
+	
+	public ServiceStatusEntity getLastStatusEntity(Set<ServiceStatusEntity> statuses) {
+		return statuses.stream().max(Comparator.comparing(ServiceStatusEntity::getId)).get();
+	}
+	
+	public ServiceStatusEntity getLastNotErrorStatusEntity(Set<ServiceStatusEntity> statuses) {
+		
+		// удаляем статусы с ошибками
+		Set<ServiceStatusEntity> temp = new HashSet<>(statuses);
+		temp.removeIf(s -> s.getStatus().name().contains("ERROR"));
+		
+		return getLastStatusEntity(temp);
 	}
 	
 	/**
@@ -603,7 +624,7 @@ public class OrderResponseConverter {
 		return order;
 	}
 	
-	private void addDocuments(Order order, List<Document> documents, ServiceItem service) {
+	public void addDocuments(Order order, List<Document> documents, ServiceItem service) {
 		if (documents != null) {
 			for (Document document : documents) {
 				OrderDocument orderDocument = new OrderDocument();
@@ -618,6 +639,7 @@ public class OrderResponseConverter {
 								if (Objects.equals(service.getId(),
 										new IdModel().create(resourceService.getResourceNativeServiceId()).getId())) {
 									orderDocument.setServiceId(resourceService.getId());
+									orderDocument.setStatus(getLastNotErrorStatus(resourceService.getStatuses()));
 									break out;
 								}
 							}
@@ -697,6 +719,41 @@ public class OrderResponseConverter {
 			}
 		}
 		return orders;
+	}
+	
+	public void updateSegments(OrderResponse response) {
+		if (response.getLocalities() != null) {
+			for (Entry<String, Locality> entry : response.getLocalities().entrySet()) {
+				Locality locality = entry.getValue();
+				locality.setId(entry.getKey());
+				if (locality.getParent() != null) {
+					if (response.getLocalities().containsKey(locality.getParent().getId())) {
+						locality.setParent(response.getLocalities().get(locality.getParent().getId()));
+					} else {
+						Locality parent = localityController.getLocality(Long.valueOf(locality.getParent().getId()));
+						if (parent != null) {
+							locality.setParent(parent);
+						}
+					}
+				}
+			}
+		}
+		if (response.getSegments() != null) {
+			for (Entry<String, Segment> entry : response.getSegments().entrySet()) {
+				Segment segment = entry.getValue();
+				segment.setId(entry.getKey());
+				segment.setDeparture(response.getLocalities().get(segment.getDeparture().getId()));
+				segment.setArrival(response.getLocalities().get(segment.getArrival().getId()));
+				if (response.getSegments() != null) {
+					if (segment.getCarrier() != null) {
+						segment.setCarrier(response.getOrganisations().get(segment.getCarrier().getId()));
+					}
+					if (segment.getInsurance() != null) {
+						segment.setInsurance(response.getOrganisations().get(segment.getInsurance().getId()));
+					}
+				}
+			}
+		}
 	}
 
 }

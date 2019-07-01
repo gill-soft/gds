@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -51,6 +54,7 @@ import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.User;
 
 @Component
@@ -64,6 +68,8 @@ public class MsDataController {
 	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
 	
 	private static final String ALL_RETURN_CONDITIONS_KEY = "all.return.conditions";
+	
+	private static final String ALL_TICKET_LAYOUTS_KEY = "all.ticket.layouts";
 	
 	private static final String ALL_FILTERS_KEY = "all.filters";
 	
@@ -117,6 +123,15 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllReturnConditionsKey(),
 				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 1800000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<Long, List<CodeEntity>> getAllTicketLayouts() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllTicketLayoutsKey(),
+				new AllTicketLayoutsUpdateTask(), () -> toMap(msService.getAllTicketLayouts()), 1800000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -276,6 +291,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<TicketLayout> getTicketLayouts() {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return getTicketLayouts(entities);
+		}
+		return null;
+	}
+	
 	public List<ServiceFilter> getFilters() {
 		List<BaseEntity> entities = getParentEntities(null);
 		if (entities != null) {
@@ -330,6 +353,14 @@ public class MsDataController {
 			
 			// конвертируем из условий возврата базы в условия возврата апи gds-commons
 			return codeEntities.stream().map(c -> convert((ReturnCondition) c)).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<TicketLayout> getTicketLayouts(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllTicketLayouts());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(e -> (TicketLayout) e).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -429,6 +460,47 @@ public class MsDataController {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * Возвращает список макетов билетов по ресурсам заказа.
+	 * 
+	 * @param order
+	 *            Заказ.
+	 * @return Список макетов билетов.
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<Long, List<TicketLayout>> getTicketLayouts(Order order) {
+		Map<Long, List<CodeEntity>> all = getAllTicketLayouts();
+		
+		// получаем макеты билетов для каждого ресурса заказа
+		Map<Long, List<TicketLayout>> layouts = order.getOrders().stream().collect(
+				Collectors.toMap(
+						ResourceOrder::getResourceId,
+						r -> {
+							if (all.containsKey(r.getResourceId())) {
+								return (List<TicketLayout>)(List<?>) all.get(r.getResourceId());
+							}
+							return null;
+						},
+						(r1, r2) -> r1));
+		// получаем макеты переопределенные для конкретного пользователя
+		List<TicketLayout> userLayouts = getTicketLayouts();
+		
+		// меняем макеты по ресурсам на переопределенные для пользователя
+		if (userLayouts != null
+				&& !userLayouts.isEmpty()) {
+			for (TicketLayout ticketLayout : userLayouts) {
+				for (Entry<Long, List<TicketLayout>> entry : layouts.entrySet()) {
+					Optional<TicketLayout> optional = entry.getValue().stream().filter(l -> Objects.equals(l.getCode(), ticketLayout.getCode())).findFirst();
+					if (optional.isPresent()) {
+						entry.getValue().remove(optional.get());
+						entry.getValue().add(ticketLayout);
+					}
+				}
+			}
+		}
+		return layouts;
 	}
 	
 	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
@@ -539,6 +611,10 @@ public class MsDataController {
 	
 	public static String getAllReturnConditionsKey() {
 		return ALL_RETURN_CONDITIONS_KEY;
+	}
+	
+	public static String getAllTicketLayoutsKey() {
+		return ALL_TICKET_LAYOUTS_KEY;
 	}
 	
 	public static String getAllFiltersKey() {

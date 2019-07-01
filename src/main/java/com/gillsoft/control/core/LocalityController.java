@@ -151,6 +151,15 @@ public class LocalityController {
 		return locality;
 	}
 	
+	public Locality getLocality(long mappingId) {
+		Mapping mapping = mappingService.getMapping(mappingId);
+		if (mapping != null) {
+			return createLocality(mapping, null, null);
+		} else {
+			return null;
+		}
+	}
+	
 	private BigDecimal createDecimal(long mappingId, String value) {
 		if (value == null) {
 			return null;

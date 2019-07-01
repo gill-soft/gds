@@ -2,12 +2,14 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -25,11 +27,15 @@ import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.OrderDAOManager;
+import com.gillsoft.control.service.PrintTicketService;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.control.service.model.PrintOrderWrapper;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
+import com.gillsoft.control.service.model.ServiceStatusEntity;
+import com.gillsoft.model.Document;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.PaymentMethod;
@@ -39,6 +45,7 @@ import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -49,6 +56,9 @@ public class OrderController {
 	
 	@Autowired
 	private AgregatorOrderService service;
+	
+	@Autowired
+	private PrintTicketService printService;
 	
 	@Autowired
 	private MsDataController dataController;
@@ -519,6 +529,8 @@ public class OrderController {
 	
 	public OrderResponse getDocuments(long orderId) {
 		
+		// TODO фильтровать билеты ресурса по статусам
+		
 		// проверяем билеты в заказе
 		Order order = getOrderDocuments(orderId);
 		if (!dataController.isOrderAvailable(order, ServiceStatus.VIEW)) {
@@ -526,6 +538,7 @@ public class OrderController {
 		}
 		if (order.getDocuments() != null
 				&& !order.getDocuments().isEmpty()) {
+			addSystemDocuments(order);
 			return converter.getDocumentsResponse(order);
 		}
 		// если нет, то берем у ресурсов и сохраняем что есть
@@ -541,7 +554,50 @@ public class OrderController {
 		} catch (ManageException e) {
 			LOGGER.error("Save documents to order error in db", e);
 		}
+		addSystemDocuments(order);
 		return converter.getDocumentsResponse(order);
+	}
+	
+	private void addSystemDocuments(Order order) {
+		
+		// макеты по ресурсам заказа и текущему пользователю
+		Map<Long, List<TicketLayout>> layouts = dataController.getTicketLayouts(order);
+		
+		// конвертируем заказ в ответ
+		OrderResponse response = converter.getResponse(order);
+		
+		// проставляем данные со словарей
+		converter.updateSegments(response);
+		List<ServiceItem> items = response.getServices();
+		
+		// формируем билет по каждой позиции отдельно
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			if (layouts.containsKey(resourceOrder.getResourceId())) {
+				List<TicketLayout> ticketLayouts = layouts.get(resourceOrder.getResourceId());
+				for (ResourceService service : resourceOrder.getServices()) {
+					
+					// берем статус, по которому формируется документ
+					ServiceStatusEntity status = converter.getLastNotErrorStatusEntity(service.getStatuses());
+					if (status.getError() == null) {
+						
+						// берем макет соответствующий последнему статусу
+						Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
+						if (layout.isPresent()) {
+							
+							// TODO может стоит брать юзера со статуса ???
+							
+							ServiceItem item = items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get();
+							response.setServices(Collections.singletonList(item));
+							PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
+							orderWrapper.setOrder(response);
+							orderWrapper.setTicketLayout(layout.get().getLayout());
+							List<Document> documents = printService.create(orderWrapper);
+							converter.addDocuments(order, documents, item);
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	public OrderResponse calcReturn(long orderId, OrderRequest request) {

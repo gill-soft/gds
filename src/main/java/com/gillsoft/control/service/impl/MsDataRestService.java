@@ -28,6 +28,7 @@ import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.User;
 
 @Service
@@ -38,6 +39,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_COMMISSIONS = "commission/all_with_parents";
 	
 	private static final String ALL_RETURN_CONDITIONS = "condition/all_with_parents";
+	
+	private static final String ALL_TICKET_LAYOUTS = "ticket_layout/all_with_parents";
 	
 	private static final String ALL_FILTERS = "filter/all_with_parents";
 	
@@ -134,6 +137,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<ReturnCondition> getAllReturnConditions() {
 		return getResult(ALL_RETURN_CONDITIONS, null, new ParameterizedTypeReference<List<ReturnCondition>>() { });
+	}
+	
+	@Override
+	public List<TicketLayout> getAllTicketLayouts() {
+		return getResult(ALL_TICKET_LAYOUTS, null, new ParameterizedTypeReference<List<TicketLayout>>() { });
 	}
 
 	@Override
