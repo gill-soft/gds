@@ -17,7 +17,6 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import org.hibernate.Hibernate;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
@@ -130,7 +129,6 @@ public class Order implements Serializable {
 	}
 	
 	public void addOrderDocument(OrderDocument orderDocument) {
-		Hibernate.initialize(documents);
 		if (documents == null) {
 			documents = new HashSet<>();
 		}

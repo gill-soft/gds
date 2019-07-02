@@ -35,7 +35,7 @@ public class OrderDocument implements Serializable {
 	@Enumerated(EnumType.STRING)
 	private DocumentType type;
 	
-	@Column(nullable = false)
+	@Column(nullable = true)
 	@Enumerated(EnumType.STRING)
 	private ServiceStatus status;
 	

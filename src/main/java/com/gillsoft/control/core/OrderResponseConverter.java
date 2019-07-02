@@ -45,6 +45,7 @@ public class OrderResponseConverter {
 	@Autowired
 	private MsDataController dataController;
 	
+	@Autowired
 	private LocalityController localityController;
 	
 	public Order convertToNewOrder(OrderRequest createRequest, OrderResponse result, OrderResponse response) {

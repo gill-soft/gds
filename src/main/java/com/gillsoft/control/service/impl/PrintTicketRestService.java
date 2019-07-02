@@ -29,7 +29,7 @@ public class PrintTicketRestService extends AbstractRestService implements Print
 
 	@Override
 	public List<Document> create(PrintOrderWrapper orderWrapper) {
-		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(Config.getMsUrl() + PRINT_METHOD);
+		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(Config.getPrintTicketUrl() + PRINT_METHOD);
 		URI uri = builder.build().toUri();
 		RequestEntity<PrintOrderWrapper> entity = new RequestEntity<PrintOrderWrapper>(orderWrapper, HttpMethod.POST, uri);
 		try {

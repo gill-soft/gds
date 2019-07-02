@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
+import com.gillsoft.mapper.model.Unmapping;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Address;
 import com.gillsoft.model.Lang;
@@ -92,9 +93,11 @@ public class TripSearchMapping {
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
 		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.CARRIER,
 				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
+				(original) -> createUnmappingOrganisation(original),
 				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
 		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.BUS,
 				(mapping, lang, original) -> createVehicle(mapping, lang, original),
+				(original) -> createUnmappingVehicle(original), 
 				(resourceId, id, v) -> v.setId(getKey(resourceId, id)));
 	}
 	
@@ -116,6 +119,7 @@ public class TripSearchMapping {
 		}
 		mappingObjects(request, objects, result, MapType.GEO,
 				(mapping, lang, original) -> createLocality(mapping, lang, original),
+				(original) -> createUnmappingLocality(original),
 				(resId, id, l) -> l.setId(getKey(resId, id)));
 		for (Locality locality : result.values()) {
 			if (locality.getParent() != null
@@ -143,11 +147,27 @@ public class TripSearchMapping {
 		return locality;
 	}
 	
+	private Unmapping createUnmappingLocality(Locality original) {
+		Unmapping unmapping = new Unmapping();
+		unmapping.setProperties(new HashMap<>());
+		unmapping.getProperties().put("NAME", original.getName(Lang.EN));
+		unmapping.getProperties().put("ADDRESS", original.getAddress(Lang.EN));
+		unmapping.getProperties().put("DETAILS", original.getDetails());
+		unmapping.getProperties().put("TIMEZONE", original.getTimezone());
+		if (original.getLatitude() != null) {
+			unmapping.getProperties().put("LATITUDE", String.valueOf(original.getLatitude()));
+		}
+		if (original.getLongitude() != null) {
+			unmapping.getProperties().put("LONGITUDE", String.valueOf(original.getLongitude()));
+		}
+		return unmapping;
+	}
+	
 	/**
 	 * Получает мапинг словарей ответа и создает словари из мапинга. Если мапинга нет, то добавляется объект ответа.
 	 */
 	public <T> void mappingObjects(LangRequest request, Map<String, T> objects, Map<String, T> result,
-			MapType mapType, MapObjectCreator<T> creator, ObjectIdSetter<T> idSetter) {
+			MapType mapType, MapObjectCreator<T> creator, UnmappingCreator<T> unmappingCreator, ObjectIdSetter<T> idSetter) {
 		if (objects == null
 				|| objects.isEmpty()) {
 			return;
@@ -162,6 +182,14 @@ public class TripSearchMapping {
 			// чтобы от разных ресурсов не пересекались ид
 			if (mappings == null) {
 				if (object.getValue() != null) {
+					
+					// сохраняем несмапленные данные
+					Unmapping unmapping = unmappingCreator.create(object.getValue());
+					unmapping.setResourceMapId(object.getKey());
+					unmapping.setResourceId(resourceId);
+					unmapping.setType(mapType);
+					mappingService.saveUnmapping(unmapping);
+					
 					T value = object.getValue();
 					idSetter.set(resourceId, object.getKey(), value);
 					result.put(getKey(resourceId, object.getKey()), value);
@@ -246,6 +274,21 @@ public class TripSearchMapping {
 		}
 	}
 	
+	private Unmapping createUnmappingOrganisation(Organisation original) {
+		Unmapping unmapping = new Unmapping();
+		unmapping.setProperties(new HashMap<>());
+		unmapping.getProperties().put("NAME", original.getName(Lang.EN));
+		unmapping.getProperties().put("ADDRESS", original.getAddress(Lang.EN));
+		unmapping.getProperties().put("TRADEMARK", original.getTradeMark());
+		if (original.getPhones() != null) {
+			unmapping.getProperties().put("PHONE", String.join("; ", original.getPhones()));
+		}
+		if (original.getEmails() != null) {
+			unmapping.getProperties().put("EMAIL", String.join("; ", original.getEmails()));
+		}
+		return unmapping;
+	}
+	
 	/*
 	 * Создает транспорт по данным мапинга.
 	 */
@@ -284,6 +327,16 @@ public class TripSearchMapping {
 		}
 	}
 	
+	private Unmapping createUnmappingVehicle(Vehicle original) {
+		Unmapping unmapping = new Unmapping();
+		unmapping.setProperties(new HashMap<>());
+		unmapping.getProperties().put("MODEL", original.getModel());
+		if (original.getCapacity() != null) {
+			unmapping.getProperties().put("CAPACITY", String.valueOf(original.getCapacity()));
+		}
+		return unmapping;
+	}
+	
 	/**
 	 * Проставляет мапинг всех объектов рейса, валидирует поля рейса и дополняет данными.
 	 */
@@ -313,7 +366,9 @@ public class TripSearchMapping {
 				Map<String, Vehicle> vehicles = new HashMap<>();
 				vehicles.put(tripNumber, null);
 				mappingObjects(request, vehicles, result.getVehicles(), MapType.BUS,
-						(mapping, lang, original) -> createVehicle(mapping, lang, original), null);
+						(mapping, lang, original) -> createVehicle(mapping, lang, original),
+						(original) -> createUnmappingVehicle(original),
+						null);
 			}
 			// устанавливаем транспорт с маппинга
 			String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
@@ -470,7 +525,9 @@ public class TripSearchMapping {
 		Map<String, Organisation> organisations = new HashMap<>();
 		organisations.put(key, null);
 		mappingObjects(request, organisations, result.getOrganisations(), MapType.CARRIER,
-				(mapping, lang, original) -> createOrganisation(mapping, lang, original), null);
+				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
+				(original) -> createUnmappingOrganisation(original),
+				null);
 	}
 	
 	/*
@@ -581,6 +638,12 @@ public class TripSearchMapping {
 	private interface ObjectIdSetter<T> {
 		
 		public void set(long resourceId, String id, T object);
+		
+	}
+	
+	private interface UnmappingCreator<T> {
+		
+		public Unmapping create(T original);
 		
 	}
 
