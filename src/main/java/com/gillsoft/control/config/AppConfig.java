@@ -43,6 +43,7 @@ public class AppConfig {
 	private static final String SSH_HOST = "ssh.host";
 	private static final String SSH_PORT = "ssh.port";
 	private static final String SSH_USER = "ssh.user";
+	private static final String SSH_PASSWORD = "ssh.password";
 	private static final String SSH_KEY = "ssh.private_key";
 	private static final String SSH_LOCAL_HOST = "ssh.local.host";
 	private static final String SSH_LOCAL_PORT = "ssh.local.port";
@@ -110,7 +111,7 @@ public class AppConfig {
 	private void tunnel() {
 		JSch jsch = new JSch();
 		try {
-			jsch.addIdentity(AppConfig.class.getClassLoader().getResource(env.getProperty(SSH_KEY)).getPath());
+			jsch.addIdentity(AppConfig.class.getClassLoader().getResource(env.getProperty(SSH_KEY)).getPath(), getPassword());
 			Session session = jsch.getSession(env.getProperty(SSH_USER),
 					env.getProperty(SSH_HOST), Integer.valueOf(env.getProperty(SSH_PORT)));
 			session.setConfig("StrictHostKeyChecking", "no");
@@ -119,6 +120,16 @@ public class AppConfig {
 					env.getProperty(SSH_LOCAL_HOST), Integer.valueOf(env.getProperty(SSH_REMOTE_PORT)));
 		} catch (JSchException e) {
 			LOGGER.info(e.getMessage(), e);
+		}
+	}
+	
+	private byte[] getPassword() {
+		String pass = env.getProperty(SSH_PASSWORD);
+		if (pass == null
+				|| pass.isEmpty()) {
+			return null;
+		} else {
+			return pass.getBytes();
 		}
 	}
 
