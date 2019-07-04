@@ -755,6 +755,17 @@ public class OrderResponseConverter {
 				}
 			}
 		}
+		if (response.getCustomers() != null) {
+			response.getCustomers().forEach((k, v) -> v.setId(k));
+		}
+		for (ServiceItem service : response.getServices()) {
+			if (service.getSegment() != null) {
+				service.setSegment(response.getSegments().get(service.getSegment().getId()));
+			}
+			if (service.getCustomer() != null) {
+				service.setCustomer(response.getCustomers().get(service.getCustomer().getId()));
+			}
+		}
 	}
 
 }
