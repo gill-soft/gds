@@ -129,9 +129,14 @@ public class Utils {
 	 */
 	public static String getLocalityTimeZoneOrNull(long mappingId) {
 		Mapping mapping = getMapping(mappingId);
-		if (mapping != null
-				&& mapping.getAttributes() != null) {
-			return mapping.getAttributes().get("TIME_ZONE");
+		if (mapping != null) {
+			String timeZone = mapping.getAttributes() != null ? mapping.getAttributes().get("TIME_ZONE") : null;
+			while (timeZone == null
+					&& mapping.getParent() != null) {
+				mapping = mapping.getParent();
+				timeZone = mapping.getAttributes() != null ? mapping.getAttributes().get("TIME_ZONE") : null;
+			}
+			return timeZone;
 		}
 		return null;
 	}
