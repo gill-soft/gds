@@ -2,14 +2,12 @@ package com.gillsoft.control.core;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.logging.log4j.Logger;
 
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
-import com.gillsoft.model.Locality;
 import com.gillsoft.model.response.Response;
 import com.gillsoft.util.ContextProvider;
 
@@ -161,17 +159,9 @@ public class Utils {
 		}
 	}
 	
-	public static String getLocalityTimeZone(Map<String, Locality> localities, String localityId) {
+	public static String getLocalityTimeZone(String localityId) {
 		if (localityId != null) {
-			Locality locality = localities.get(localityId);
-			String timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(localityId));
-			while (timeZone == null
-					&& locality.getParent() != null) {
-				timeZone = Utils.getLocalityTimeZoneOrNull(getMappingId(locality.getParent().getId()));
-				locality = localities.containsKey(locality.getParent().getId()) ?
-						localities.get(locality.getParent().getId()) : locality.getParent();
-			}
-			return timeZone;
+			return Utils.getLocalityTimeZoneOrNull(getMappingId(localityId));
 		}
 		return null;
 	}

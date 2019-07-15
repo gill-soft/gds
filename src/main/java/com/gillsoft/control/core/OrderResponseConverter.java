@@ -306,7 +306,7 @@ public class OrderResponseConverter {
 			if (service.getError() == null) {
 				Segment segment = getSegment(order, service);
 				service.setPrice(dataController.recalculateReturn(segment,
-						getDepartureTimeZone(order, segment), service.getPrice(), service.getPrice().getSource()));
+						getDepartureTimeZone(segment), service.getPrice(), service.getPrice().getSource()));
 			}
 		}
 		return response;
@@ -356,9 +356,9 @@ public class OrderResponseConverter {
 		return null;
 	}
 	
-	private String getDepartureTimeZone(Order order, Segment segment) {
+	private String getDepartureTimeZone(Segment segment) {
 		if (segment != null) {
-			return Utils.getLocalityTimeZone(order.getResponse().getLocalities(), segment.getDeparture().getId());
+			return Utils.getLocalityTimeZone(segment.getDeparture().getId());
 		}
 		return null;
 	}

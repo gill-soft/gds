@@ -423,7 +423,7 @@ public class TripSearchMapping {
 		
 		// проставляем время в пути
 		for (Segment segment : result.getSegments().values()) {
-			setTimeInWay(result.getLocalities(), segment);
+			setTimeInWay(segment);
 		}
 	}
 	
@@ -556,11 +556,11 @@ public class TripSearchMapping {
 	/*
 	 * Время в пути с учетом таймзон
 	 */
-	private void setTimeInWay(Map<String, Locality> localities, Segment segment) {
+	private void setTimeInWay(Segment segment) {
 		try {
 			segment.setTimeInWay(Utils.getTimeInWay(segment.getDepartureDate(), segment.getArrivalDate(),
-					Utils.getLocalityTimeZone(localities, segment.getDeparture().getId()),
-					Utils.getLocalityTimeZone(localities, segment.getArrival().getId())));
+					Utils.getLocalityTimeZone(segment.getDeparture().getId()),
+					Utils.getLocalityTimeZone(segment.getArrival().getId())));
 		} catch (NumberFormatException e) {
 		}
 	}
