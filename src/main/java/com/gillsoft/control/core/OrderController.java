@@ -541,18 +541,22 @@ public class OrderController {
 			addSystemDocuments(order);
 			return converter.getDocumentsResponse(order);
 		}
-		// если нет, то берем у ресурсов и сохраняем что есть
-		List<OrderRequest> requests = operationRequests(order, Method.ORDER_DOCUMENTS, null);
-		
-		// получаем документы в ресурсах
-		List<OrderResponse> responses = service.getPdfDocuments(requests);
-		
-		// сохраняем документы по заказу
-		order = converter.addDocuments(order, responses);
 		try {
-			order = manager.update(order);
-		} catch (ManageException e) {
-			LOGGER.error("Save documents to order error in db", e);
+			// если нет, то берем у ресурсов и сохраняем что есть
+			List<OrderRequest> requests = operationRequests(order, Method.ORDER_DOCUMENTS, null);
+			
+			// получаем документы в ресурсах
+			List<OrderResponse> responses = service.getPdfDocuments(requests);
+			
+			// сохраняем документы по заказу
+			order = converter.addDocuments(order, responses);
+			try {
+				order = manager.update(order);
+			} catch (ManageException e) {
+				LOGGER.error("Save documents to order error in db", e);
+			}
+		} catch (Exception e) {
+			LOGGER.error("Can not get documents from resource.", e);
 		}
 		addSystemDocuments(order);
 		return converter.getDocumentsResponse(order);
