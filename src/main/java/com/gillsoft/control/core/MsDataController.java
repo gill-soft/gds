@@ -263,15 +263,15 @@ public class MsDataController {
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
-//			if (price.getTariff().getReturnConditions() == null) {
+			if (price.getTariff().getReturnConditions() == null) {
 				price.getTariff().setReturnConditions(conditions);
-//			} else {
-//				price.getTariff().getReturnConditions().forEach(c -> c.setId("-1"));
-//				price.getTariff().getReturnConditions().addAll(conditions);
-//			}
+			} else {
+				price.getTariff().getReturnConditions().forEach(c -> c.setId("-1"));
+				price.getTariff().getReturnConditions().addAll(conditions);
+			}
 		}
-		price.getSource().setReturned(Calculator.calculateReturn(price, getUser(), price.getCurrency(),
-				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));// TODO
+		price.getSource().setReturned(Calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
+				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
 		return price.getSource();
 	}
 	

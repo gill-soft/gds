@@ -111,6 +111,8 @@ public class OrderResponseConverter {
 							} else if (segment != null) {
 								item.setPrice(segment.getPrice());
 							}
+							// добавляем условия возврата
+							addReturnConditions(item, segment);
 							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW, null));
 						} else {
 							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW_ERROR,
@@ -122,6 +124,20 @@ public class OrderResponseConverter {
 			}
 		}
 		return order;
+	}
+	
+	private void addReturnConditions(ServiceItem item, Segment segment) {
+		
+		// проверяем условия возврата и, если нет, то берем с рейса
+		if (item.getPrice() != null
+				&& item.getPrice().getTariff() != null
+				&& (item.getPrice().getTariff().getReturnConditions() == null
+					|| item.getPrice().getTariff().getReturnConditions().isEmpty())
+				&& segment != null
+				&& segment.getPrice() != null
+				&& segment.getPrice().getTariff() != null) {
+			item.getPrice().getTariff().setReturnConditions(segment.getPrice().getTariff().getReturnConditions());
+		}
 	}
 	
 	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service, ServiceStatus statusType, String error) {
