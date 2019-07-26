@@ -180,6 +180,14 @@ public class OrderController {
 				requests.put(serviceResource.getId(), resourceRequest);
 			}
 			item.getSegment().setId(idModel.getId());
+			if (item.getAdditionals() == null) {
+				item.setAdditionals(new HashMap<>());
+			}
+			try {
+				item.getAdditionals().put("uniqueId", String.valueOf(manager.getUniqueId(serviceResource.getId())));
+			} catch (ManageException e) {
+				LOGGER.error("Can not create unique id for resource " + serviceResource.getId(), e);
+			}
 			resourceRequest.getServices().add(item);
 		}
 		OrderRequest newRequest = new OrderRequest();

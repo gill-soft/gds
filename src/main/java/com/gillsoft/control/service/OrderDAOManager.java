@@ -32,5 +32,7 @@ public interface OrderDAOManager {
 	public List<Order> getOrders(OrderParams params) throws ManageException;
 	
 	public void reportStatuses(Set<Long> ids) throws ManageException;
+	
+	public long getUniqueId(long groupeId) throws ManageException;
 
 }

@@ -9,7 +9,8 @@ import com.gillsoft.security.WhiteList;
 public class CustomWhiteList extends WhiteList {
 	
 	private static final String[] AUTH_WHITELIST = {
-            "/**/order/print"
+            "/**/order/print",
+            "/**/generate/**"
     };
 	
 	@Override

@@ -92,7 +92,7 @@ public class MsDataController {
 		}
 		String userName = authentication.getName();
 		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
-				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 1800000l);
+				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 600000l);
 	}
 	
 	public ResourceParams createResourceParams(long resourceId) {
@@ -113,7 +113,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllCommissionsKey(),
-				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 1800000l);
+				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 600000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -122,7 +122,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllReturnConditionsKey(),
-				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 1800000l);
+				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 600000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -131,7 +131,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllTicketLayoutsKey(),
-				new AllTicketLayoutsUpdateTask(), () -> toMap(msService.getAllTicketLayouts()), 1800000l);
+				new AllTicketLayoutsUpdateTask(), () -> toMap(msService.getAllTicketLayouts()), 600000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -140,7 +140,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllFiltersKey(),
-				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 1800000l);
+				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 600000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -149,7 +149,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllOrdersAccessKey(),
-				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 1800000l);
+				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 600000l);
 	}
 	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {

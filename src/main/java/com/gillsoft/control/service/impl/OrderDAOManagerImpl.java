@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gillsoft.control.service.OrderDAOManager;
+import com.gillsoft.control.service.model.GroupeIdEntity;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
@@ -153,6 +154,19 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					.setParameter("ids", ids).executeUpdate();
 		} catch (Exception e) {
 			throw new ManageException("Error when report statuses", e);
+		}
+	}
+
+	@Transactional
+	@Override
+	public long getUniqueId(long groupeId) throws ManageException {
+		try {
+			GroupeIdEntity groupeIdEntity = new GroupeIdEntity();
+			groupeIdEntity.setGroupeId(groupeId);
+			sessionFactory.getCurrentSession().save(groupeIdEntity);
+			return groupeIdEntity.getId();
+		} catch (Exception e) {
+			throw new ManageException("Error when create unique", e);
 		}
 	}
 
