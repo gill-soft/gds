@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -261,6 +262,8 @@ public class MsDataController {
 		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
 		resourcePrice = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice));
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		
+		// условия возврата для стоимости установленные на организацию
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
 			if (price.getTariff().getReturnConditions() == null) {
@@ -268,6 +271,25 @@ public class MsDataController {
 			} else {
 				price.getTariff().getReturnConditions().forEach(c -> c.setId("-1"));
 				price.getTariff().getReturnConditions().addAll(conditions);
+			}
+		}
+		if (price.getTariff().getReturnConditions() != null) {
+			price.getTariff().getReturnConditions().removeIf(r -> r.getReturnPercent() == null);
+		}
+		// условия возврата каждого сбора
+		if (price.getCommissions() != null) {
+			for (com.gillsoft.model.Commission commission : price.getCommissions()) {
+				if (commission.getId() != null) {
+					BaseEntity entity = new BaseEntity();
+					try {
+						entity.setId(Long.parseLong(commission.getId()));
+						List<com.gillsoft.model.ReturnCondition> commissionConditions = getReturnConditions(Collections.singletonList(entity));
+						if (commissionConditions != null) {
+							commission.setReturnConditions(commissionConditions);
+						}
+					} catch (NumberFormatException e) {
+					}
+				}
 			}
 		}
 		price.getSource().setReturned(Calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
@@ -429,7 +451,7 @@ public class MsDataController {
 		converted.setValueCalcType(CalcType.valueOf(commission.getValueCalcType().name()));
 		converted.setVat(commission.getVat());
 		converted.setVatCalcType(CalcType.valueOf(commission.getVatCalcType().name()));
-		converted.setType(ValueType.valueOf(commission.getVatType().name()));
+		converted.setType(ValueType.valueOf(commission.getValueType().name()));
 		converted.setCurrency(Currency.valueOf(commission.getCurrency().name()));
 		converted.setName(getValue("name", commission));
 		return converted;
