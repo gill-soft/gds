@@ -116,15 +116,17 @@ public class LocalityController {
 	public Locality createLocality(Mapping mapping, Lang lang, Locality original) {
 		Locality locality = new Locality();
 		locality.setId(String.valueOf(mapping.getId()));
-		if (mapping.getAttributes() != null) {
-			if (lang == null) {
+		if (mapping.getAttributes() != null
+				|| mapping.getLangAttributes() != null) {
+			if (lang == null
+					&& mapping.getLangAttributes() != null) {
 				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
 					locality.setName(entry.getKey(), entry.getValue().containsKey("NAME") ?
 							entry.getValue().get("NAME") : (original != null ? original.getName(entry.getKey()) : null));
 					locality.setAddress(entry.getKey(), entry.getValue().containsKey("ADDRESS") ?
 							entry.getValue().get("ADDRESS") : (original != null ? original.getAddress(entry.getKey()) : null));
 				}
-			} else {
+			} else if (mapping.getAttributes() != null) {
 				if (mapping.getAttributes().containsKey("NAME")) {
 					locality.setName(lang, mapping.getAttributes().get("NAME"));
 				} else if (original != null) {
@@ -136,12 +138,14 @@ public class LocalityController {
 					locality.setAddress(original.getAddress());
 				}
 			}
-			locality.setLatitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LATITUDE")));
-			locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
-			locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
-			locality.setDetails(mapping.getAttributes().get("DETAILS"));
-			locality.setType(mapping.getAttributes().get("TYPE"));
-			locality.setSubtype(mapping.getAttributes().get("SUBTYPE"));
+			if (mapping.getAttributes() != null) {
+				locality.setLatitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LATITUDE")));
+				locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
+				locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
+				locality.setDetails(mapping.getAttributes().get("DETAILS"));
+				locality.setType(mapping.getAttributes().get("TYPE"));
+				locality.setSubtype(mapping.getAttributes().get("SUBTYPE"));
+			}
 			return locality;
 		}
 		if (original != null) {
