@@ -349,6 +349,16 @@ public class TripSearchMapping {
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			Segment segment = entry.getValue();
 			
+			// TODO мапинг тарифа
+			
+			// начисление сборов
+			try {
+				segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+			} catch (Exception e) {
+				continue;
+			}
+			applyLang(segment.getPrice().getTariff(), request.getLang());
+			
 			// устанавливаем ресурс
 			segment.setResource(new Resource(String.valueOf(resourceId)));
 			
@@ -395,12 +405,6 @@ public class TripSearchMapping {
 			if (result.getOrganisations().containsKey(insuranceKey)) {
 				segment.setInsurance(result.getOrganisations().get(insuranceKey));
 			}
-			// TODO мапинг тарифа
-			
-			// начисление сборов
-			segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
-			applyLang(segment.getPrice().getTariff(), request.getLang());
-			
 			// мапинг пунктов маршрута
 			if (segment.getRoute() != null) {
 				for (RoutePoint point : segment.getRoute().getPath()) {

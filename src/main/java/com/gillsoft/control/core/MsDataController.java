@@ -238,6 +238,9 @@ public class MsDataController {
 	public Price recalculate(Segment segment, Price price, Currency currency) {
 		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		if (price.getCommissions() != null) {
+			price.getCommissions().forEach(c -> c.setId(null));
+		}
 		List<com.gillsoft.model.Commission> commissions = getCommissions(segment);
 		if (commissions != null) {
 			if (price.getCommissions() == null) {
@@ -261,6 +264,9 @@ public class MsDataController {
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
 		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
 		resourcePrice = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice));
+		if (resourcePrice.getCommissions() != null) {
+			resourcePrice.getCommissions().forEach(c -> c.setId(null));
+		}
 		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		
 		// условия возврата для стоимости установленные на организацию
