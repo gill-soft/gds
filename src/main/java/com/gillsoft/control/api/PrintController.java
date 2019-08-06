@@ -28,7 +28,10 @@ import com.google.zxing.oned.Code128Writer;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.ibm.icu.text.Transliterator;
 
+import springfox.documentation.annotations.ApiIgnore;
+
 @Controller
+@ApiIgnore
 public class PrintController {
 
 	@PostMapping("/order/print")

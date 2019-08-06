@@ -53,19 +53,31 @@ public class LocalityController {
 	@Autowired
 	private MappingService mappingService;
 	
+	private Map<Long, Set<Locality>> allNotMapped = new HashMap<>();
+	
+	private Map<Long, Set<Locality>> usedNotMapped = new HashMap<>();
+	
+	public Map<Long, Set<Locality>> getAllNotMapped() {
+		return allNotMapped;
+	}
+
+	public Map<Long, Set<Locality>> getUsedNotMapped() {
+		return usedNotMapped;
+	}
+
 	public List<Locality> getAll(LocalityRequest mainRequest) {
 		List<LocalityRequest> requests = createRequest(Method.LOCALITY_ALL, MethodType.POST, mainRequest);
 		List<LocalityResponse> responses = service.getAll(requests);
-		return getMapping(requests, responses, mainRequest);
+		return getMapping(requests, responses, mainRequest, allNotMapped);
 	}
 	
 	public List<Locality> getUsed(LocalityRequest mainRequest) {
 		List<LocalityRequest> requests = createRequest(Method.LOCALITY_USED, MethodType.POST, mainRequest);
 		List<LocalityResponse> responses = service.getUsed(requests);
-		return getMapping(requests, responses, mainRequest);
+		return getMapping(requests, responses, mainRequest, usedNotMapped);
 	}
 	
-	private List<Locality> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses, LocalityRequest mainRequest) {
+	private List<Locality> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses, LocalityRequest mainRequest, Map<Long, Set<Locality>> notMapped) {
 		if (responses == null) {
 			return new ArrayList<>(0);
 		}
@@ -84,7 +96,16 @@ public class LocalityController {
 					// мапинг ресурса
 					long resourceId = Long.parseLong(request.getParams().getResource().getId());
 					mappings.putAll(localityResponse.getLocalities().stream()
-							.map(l -> mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang()))
+							.map(l -> {
+								List<Mapping> mapped = mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang());
+								if (mapped == null) {
+									if (!notMapped.containsKey(resourceId)) {
+										notMapped.put(resourceId, new HashSet<>());
+									}
+									notMapped.get(resourceId).add(l);
+								}
+								return mapped;
+							})
 							.filter(map -> map != null).flatMap(maps -> maps.stream()).collect(
 									Collectors.toMap(Mapping::getId, m -> m, (m1, m2) -> m1)));
 				}
@@ -251,5 +272,5 @@ public class LocalityController {
 		}
 		throw new ResourceUnavailableException("User does not has available resources");
 	}
-
+	
 }

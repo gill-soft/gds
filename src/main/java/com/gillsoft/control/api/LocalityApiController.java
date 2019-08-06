@@ -68,5 +68,17 @@ public class LocalityApiController {
 		request.setLang(lang);
 		return request;
 	}
+	
+	@ApiOperation(hidden = true, value = "/unmapped/all")
+	@GetMapping("/unmapped/all")
+	public Map<Long, Set<Locality>> getAllNotMapped() {
+		return controller.getAllNotMapped();
+	}
+	
+	@ApiOperation(hidden = true, value = "/unmapped/used")
+	@GetMapping("/unmapped/used")
+	public Map<Long, Set<Locality>> getUsedNotMapped() {
+		return controller.getUsedNotMapped();
+	}
 
 }

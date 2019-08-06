@@ -236,8 +236,6 @@ public class MsDataController {
 	}
 	
 	public Price recalculate(Segment segment, Price price, Currency currency) {
-		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
-		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		if (price.getCommissions() != null) {
 			price.getCommissions().forEach(c -> c.setId(null));
 		}
@@ -258,17 +256,15 @@ public class MsDataController {
 				}
 			}
 		}
-		return Calculator.calculateResource(price, getUser(), currency);
+		Price calculated = Calculator.calculateResource(price, getUser(), currency);
+		calculated.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		return calculated;
 	}
 	
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
-		price = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(price));
-		resourcePrice = (Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice));
 		if (resourcePrice.getCommissions() != null) {
 			resourcePrice.getCommissions().forEach(c -> c.setId(null));
 		}
-		price.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
-		
 		// условия возврата для стоимости установленные на организацию
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
@@ -298,9 +294,12 @@ public class MsDataController {
 				}
 			}
 		}
-		price.getSource().setReturned(Calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
+		price.setReturned(Calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
 				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
-		return price.getSource();
+		
+		// устанавливаем исходную сумму возврата от ресурса
+		price.getReturned().setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice)));
+		return price;
 	}
 	
 	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {
