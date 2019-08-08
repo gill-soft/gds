@@ -262,7 +262,8 @@ public class MsDataController {
 	}
 	
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
-		if (resourcePrice.getCommissions() != null) {
+		if (resourcePrice != null
+				&& resourcePrice.getCommissions() != null) {
 			resourcePrice.getCommissions().forEach(c -> c.setId(null));
 		}
 		// условия возврата для стоимости установленные на организацию

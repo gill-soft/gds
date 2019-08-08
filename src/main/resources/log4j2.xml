@@ -15,7 +15,7 @@
 			<PatternLayout charset="UTF-8"
 				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n" />
 			<Policies>
-				<SizeBasedTriggeringPolicy size="10 MB" />
+				<SizeBasedTriggeringPolicy size="100 MB" />
 			</Policies>
 			<DefaultRolloverStrategy>
 				<Delete basePath="${baseDir}" maxDepth="2">
