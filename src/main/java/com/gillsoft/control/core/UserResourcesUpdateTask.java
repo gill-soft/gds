@@ -27,7 +27,7 @@ public class UserResourcesUpdateTask implements Runnable, Serializable {
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, MsDataController.getActiveResourcesCacheKey(userName));
 		params.put(MemoryCacheHandler.IGNORE_AGE, true);
-		params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
+		params.put(MemoryCacheHandler.UPDATE_DELAY, 600000l);
 		
 		MsDataService service = ContextProvider.getBean(MsDataService.class);
 		MsDataController dataController = ContextProvider.getBean(MsDataController.class);

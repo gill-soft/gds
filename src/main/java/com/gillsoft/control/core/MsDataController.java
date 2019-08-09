@@ -357,6 +357,13 @@ public class MsDataController {
 				entities.add(parent);
 			}
 			if (segment != null) {
+				
+				// добавляем сущность ресурса
+				List<Resource> resources = getUserResources();
+				Optional<Resource> resource = resources.stream().filter(r -> String.valueOf(r.getId()).equals(segment.getResource().getId())).findFirst();
+				if (resource.isPresent()) {
+					entities.add(resource.get());
+				}
 				// TODO add segment object's ids which mapping in system
 			}
 			// TODO add ids of price tariff and commissions

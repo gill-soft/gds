@@ -349,14 +349,6 @@ public class TripSearchMapping {
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			Segment segment = entry.getValue();
 			
-			// TODO мапинг тарифа
-			
-			// начисление сборов
-			try {
-				segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
-			} catch (Exception e) {
-				continue;
-			}
 			applyLang(segment.getPrice().getTariff(), request.getLang());
 			
 			// устанавливаем ресурс
@@ -415,6 +407,14 @@ public class TripSearchMapping {
 			// доавляем ресурс в ид вагона
 			if (segment.getCarriages() != null) {
 				segment.getCarriages().forEach(c -> c.setId(new IdModel(resourceId, c.getId()).asString()));
+			}
+			// TODO мапинг тарифа
+			
+			// начисление сборов
+			try {
+				segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+			} catch (Exception e) {
+				continue;
 			}
 			// добавляем рейсы в результат
 			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
