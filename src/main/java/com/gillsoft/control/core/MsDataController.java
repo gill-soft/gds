@@ -272,7 +272,7 @@ public class MsDataController {
 			if (price.getTariff().getReturnConditions() == null) {
 				price.getTariff().setReturnConditions(conditions);
 			} else {
-				price.getTariff().getReturnConditions().forEach(c -> c.setId("-1"));
+				price.getTariff().getReturnConditions().forEach(c -> c.setId(null));
 				price.getTariff().getReturnConditions().addAll(conditions);
 			}
 		}
