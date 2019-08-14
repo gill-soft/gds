@@ -96,6 +96,9 @@ public class TripSearchController {
 	@Autowired
 	private ConnectionsController connectionsController;
 	
+	@Autowired
+	private ScheduleService scheduleService;
+	
 	/**
 	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
 	 */
@@ -571,16 +574,46 @@ public class TripSearchController {
 	}
 	
 	public void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result) {
+		
+		// добавляем рейсы из расписания
+		for (String segmentId : orderResponse.getSegments().keySet()) {
+			TripSearchResponse segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
+			
+			// заменяем данными из расписания так как там более подробные данные по рейсу
+			if (segmentResponse != null) {
+				if (orderResponse.getLocalities() == null) {
+					orderResponse.setLocalities(segmentResponse.getLocalities());
+				} else if (segmentResponse.getLocalities() != null) {
+					orderResponse.getLocalities().putAll(segmentResponse.getLocalities());
+				}
+				if (orderResponse.getVehicles() == null) {
+					orderResponse.setVehicles(segmentResponse.getVehicles());
+				} else if (segmentResponse.getVehicles() != null) {
+					orderResponse.getVehicles().putAll(segmentResponse.getVehicles());
+				}
+				if (orderResponse.getOrganisations() == null) {
+					orderResponse.setOrganisations(segmentResponse.getOrganisations());
+				} else if (segmentResponse.getOrganisations() != null) {
+					orderResponse.getOrganisations().putAll(segmentResponse.getOrganisations());
+				}
+				if (orderResponse.getSegments() == null) {
+					orderResponse.setSegments(segmentResponse.getSegments());
+				} else if (segmentResponse.getSegments() != null) {
+					orderResponse.getSegments().putAll(segmentResponse.getSegments());
+				}
+			}
+		}
 		TripSearchResponse searchResponse = new TripSearchResponse();
 		searchResponse.setLocalities(orderResponse.getLocalities());
 		searchResponse.setVehicles(orderResponse.getVehicles());
 		searchResponse.setOrganisations(orderResponse.getOrganisations());
 		searchResponse.setSegments(orderResponse.getSegments());
 		
+		// выполняем маппинг данных
 		mapOrderSegment(orderRequest, orderResponse, result, searchResponse);
 	}
 	
-	public void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result, TripSearchResponse searchResponse) {
+	private void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result, TripSearchResponse searchResponse) {
 		TripSearchRequest request = new TripSearchRequest();
 		request.setCurrency(orderRequest.getCurrency());
 		request.setLang(orderRequest.getLang());
@@ -617,35 +650,6 @@ public class TripSearchController {
 		} else {
 			orderResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
 		}
-	}
-	
-	@Autowired
-	private ScheduleService scheduleService;
-	
-	public void mapOrderSegmentFromSchedule(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result) {
-		TripSearchResponse searchResponse = new TripSearchResponse();
-		searchResponse.setLocalities(new HashMap<>());
-		searchResponse.setVehicles(new HashMap<>());
-		searchResponse.setOrganisations(new HashMap<>());
-		searchResponse.setSegments(new HashMap<>());
-		for (String segmentId : orderResponse.getSegments().keySet()) {
-			TripSearchResponse segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
-			if (segmentResponse != null) {
-				if (segmentResponse.getLocalities() != null) {
-					searchResponse.getLocalities().putAll(segmentResponse.getLocalities());
-				}
-				if (segmentResponse.getVehicles() != null) {
-					searchResponse.getVehicles().putAll(segmentResponse.getVehicles());
-				}
-				if (segmentResponse.getOrganisations() != null) {
-					searchResponse.getOrganisations().putAll(segmentResponse.getOrganisations());
-				}
-				if (segmentResponse.getSegments() != null) {
-					searchResponse.getSegments().putAll(segmentResponse.getSegments());
-				}
-			}
-		}
-		mapOrderSegment(orderRequest, orderResponse, result, searchResponse);
 	}
 
 }

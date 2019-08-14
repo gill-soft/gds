@@ -99,11 +99,11 @@ public class OrderResponseConverter {
 						}
 						if (segment == null) {
 							
-							// маппим рейсы заказа из расписания
-							searchController.mapOrderSegmentFromSchedule(currRequest, orderResponse, result);
-							
 							// маппим рейсы заказа из ответа
 							searchController.mapOrderSegment(currRequest, orderResponse, result);
+							
+							setSegment(result.getSegments(), item);
+							segment = result.getSegments().get(item.getSegment().getId());
 						}
 						if (item.getError() == null) {
 							
