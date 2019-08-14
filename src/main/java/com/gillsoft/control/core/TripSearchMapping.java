@@ -337,10 +337,14 @@ public class TripSearchMapping {
 		return unmapping;
 	}
 	
+	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
+		updateSegments(request, searchResponse, result, true);
+	}
+	
 	/**
 	 * Проставляет мапинг всех объектов рейса, валидирует поля рейса и дополняет данными.
 	 */
-	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
+	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result, boolean onlyCalculated) {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
@@ -348,8 +352,6 @@ public class TripSearchMapping {
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			Segment segment = entry.getValue();
-			
-			applyLang(segment.getPrice().getTariff(), request.getLang());
 			
 			// устанавливаем ресурс
 			segment.setResource(new Resource(String.valueOf(resourceId)));
@@ -413,8 +415,11 @@ public class TripSearchMapping {
 			// начисление сборов
 			try {
 				segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+				applyLang(segment.getPrice().getTariff(), request.getLang());
 			} catch (Exception e) {
-				continue;
+				if (onlyCalculated) {
+					continue;
+				}
 			}
 			// добавляем рейсы в результат
 			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
@@ -432,7 +437,8 @@ public class TripSearchMapping {
 	}
 	
 	public void applyLang(Tariff tariff, Lang lang) {
-		if (lang != null) {
+		if (tariff != null
+				&& lang != null) {
 			if (tariff.getDescription() != null
 					&& tariff.getDescription().get(lang) != null) {
 				tariff.getDescription().keySet().removeIf(k -> k != lang);
@@ -448,7 +454,8 @@ public class TripSearchMapping {
 	}
 	
 	public void applyLang(ReturnCondition returnCondition, Lang lang) {
-		if (lang != null) {
+		if (returnCondition != null
+				&& lang != null) {
 			if (returnCondition.getTitle() != null
 					&& returnCondition.getTitle().get(lang) != null) {
 				returnCondition.getTitle().keySet().removeIf(k -> k != lang);
@@ -464,32 +471,34 @@ public class TripSearchMapping {
 	 * Объединяет все запросы с одинаковым мапингом.
 	 */
 	private void joinContainers(long resourceId, TripSearchResponse result, List<TripContainer> containers) {
-		for (TripContainer container : containers) {
-			List<Mapping> fromMappings = mappingService.getMappings(MapType.GEO, resourceId,
-					container.getRequest().getLocalityPairs().get(0)[0]);
-			if (fromMappings != null) {
-				List<Mapping> toMappings = mappingService.getMappings(MapType.GEO, resourceId,
-						container.getRequest().getLocalityPairs().get(0)[1]);
-				if (toMappings != null) {
-					List<String[]> pair = Collections.singletonList(
-							new String[] { String.valueOf(fromMappings.get(0).getId()), String.valueOf(toMappings.get(0).getId())});
-					
-					// обновляем ид рейсов, а потом подменяем запрос
-					updateTripIds(resourceId, result, container, pair.get(0));
-					container.getRequest().setLocalityPairs(pair);
-					
-					TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
-					if (resultContainer != null) {
-						if (resultContainer.getTrips() == null
-								&& container.getTrips() != null) {
-							resultContainer.setTrips(container.getTrips());
+		if (containers != null) {
+			for (TripContainer container : containers) {
+				List<Mapping> fromMappings = mappingService.getMappings(MapType.GEO, resourceId,
+						container.getRequest().getLocalityPairs().get(0)[0]);
+				if (fromMappings != null) {
+					List<Mapping> toMappings = mappingService.getMappings(MapType.GEO, resourceId,
+							container.getRequest().getLocalityPairs().get(0)[1]);
+					if (toMappings != null) {
+						List<String[]> pair = Collections.singletonList(
+								new String[] { String.valueOf(fromMappings.get(0).getId()), String.valueOf(toMappings.get(0).getId())});
+						
+						// обновляем ид рейсов, а потом подменяем запрос
+						updateTripIds(resourceId, result, container, pair.get(0));
+						container.getRequest().setLocalityPairs(pair);
+						
+						TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
+						if (resultContainer != null) {
+							if (resultContainer.getTrips() == null
+									&& container.getTrips() != null) {
+								resultContainer.setTrips(container.getTrips());
+							}
+							if (resultContainer.getTrips() != null
+									&& container.getTrips() != null) {
+								resultContainer.getTrips().addAll(container.getTrips());
+							}
+						} else {
+							result.getTripContainers().add(container);
 						}
-						if (resultContainer.getTrips() != null
-								&& container.getTrips() != null) {
-							resultContainer.getTrips().addAll(container.getTrips());
-						}
-					} else {
-						result.getTripContainers().add(container);
 					}
 				}
 			}

@@ -48,6 +48,9 @@ public class OrderResponseConverter {
 	@Autowired
 	private LocalityController localityController;
 	
+	@Autowired
+	private TripSearchController searchController;
+	
 	public Order convertToNewOrder(OrderRequest createRequest, OrderResponse result, OrderResponse response) {
 		
 		// заказ для сохранения
@@ -93,6 +96,14 @@ public class OrderResponseConverter {
 								&& result.getSegments() != null) {
 							setSegment(result.getSegments(), item);
 							segment = result.getSegments().get(item.getSegment().getId());
+						}
+						if (segment == null) {
+							
+							// маппим рейсы заказа из расписания
+							searchController.mapOrderSegmentFromSchedule(currRequest, orderResponse, result);
+							
+							// маппим рейсы заказа из ответа
+							searchController.mapOrderSegment(currRequest, orderResponse, result);
 						}
 						if (item.getError() == null) {
 							

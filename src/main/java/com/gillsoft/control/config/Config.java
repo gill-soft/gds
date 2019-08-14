@@ -32,6 +32,10 @@ private static Properties properties;
 		return properties.getProperty("print.ticket.url");
 	}
 	
+	public static String getScheduleUrl() {
+		return properties.getProperty("schedule.url");
+	}
+	
 	public static String getMsUrl() {
 		return properties.getProperty("ms.url");
 	}

@@ -1,5 +1,6 @@
 package com.gillsoft.control.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +30,7 @@ import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorTripSearchService;
+import com.gillsoft.control.service.ScheduleService;
 import com.gillsoft.control.service.model.SearchRequestContainer;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Lang;
@@ -49,6 +52,7 @@ import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.response.RequiredResponse;
 import com.gillsoft.model.response.Response;
 import com.gillsoft.model.response.ReturnConditionResponse;
@@ -532,6 +536,116 @@ public class TripSearchController {
 				return true;
 			});
 		}
+	}
+	
+	public OrderResponse search(OrderRequest request) {
+		TripSearchResponse search = search(request,
+				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
+		OrderResponse response = new OrderResponse();
+		response.setId(request.getId());
+		response.setCustomers(request.getCustomers());
+		response.setServices(new ArrayList<>());
+		updateOrderResponse(response, search);
+		return response;
+	}
+	
+	private void updateOrderResponse(OrderResponse orderResponse, TripSearchResponse searchResponse) {
+		if (searchResponse != null) {
+			orderResponse.setVehicles(searchResponse.getVehicles());
+			orderResponse.setOrganisations(searchResponse.getOrganisations());
+			orderResponse.setLocalities(searchResponse.getLocalities());
+			if (orderResponse.getSegments() == null) {
+				orderResponse.setSegments(searchResponse.getSegments());
+			} else {
+				searchResponse.getSegments().forEach((id, s) -> orderResponse.getSegments().putIfAbsent(id, s));
+			}
+			orderResponse.getSegments().values().forEach(s -> {
+				if (s.getResource() != null
+						&& searchResponse.getResources().containsKey(s.getResource().getId())) {
+					com.gillsoft.model.Resource resource = searchResponse.getResources().get(s.getResource().getId());
+					resource.setId(s.getResource().getId());
+					s.setResource(resource);
+				}
+			});
+		}
+	}
+	
+	public void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result) {
+		TripSearchResponse searchResponse = new TripSearchResponse();
+		searchResponse.setLocalities(orderResponse.getLocalities());
+		searchResponse.setVehicles(orderResponse.getVehicles());
+		searchResponse.setOrganisations(orderResponse.getOrganisations());
+		searchResponse.setSegments(orderResponse.getSegments());
+		
+		mapOrderSegment(orderRequest, orderResponse, result, searchResponse);
+	}
+	
+	public void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result, TripSearchResponse searchResponse) {
+		TripSearchRequest request = new TripSearchRequest();
+		request.setCurrency(orderRequest.getCurrency());
+		request.setLang(orderRequest.getLang());
+		request.setParams(orderRequest.getParams());
+		
+		TripSearchResponse searchResult = new TripSearchResponse();
+		tripSearchMapping.createDictionaries(searchResult);
+		
+		// мапим словари
+		tripSearchMapping.mapDictionaries(request, searchResponse, searchResult);
+		
+		// обновляем мапингом рейсы
+		tripSearchMapping.updateSegments(request, searchResponse, searchResult, false);
+		
+		updateOrderResponse(orderResponse, searchResult);
+		
+		if (result.getVehicles() == null) {
+			result.setVehicles(orderResponse.getVehicles());
+		} else {
+			orderResponse.getVehicles().forEach((id, v) -> result.getVehicles().putIfAbsent(id, v));
+		}
+		if (result.getOrganisations() == null) {
+			result.setOrganisations(orderResponse.getOrganisations());
+		} else {
+			orderResponse.getOrganisations().forEach((id, o) -> result.getOrganisations().putIfAbsent(id, o));
+		}
+		if (result.getLocalities() == null) {
+			result.setLocalities(orderResponse.getLocalities());
+		} else {
+			orderResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
+		}
+		if (result.getSegments() == null) {
+			result.setSegments(orderResponse.getSegments());
+		} else {
+			orderResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
+		}
+	}
+	
+	@Autowired
+	private ScheduleService scheduleService;
+	
+	public void mapOrderSegmentFromSchedule(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result) {
+		TripSearchResponse searchResponse = new TripSearchResponse();
+		searchResponse.setLocalities(new HashMap<>());
+		searchResponse.setVehicles(new HashMap<>());
+		searchResponse.setOrganisations(new HashMap<>());
+		searchResponse.setSegments(new HashMap<>());
+		for (String segmentId : orderResponse.getSegments().keySet()) {
+			TripSearchResponse segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
+			if (segmentResponse != null) {
+				if (segmentResponse.getLocalities() != null) {
+					searchResponse.getLocalities().putAll(segmentResponse.getLocalities());
+				}
+				if (segmentResponse.getVehicles() != null) {
+					searchResponse.getVehicles().putAll(segmentResponse.getVehicles());
+				}
+				if (segmentResponse.getOrganisations() != null) {
+					searchResponse.getOrganisations().putAll(segmentResponse.getOrganisations());
+				}
+				if (segmentResponse.getSegments() != null) {
+					searchResponse.getSegments().putAll(segmentResponse.getSegments());
+				}
+			}
+		}
+		mapOrderSegment(orderRequest, orderResponse, result, searchResponse);
 	}
 
 }

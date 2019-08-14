@@ -43,7 +43,6 @@ import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
-import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.util.StringUtil;
@@ -96,7 +95,7 @@ public class OrderController {
 		validator.validateRequiredFields(request);
 		
 		// получаем все рейсы, чтобы вернуть потом в заказе
-		OrderResponse result = search(request);
+		OrderResponse result = searchController.search(request);
 		
 		// создаем заказ в ресурсе
 		OrderRequest createRequest = createRequest(request);
@@ -112,44 +111,6 @@ public class OrderController {
 		} else {
 			throw new ApiException("Empty response");
 		}
-	}
-	
-	private OrderResponse search(OrderRequest request) {
-		OrderResponse response = new OrderResponse();
-		response.setId(request.getId());
-		response.setCustomers(request.getCustomers());
-		response.setServices(new ArrayList<>());
-		response.setVehicles(new HashMap<>());
-		response.setOrganisations(new HashMap<>());
-		response.setLocalities(new HashMap<>());
-		response.setSegments(new HashMap<>());
-		TripSearchResponse search = searchController.search(request,
-				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
-		if (search != null) {
-			response.getVehicles().putAll(search.getVehicles());
-			response.getOrganisations().putAll(search.getOrganisations());
-			response.getLocalities().putAll(search.getLocalities());
-			response.getSegments().putAll(search.getSegments());
-			response.getSegments().values().forEach(s -> {
-				com.gillsoft.model.Resource resource = search.getResources().get(s.getResource().getId());
-				resource.setId(s.getResource().getId());
-				s.setResource(resource);
-				
-			});
-		}
-		if (response.getVehicles().isEmpty()) {
-			response.setVehicles(null);
-		}
-		if (response.getOrganisations().isEmpty()) {
-			response.setOrganisations(null);
-		}
-		if (response.getLocalities().isEmpty()) {
-			response.setLocalities(null);
-		}
-		if (response.getSegments().isEmpty()) {
-			response.setSegments(null);
-		}
-		return response;
 	}
 	
 	private OrderRequest createRequest(OrderRequest request) {
