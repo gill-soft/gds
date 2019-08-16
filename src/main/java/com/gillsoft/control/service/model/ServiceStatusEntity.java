@@ -11,6 +11,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
@@ -33,7 +34,7 @@ import com.gillsoft.model.Price;
 import com.gillsoft.model.ServiceStatus;
 
 @Entity
-@Table(name = "service_statuses")
+@Table(name = "service_statuses", indexes = { @Index(columnList = "reported") })
 @JsonInclude(Include.NON_NULL)
 public class ServiceStatusEntity implements Serializable {
 

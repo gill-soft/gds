@@ -107,13 +107,13 @@ public class OrderApiController {
 	}
 	
 	@ApiOperation(value = "Returns the pdf document of selected order",
-			responseContainer = "List", response = OrderResponse.class)
+			responseContainer = "List", response = OrderResponse.class, hidden = true)
 	@GetMapping("/first/{count}")
 	public List<Order> getOrders(@Validated @PathVariable int count) {
 		return controller.getOrders(count);
 	}
 	
-	@ApiOperation(value = "Report statuses with selected ids")
+	@ApiOperation(value = "Report statuses with selected ids", hidden = true)
 	@PostMapping("/report")
 	public void reportStatuses(@RequestBody Set<Long> ids) {
 		controller.reportStatuses(ids);

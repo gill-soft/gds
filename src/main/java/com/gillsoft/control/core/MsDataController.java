@@ -2,6 +2,7 @@ package com.gillsoft.control.core;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -513,7 +514,8 @@ public class MsDataController {
 				Collectors.toMap(
 						ResourceOrder::getResourceId,
 						r -> {
-							if (all.containsKey(r.getResourceId())) {
+							if (all != null
+									&& all.containsKey(r.getResourceId())) {
 								return (List<TicketLayout>)(List<?>) all.get(r.getResourceId());
 							}
 							return null;
@@ -527,10 +529,14 @@ public class MsDataController {
 				&& !userLayouts.isEmpty()) {
 			for (TicketLayout ticketLayout : userLayouts) {
 				for (Entry<Long, List<TicketLayout>> entry : layouts.entrySet()) {
-					Optional<TicketLayout> optional = entry.getValue().stream().filter(l -> Objects.equals(l.getCode(), ticketLayout.getCode())).findFirst();
-					if (optional.isPresent()) {
-						entry.getValue().remove(optional.get());
-						entry.getValue().add(ticketLayout);
+					if (entry.getValue() != null) {
+						Optional<TicketLayout> optional = entry.getValue().stream().filter(l -> Objects.equals(l.getCode(), ticketLayout.getCode())).findFirst();
+						if (optional.isPresent()) {
+							entry.getValue().remove(optional.get());
+							entry.getValue().add(ticketLayout);
+						}
+					} else {
+						entry.setValue(Arrays.asList(ticketLayout));
 					}
 				}
 			}

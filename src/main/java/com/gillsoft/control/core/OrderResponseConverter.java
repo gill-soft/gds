@@ -64,6 +64,8 @@ public class OrderResponseConverter {
 		
 		User user = dataController.getUser();
 		
+		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
+		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : response.getResources()) {
 			Stream<OrderRequest> stream = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId()));
@@ -89,6 +91,7 @@ public class OrderResponseConverter {
 					});
 				} else {
 					for (ServiceItem item : orderResponse.getServices()) {
+						resultSegmentIds.add(item.getSegment().getId());
 						
 						// устанавливаем ид сегмента рейса
 						Segment segment = null;
@@ -134,6 +137,8 @@ public class OrderResponseConverter {
 				}
 			}
 		}
+		// очищаем неиспользуемые данные из словарей
+		searchController.updateResponseDictionaries(resultSegmentIds, result.getSegments(), result.getVehicles(), result.getOrganisations(), result.getLocalities(), null);
 		return order;
 	}
 	

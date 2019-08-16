@@ -37,6 +37,7 @@ import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.Organisation;
 import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.ReturnCondition;
@@ -48,6 +49,7 @@ import com.gillsoft.model.Segment;
 import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
+import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.TripDetailsRequest;
@@ -479,12 +481,20 @@ public class TripSearchController {
 				}
 			}
 		}
+		// удаляем лишнее со словарей
+		updateResponseDictionaries(resultSegmentIds, segments, response.getVehicles(), response.getOrganisations(), response.getLocalities(), response.getResources());
+	}
+	
+	public void updateResponseDictionaries(Set<String> resultSegmentIds, Map<String, Segment> segments,
+			Map<String, Vehicle> vehicles, Map<String, Organisation> organisations, Map<String, Locality> localities,
+			Map<String, com.gillsoft.model.Resource> resources) {
+		
 		// перезаливаем рейсы
 		segments.keySet().removeIf(key -> !resultSegmentIds.contains(key));
 		
 		// перезаливаем словари
-		if (response.getVehicles() != null) {
-			response.getVehicles().keySet().removeIf(key -> {
+		if (vehicles != null) {
+			vehicles.keySet().removeIf(key -> {
 				for (Segment segment : segments.values()) {
 					if (segment.getVehicle() != null
 							&& Objects.equals(key, segment.getVehicle().getId())) {
@@ -494,8 +504,8 @@ public class TripSearchController {
 				return true;
 			});
 		}
-		if (response.getResources() != null) {
-			response.getResources().keySet().removeIf(key -> {
+		if (resources != null) {
+			resources.keySet().removeIf(key -> {
 				for (Segment segment : segments.values()) {
 					if (segment.getResource() != null
 							&& Objects.equals(key, segment.getResource().getId())) {
@@ -505,8 +515,8 @@ public class TripSearchController {
 				return true;
 			});
 		}
-		if (response.getOrganisations() != null) {
-			response.getOrganisations().keySet().removeIf(key -> {
+		if (organisations != null) {
+			organisations.keySet().removeIf(key -> {
 				for (Segment segment : segments.values()) {
 					if ((segment.getCarrier() != null
 							&& Objects.equals(key, segment.getCarrier().getId()))
@@ -518,8 +528,8 @@ public class TripSearchController {
 				return true;
 			});
 		}
-		if (response.getLocalities() != null) {
-			response.getLocalities().keySet().removeIf(key -> {
+		if (localities != null) {
+			localities.keySet().removeIf(key -> {
 				for (Segment segment : segments.values()) {
 					if (Objects.equals(key, segment.getDeparture().getId())
 							|| Objects.equals(key, segment.getArrival().getId())) {

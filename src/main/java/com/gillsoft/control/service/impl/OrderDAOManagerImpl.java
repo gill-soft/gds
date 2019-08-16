@@ -34,12 +34,13 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "left join fetch o.documents as d "
 			+ "where o.id = :orderId";
 	
-	private final static String GET_ORDERS = "from Order as o "
+	private final static String GET_ORDERS = "select o from Order as o "
 			+ "join fetch o.orders as ro "
 			+ "join fetch ro.services as rs "
+			+ "join rs.statuses as wss "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
-			+ "where ss.reported is false";
+			+ "where wss.reported is false";
 	
 	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "
 			+ "set ss.reported = true "

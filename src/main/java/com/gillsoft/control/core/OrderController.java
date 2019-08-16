@@ -554,18 +554,24 @@ public class OrderController {
 					if (status.getError() == null) {
 						
 						// берем макет соответствующий последнему статусу
-						Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
-						if (layout.isPresent()) {
-							
-							// TODO может стоит брать юзера со статуса ???
-							
-							ServiceItem item = items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get();
-							response.setServices(Collections.singletonList(item));
-							PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
-							orderWrapper.setOrder(response);
-							orderWrapper.setTicketLayout(layout.get().getLayout());
-							List<Document> documents = printService.create(orderWrapper);
-							converter.addDocuments(order, documents, item);
+						if (ticketLayouts != null) {
+							Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
+							if (layout.isPresent()) {
+								TicketLayout ticketLayout = layout.get();
+								if (ticketLayout.getLayout() != null
+										&& !ticketLayout.getLayout().isEmpty()) {
+								
+									// TODO может стоит брать юзера со статуса ???
+									
+									ServiceItem item = items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get();
+									response.setServices(Collections.singletonList(item));
+									PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
+									orderWrapper.setOrder(response);
+									orderWrapper.setTicketLayout(layout.get().getLayout());
+									List<Document> documents = printService.create(orderWrapper);
+									converter.addDocuments(order, documents, item);
+								}
+							}
 						}
 					}
 				}
@@ -672,7 +678,14 @@ public class OrderController {
 		OrderParams params = new OrderParams();
 		params.setCount(count);
 		try {
-			return converter.addPrice(manager.getOrders(params));
+			List<Order> orders = converter.addPrice(manager.getOrders(params));
+			
+			// удаляем уже переданные статусы
+			orders.forEach(
+					o -> o.getOrders().forEach(
+							ro -> ro.getServices().forEach(
+									rs -> rs.getStatuses().removeIf(ServiceStatusEntity::isReported))));
+			return orders;
 		} catch (ManageException e) {
 			LOGGER.error("Get orders error in db", e);
 			throw new ApiException(e);
