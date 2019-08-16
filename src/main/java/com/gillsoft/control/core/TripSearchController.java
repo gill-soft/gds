@@ -638,26 +638,29 @@ public class TripSearchController {
 		// обновляем мапингом рейсы
 		tripSearchMapping.updateSegments(request, searchResponse, searchResult, false);
 		
+		// меняем ключи мап на ид из мапинга
+		tripSearchMapping.updateResultDictionaries(searchResult);
+		
 		updateOrderResponse(orderResponse, searchResult);
 		
 		if (result.getVehicles() == null) {
 			result.setVehicles(orderResponse.getVehicles());
-		} else {
+		} else if (orderResponse.getVehicles() != null) {
 			orderResponse.getVehicles().forEach((id, v) -> result.getVehicles().putIfAbsent(id, v));
 		}
 		if (result.getOrganisations() == null) {
 			result.setOrganisations(orderResponse.getOrganisations());
-		} else {
+		} else if (orderResponse.getOrganisations() != null) {
 			orderResponse.getOrganisations().forEach((id, o) -> result.getOrganisations().putIfAbsent(id, o));
 		}
 		if (result.getLocalities() == null) {
 			result.setLocalities(orderResponse.getLocalities());
-		} else {
+		} else if (orderResponse.getLocalities() != null) {
 			orderResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
 		}
 		if (result.getSegments() == null) {
 			result.setSegments(orderResponse.getSegments());
-		} else {
+		} else if (orderResponse.getSegments() != null) {
 			orderResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
 		}
 	}
