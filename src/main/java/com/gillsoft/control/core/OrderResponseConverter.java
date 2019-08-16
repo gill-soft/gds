@@ -91,22 +91,24 @@ public class OrderResponseConverter {
 					});
 				} else {
 					for (ServiceItem item : orderResponse.getServices()) {
-						resultSegmentIds.add(item.getSegment().getId());
 						
 						// устанавливаем ид сегмента рейса
 						Segment segment = null;
-						if (item.getSegment() != null
-								&& result.getSegments() != null) {
-							setSegment(result.getSegments(), item);
-							segment = result.getSegments().get(item.getSegment().getId());
-						}
-						if (segment == null) {
-							
-							// маппим рейсы заказа из ответа
-							searchController.mapOrderSegment(currRequest, orderResponse, result);
-							
-							setSegment(result.getSegments(), item);
-							segment = result.getSegments().get(item.getSegment().getId());
+						if (item.getSegment() != null) {
+							if (item.getSegment() != null
+									&& result.getSegments() != null) {
+								setSegment(result.getSegments(), item);
+								segment = result.getSegments().get(item.getSegment().getId());
+							}
+							if (segment == null) {
+								
+								// маппим рейсы заказа из ответа
+								searchController.mapOrderSegment(currRequest, orderResponse, result);
+								
+								setSegment(result.getSegments(), item);
+								segment = result.getSegments().get(item.getSegment().getId());
+							}
+							resultSegmentIds.add(item.getSegment().getId());
 						}
 						if (item.getError() == null) {
 							
