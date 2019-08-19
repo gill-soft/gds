@@ -761,13 +761,17 @@ public class OrderResponseConverter {
 			for (Entry<String, Locality> entry : response.getLocalities().entrySet()) {
 				Locality locality = entry.getValue();
 				locality.setId(entry.getKey());
-				if (locality.getParent() != null) {
+				if (locality.getParent() != null
+						&& locality.getParent().getId() != null) {
 					if (response.getLocalities().containsKey(locality.getParent().getId())) {
 						locality.setParent(response.getLocalities().get(locality.getParent().getId()));
 					} else {
-						Locality parent = localityController.getLocality(Long.valueOf(locality.getParent().getId()));
-						if (parent != null) {
-							locality.setParent(parent);
+						try {
+							Locality parent = localityController.getLocality(Long.valueOf(locality.getParent().getId()));
+							if (parent != null) {
+								locality.setParent(parent);
+							}
+						} catch (NumberFormatException e) {
 						}
 					}
 				}
