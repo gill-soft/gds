@@ -15,7 +15,20 @@
 		<servlet-name>api</servlet-name>
 		<url-pattern>/api/v1/*</url-pattern>
 	</servlet-mapping>
-	
+
+	<filter>
+		<filter-name>charsetFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>charsetFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
 	<filter>
 		<filter-name>LoggingFilter</filter-name>
 		<filter-class>com.gillsoft.logging.RequestResponseLoggingFilter</filter-class>
@@ -25,7 +38,7 @@
 		<filter-name>LoggingFilter</filter-name>
 		<url-pattern>/api/v1/*</url-pattern>
 	</filter-mapping>
-	
+
 	<filter>
 		<filter-name>PrintFilter</filter-name>
 		<filter-class>com.gillsoft.control.filter.PrintFilter</filter-class>
@@ -35,5 +48,5 @@
 		<filter-name>PrintFilter</filter-name>
 		<url-pattern>/api/v1/order/print</url-pattern>
 	</filter-mapping>
-	
+
 </web-app>
