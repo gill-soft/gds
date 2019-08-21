@@ -10,16 +10,16 @@ public class AllFiltersUpdateTask extends AllCommissionsUpdateTask {
 	private static final long serialVersionUID = 970236571354075432L;
 	
 	public AllFiltersUpdateTask() {
-		super();
+		
 	}
 
 	@Override
 	protected String getCacheKey() {
 		return MsDataController.getAllFiltersKey();
 	}
-	
+
 	@Override
-	protected List<? extends BaseEntity> getCachedList(MsDataService service) {
+	protected List<? extends BaseEntity> getList(MsDataService service) {
 		return service.getAllFilters();
 	}
 

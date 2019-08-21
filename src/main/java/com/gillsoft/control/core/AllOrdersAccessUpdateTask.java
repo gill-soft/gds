@@ -10,16 +10,16 @@ public class AllOrdersAccessUpdateTask extends AllCommissionsUpdateTask {
 	private static final long serialVersionUID = -8997268935543892648L;
 
 	public AllOrdersAccessUpdateTask() {
-		super();
+		
 	}
 
 	@Override
 	protected String getCacheKey() {
 		return MsDataController.getAllOrdersAccessKey();
 	}
-	
+
 	@Override
-	protected List<? extends BaseEntity> getCachedList(MsDataService service) {
+	protected List<? extends BaseEntity> getList(MsDataService service) {
 		return service.getAllOrdersAccess();
 	}
 

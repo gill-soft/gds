@@ -17,9 +17,10 @@ public class AllReturnConditionsUpdateTask extends AllCommissionsUpdateTask {
 	protected String getCacheKey() {
 		return MsDataController.getAllReturnConditionsKey();
 	}
-	
+
 	@Override
-	protected List<? extends BaseEntity> getCachedList(MsDataService service) {
+	protected List<? extends BaseEntity> getList(MsDataService service) {
 		return service.getAllReturnConditions();
 	}
+	
 }

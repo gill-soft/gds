@@ -10,16 +10,17 @@ public class AllTicketLayoutsUpdateTask extends AllCommissionsUpdateTask {
 	private static final long serialVersionUID = -4167848828012193657L;
 
 	public AllTicketLayoutsUpdateTask() {
-		super();
+		
 	}
 
 	@Override
 	protected String getCacheKey() {
 		return MsDataController.getAllTicketLayoutsKey();
 	}
-	
+
 	@Override
-	protected List<? extends BaseEntity> getCachedList(MsDataService service) {
+	protected List<? extends BaseEntity> getList(MsDataService service) {
 		return service.getAllTicketLayouts();
 	}
+	
 }

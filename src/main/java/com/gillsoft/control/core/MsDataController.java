@@ -43,6 +43,7 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
+import com.gillsoft.model.Lang;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
@@ -53,6 +54,7 @@ import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.OrderAccess;
+import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
@@ -78,6 +80,8 @@ public class MsDataController {
 	private static final String ALL_ORDERS_ACCESS_KEY = "all.orders.access";
 	
 	private static final String USER_KEY = "user.";
+	
+	private static final String ORGANISATION_KEY = "organisation.";
 	
 	@Autowired
 	private MsDataService msService;
@@ -201,6 +205,11 @@ public class MsDataController {
 	public User getUser(long id) {
 		return (User) getFromCache(getUserCacheKey(id),
 				new UserByIdUpdateTask(id), () -> msService.getUser(id), 600000l);
+	}
+	
+	public Organisation getOrganisation(long id) {
+		return (Organisation) getFromCache(getOrganisationCacheKey(id),
+				new OrganisationUpdateTask(id), () -> msService.getOrganisation(id), 600000l);
 	}
 	
 	private Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
@@ -480,6 +489,41 @@ public class MsDataController {
 		return converted;
 	}
 	
+	public com.gillsoft.model.User convert(User user) {
+		com.gillsoft.model.User converted = new com.gillsoft.model.User();
+		converted.setId(String.valueOf(user.getId()));
+		converted.setName(getValue("name", user));
+		converted.setEmail(getValue("email", user));
+		converted.setPhone(getValue("phone", user));
+		converted.setSurname(getValue("surname", user));
+		converted.setPatronymic(getValue("patronymic", user));
+		return converted;
+	}
+	
+	public com.gillsoft.model.Organisation convert(Organisation organisation) {
+		com.gillsoft.model.Organisation converted = new com.gillsoft.model.Organisation();
+		converted.setAddress(getValue("address", organisation));
+		for (Lang lang : Lang.values()) {
+			converted.setAddress(lang, getValue("address_" + lang.name(), organisation));
+		}
+		converted.setName(getValue("name", organisation));
+		for (Lang lang : Lang.values()) {
+			converted.setName(lang, getValue("name_" + lang.name(), organisation));
+		}
+		
+		String emails = getValue("email", organisation);
+		if (emails != null) {
+			converted.setEmails(Collections.singletonList(emails));
+		}
+		String phones = getValue("prhone", organisation);
+		if (phones != null) {
+			converted.setPhones(Collections.singletonList(phones));
+		}
+		converted.setTradeMark(getValue("trade_mark", organisation));
+		converted.setId(String.valueOf(organisation.getId()));
+		return converted;
+	}
+	
 	private String getValue(String name, BaseEntity entity) {
 		AttributeValue value = getAttributeValue(name, entity);
 		if (value != null) {
@@ -672,6 +716,10 @@ public class MsDataController {
 	
 	public static String getUserCacheKey(long id) {
 		return USER_KEY + id;
+	}
+	
+	public static String getOrganisationCacheKey(long id) {
+		return ORGANISATION_KEY + id;
 	}
 	
 	private interface CacheObjectGetter {

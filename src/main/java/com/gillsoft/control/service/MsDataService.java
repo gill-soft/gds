@@ -52,6 +52,15 @@ public interface MsDataService {
 	public Organisation getUserOrganisation(String userName);
 	
 	/**
+	 * Возвращает организацию.
+	 * 
+	 * @param id
+	 *            Ид организации.
+	 * @return Объект организации.
+	 */
+	public Organisation getOrganisation(long id);
+	
+	/**
 	 * Возвращает список всех существующих комиссий с родетельскими объектами, к
 	 * которым принадлежит комиссия.
 	 * 

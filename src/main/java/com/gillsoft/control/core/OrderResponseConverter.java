@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -35,6 +36,7 @@ import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
+import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.User;
 import com.gillsoft.util.StringUtil;
 
@@ -221,6 +223,34 @@ public class OrderResponseConverter {
 					for (ResourceOrder resourceOrder : order.getOrders()) {
 						for (ResourceService resourceService : resourceOrder.getServices()) {
 							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+								
+								// данные пользователя обновившего сервис
+								ServiceStatusEntity statusEntity = getLastNotErrorStatusEntity(resourceService.getStatuses());
+								service.setUpdated(convertUTCDateToUserTimeZone(statusEntity.getCreated()));
+								User user = dataController.getUser(statusEntity.getUserId());
+								if (user != null) {
+									com.gillsoft.model.User modelUser = dataController.convert(user);
+									service.setUpdateUser(modelUser);
+									Organisation organisation = dataController.getOrganisation(statusEntity.getOrganisationId());
+									if (organisation != null) {
+										modelUser.setOrganisation(dataController.convert(organisation));
+									}
+								}
+								// данные пользователя создавшего сервис
+								ServiceStatusEntity createdEntity = getStatusEntity(ServiceStatus.NEW, resourceService.getStatuses());
+								if (createdEntity == null) {
+									createdEntity = statusEntity;
+								}
+								service.setCreated(convertUTCDateToUserTimeZone(createdEntity.getCreated()));
+								user = dataController.getUser(createdEntity.getUserId());
+								if (user != null) {
+									com.gillsoft.model.User modelUser = dataController.convert(user);
+									service.setCreateUser(modelUser);
+									Organisation organisation = dataController.getOrganisation(createdEntity.getOrganisationId());
+									if (organisation != null) {
+										modelUser.setOrganisation(dataController.convert(organisation));
+									}
+								}
 								service.setId(String.valueOf(resourceService.getId()));
 								ServiceStatus status = getLastStatus(resourceService.getStatuses());
 								service.setStatus(status.name());
@@ -237,6 +267,7 @@ public class OrderResponseConverter {
 					}
 			}
 		}
+		response.fillMaps();
 		return response;
 	}
 	
@@ -482,6 +513,11 @@ public class OrderResponseConverter {
 	
 	public ServiceStatus getLastNotErrorStatus(Set<ServiceStatusEntity> statuses) {
 		return getLastNotErrorStatusEntity(statuses).getStatus();
+	}
+	
+	public ServiceStatusEntity getStatusEntity(ServiceStatus status, Set<ServiceStatusEntity> statuses) {
+		Optional<ServiceStatusEntity> statusEntity = statuses.stream().filter(s -> s.getStatus() == status).findFirst();
+		return statusEntity.isPresent() ? statusEntity.get() : null;
 	}
 	
 	public ServiceStatusEntity getLastStatusEntity(Set<ServiceStatusEntity> statuses) {
