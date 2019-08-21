@@ -683,32 +683,72 @@ public class OrderResponseConverter {
 	/**
 	 * Добавляет документы в заказ из бд.
 	 */
-	public Order addDocuments(Order order, List<OrderResponse> responses) {
+	public Order addDocuments(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
 		for (OrderResponse response : responses) {
-			addDocuments(order, response.getDocuments(), null);
+			addDocuments(order, getMaxStatus(order, requests, responses), response.getDocuments(), null);
 			if (response.getServices() != null) {
 				for (ServiceItem service : response.getServices()) {
-					addDocuments(order, service.getDocuments(), service);
+					addDocuments(order, null, service.getDocuments(), service);
 				}
 			}
 		}
 		return order;
 	}
 	
-	public void addDocuments(Order order, List<Document> documents, ServiceItem service) {
+	// максимально последнмй статус любой позиции заказа ресурса
+	private ServiceStatus getMaxStatus(Order order, List<OrderRequest> requests, List<OrderResponse> responses) {
+		for (OrderRequest request : requests) {
+			if (responses.stream().filter(resp -> Objects.equals(request.getId(), resp.getId())).findFirst().isPresent()) {
+				for (ResourceOrder resourceOrder : order.getOrders()) {
+					if (Objects.equals(request.getOrderId(), new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId())) {
+						ServiceStatusEntity maxStatus = null;
+						for (ResourceService resourceService : resourceOrder.getServices()) {
+							ServiceStatusEntity status = getLastNotErrorStatusEntity(resourceService.getStatuses());
+							if (maxStatus == null
+									|| maxStatus.getCreated().getTime() < status.getCreated().getTime()) {
+								maxStatus = status;
+							}
+						}
+						return maxStatus.getStatus();
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	// максимально последнмй статус любой позиции заказа
+	private ServiceStatus getMaxStatus(Order order) {
+		ServiceStatusEntity maxStatus = null;
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				ServiceStatusEntity status = getLastNotErrorStatusEntity(resourceService.getStatuses());
+				if (maxStatus == null
+						|| maxStatus.getCreated().getTime() < status.getCreated().getTime()) {
+					maxStatus = status;
+				}
+			}
+		}
+		return maxStatus.getStatus();
+	}
+	
+	public void addDocuments(Order order, ServiceStatus orderStatus, List<Document> documents, ServiceItem service) {
 		if (documents != null) {
 			for (Document document : documents) {
 				OrderDocument orderDocument = new OrderDocument();
 				orderDocument.setType(document.getType() == null ? DocumentType.TICKET : document.getType());
 				orderDocument.setBase64(document.getBase64());
+				orderDocument.setStatus(orderStatus);
 				
 				// ищем ид сервиса
-				if (service != null) {
+				if (service != null
+						&& service.getError() == null) {
 					out:
 						for (ResourceOrder resourceOrder : order.getOrders()) {
 							for (ResourceService resourceService : resourceOrder.getServices()) {
 								if (Objects.equals(service.getId(),
-										new IdModel().create(resourceService.getResourceNativeServiceId()).getId())) {
+										new IdModel().create(resourceService.getResourceNativeServiceId()).getId())
+										|| Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
 									orderDocument.setServiceId(resourceService.getId());
 									orderDocument.setStatus(getLastNotErrorStatus(resourceService.getStatuses()));
 									break out;
@@ -728,29 +768,53 @@ public class OrderResponseConverter {
 		OrderResponse response = new OrderResponse();
 		response.setOrderId(String.valueOf(order.getId()));
 		Map<Long, ServiceItem> services = new HashMap<>();
+		
+		// максимально последнмй статус любой позиции заказа
+		ServiceStatus maxStatus = getMaxStatus(order);
 		for (OrderDocument document : order.getDocuments()) {
-			Document serviceDocument = new Document(document.getType(), document.getBase64());
-			if (document.getServiceId() != 0) {
-				ServiceItem service = services.get(document.getServiceId());
-				if (service == null) {
-					service = new ServiceItem();
-					service.setId(String.valueOf(document.getServiceId()));
-					service.setDocuments(new ArrayList<>());
-					services.put(document.getServiceId(), service);
+			
+			// проверяем статус позиции текущего документа
+			// если документ для всего заказа, то проверяется maxStatus
+			if (isAddToResponse(order, document, maxStatus)) {
+				Document serviceDocument = new Document(document.getType(), document.getBase64());
+				if (document.getServiceId() != 0) {
+					ServiceItem service = services.get(document.getServiceId());
+					if (service == null) {
+						service = new ServiceItem();
+						service.setId(String.valueOf(document.getServiceId()));
+						service.setDocuments(new ArrayList<>());
+						services.put(document.getServiceId(), service);
+					}
+					service.getDocuments().add(serviceDocument);
+				} else {
+					if (response.getDocuments() == null) {
+						response.setDocuments(new ArrayList<>());
+					}
+					response.getDocuments().add(serviceDocument);
 				}
-				service.getDocuments().add(serviceDocument);
-			} else {
-				if (response.getDocuments() == null) {
-					response.setDocuments(new ArrayList<>());
-				}
-				response.getDocuments().add(serviceDocument);
 			}
 		}
 		if (response.getDocuments() != null
 				&& response.getDocuments().isEmpty()) {
 			response.setDocuments(null);
 		}
+		if (!services.isEmpty()) {
+			response.setServices(new ArrayList<>(services.values()));
+		}
 		return response;
+	}
+	
+	private boolean isAddToResponse(Order order, OrderDocument document, ServiceStatus status) {
+		if (document.getServiceId() != 0) {
+			for (ResourceOrder resourceOrder : order.getOrders()) {
+				for (ResourceService resourceService : resourceOrder.getServices()) {
+					if (document.getId() == resourceService.getId()) {
+						return getLastNotErrorStatus(resourceService.getStatuses()) == document.getStatus();
+					}
+				}
+			}
+		}
+		return status == document.getStatus();
 	}
 	
 	/**
@@ -838,6 +902,22 @@ public class OrderResponseConverter {
 			}
 			if (service.getCustomer() != null) {
 				service.setCustomer(response.getCustomers().get(service.getCustomer().getId()));
+			}
+			if (response.getUsers() != null) {
+				if (service.getCreateUser() != null) {
+					service.setCreateUser(response.getUsers().get(service.getCreateUser().getId()));
+					if (service.getCreateUser().getOrganisation() != null) {
+						service.getCreateUser().setOrganisation(response.getOrganisations().get(
+								service.getCreateUser().getOrganisation().getId()));
+					}
+				}
+				if (service.getUpdateUser() != null) {
+					service.setUpdateUser(response.getUsers().get(service.getUpdateUser().getId()));
+					if (service.getUpdateUser().getOrganisation() != null) {
+						service.getUpdateUser().setOrganisation(response.getOrganisations().get(
+								service.getUpdateUser().getOrganisation().getId()));
+					}
+				}
 			}
 		}
 	}

@@ -498,8 +498,6 @@ public class OrderController {
 	
 	public OrderResponse getDocuments(long orderId) {
 		
-		// TODO фильтровать билеты ресурса по статусам
-		
 		// проверяем билеты в заказе
 		Order order = getOrderDocuments(orderId);
 		if (!dataController.isOrderAvailable(order, ServiceStatus.VIEW)) {
@@ -518,7 +516,7 @@ public class OrderController {
 			List<OrderResponse> responses = service.getPdfDocuments(requests);
 			
 			// сохраняем документы по заказу
-			order = converter.addDocuments(order, responses);
+			order = converter.addDocuments(order, requests, responses);
 			try {
 				order = manager.update(order);
 			} catch (ManageException e) {
@@ -569,7 +567,7 @@ public class OrderController {
 									orderWrapper.setOrder(response);
 									orderWrapper.setTicketLayout(layout.get().getLayout());
 									List<Document> documents = printService.create(orderWrapper);
-									converter.addDocuments(order, documents, item);
+									converter.addDocuments(order, null, documents, item);
 								}
 							}
 						}
