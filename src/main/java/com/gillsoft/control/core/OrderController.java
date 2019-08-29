@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
@@ -107,7 +108,7 @@ public class OrderController {
 				&& !response.getResources().isEmpty()) {
 			
 			// заказ для сохранения
-			return converter.convertToNewOrder(createRequest, result, response);
+			return converter.convertToNewOrder(request, createRequest, result, response);
 		} else {
 			throw new ApiException("Empty response");
 		}
@@ -117,18 +118,19 @@ public class OrderController {
 		List<Resource> resources = getResources();
 		Map<Long, OrderRequest> requests = new HashMap<>();
 		for (ServiceItem item : request.getServices()) {
-			TripIdModel idModel = new TripIdModel().create(item.getSegment().getId());
+			ServiceItem resourceItem = (ServiceItem) SerializationUtils.deserialize(SerializationUtils.serialize(item));
+			TripIdModel idModel = new TripIdModel().create(resourceItem.getSegment().getId());
 			
 			// проверяем ресурс
 			Resource serviceResource = getResource(idModel.getResourceId(), resources);
 			if (serviceResource == null) {
 				throw new ResourceUnavailableException("Resource is unavailable for service where segmentId="
-						+ item.getSegment().getId());
+						+ resourceItem.getSegment().getId());
 			}
 			// проверяем доступность метода
 			if (!infoController.isMethodAvailable(serviceResource, Method.ORDER, MethodType.POST)) {
 				throw new MethodUnavalaibleException("Method is unavailable for service where segmentId="
-						+ item.getSegment().getId());
+						+ resourceItem.getSegment().getId());
 			}
 			OrderRequest resourceRequest = requests.get(serviceResource.getId());
 			if (resourceRequest == null) {
@@ -140,16 +142,16 @@ public class OrderController {
 				resourceRequest.setServices(new ArrayList<>());
 				requests.put(serviceResource.getId(), resourceRequest);
 			}
-			item.getSegment().setId(idModel.getId());
-			if (item.getAdditionals() == null) {
-				item.setAdditionals(new HashMap<>());
+			resourceItem.getSegment().setId(idModel.getId());
+			if (resourceItem.getAdditionals() == null) {
+				resourceItem.setAdditionals(new HashMap<>());
 			}
 			try {
-				item.getAdditionals().put("uniqueId", String.valueOf(manager.getUniqueId(serviceResource.getId())));
+				resourceItem.getAdditionals().put("uniqueId", String.valueOf(manager.getUniqueId(serviceResource.getId())));
 			} catch (ManageException e) {
 				LOGGER.error("Can not create unique id for resource " + serviceResource.getId(), e);
 			}
-			resourceRequest.getServices().add(item);
+			resourceRequest.getServices().add(resourceItem);
 		}
 		OrderRequest newRequest = new OrderRequest();
 		newRequest.setCustomers(request.getCustomers());

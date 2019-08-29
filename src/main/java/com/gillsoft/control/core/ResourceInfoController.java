@@ -17,11 +17,11 @@ import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
 import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.AgregatorResourceInfoService;
-import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.model.response.ResourceMethodResponse;
+import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
 
 @Component

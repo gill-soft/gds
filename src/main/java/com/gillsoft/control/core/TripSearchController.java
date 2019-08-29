@@ -567,11 +567,7 @@ public class TripSearchController {
 			orderResponse.setVehicles(searchResponse.getVehicles());
 			orderResponse.setOrganisations(searchResponse.getOrganisations());
 			orderResponse.setLocalities(searchResponse.getLocalities());
-			if (orderResponse.getSegments() == null) {
-				orderResponse.setSegments(searchResponse.getSegments());
-			} else {
-				searchResponse.getSegments().forEach((id, s) -> orderResponse.getSegments().putIfAbsent(id, s));
-			}
+			orderResponse.setSegments(searchResponse.getSegments());
 			orderResponse.getSegments().values().forEach(s -> {
 				if (s.getResource() != null
 						&& searchResponse.getResources().containsKey(s.getResource().getId())) {
@@ -583,7 +579,20 @@ public class TripSearchController {
 		}
 	}
 	
-	public void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result) {
+	/**
+	 * Маппит в заказ рейс с расписания.
+	 * 
+	 * @param segmentIds
+	 *            Список рейсов с запроса.
+	 * @param orderRequest
+	 *            Запрос заказа в ресурс.
+	 * @param orderResponse
+	 *            Ответ от ресурса.
+	 * @param result
+	 *            Заказ ГДС.
+	 */
+	public void mapScheduleSegment(List<String> segmentIds, OrderRequest orderRequest, OrderResponse orderResponse,
+			OrderResponse result) {
 		
 		// добавляем рейсы из расписания
 		for (String segmentId : orderResponse.getSegments().keySet()) {
@@ -613,17 +622,30 @@ public class TripSearchController {
 				}
 			}
 		}
+		// выполняем маппинг данных
+		mapOrderSegment(segmentIds, orderRequest, orderResponse, result);
+	}
+	
+	/**
+	 * Маппит в заказ рейс с заказа ресурса.
+	 * 
+	 * @param segmentIds
+	 *            Список рейсов с запроса.
+	 * @param orderRequest
+	 *            Запрос заказа в ресурс.
+	 * @param orderResponse
+	 *            Ответ от ресурса.
+	 * @param result
+	 *            Заказ ГДС.
+	 */
+	public void mapOrderSegment(List<String> segmentIds, OrderRequest orderRequest, OrderResponse orderResponse,
+			OrderResponse result) {
 		TripSearchResponse searchResponse = new TripSearchResponse();
 		searchResponse.setLocalities(orderResponse.getLocalities());
 		searchResponse.setVehicles(orderResponse.getVehicles());
 		searchResponse.setOrganisations(orderResponse.getOrganisations());
 		searchResponse.setSegments(orderResponse.getSegments());
 		
-		// выполняем маппинг данных
-		mapOrderSegment(orderRequest, orderResponse, result, searchResponse);
-	}
-	
-	private void mapOrderSegment(OrderRequest orderRequest, OrderResponse orderResponse, OrderResponse result, TripSearchResponse searchResponse) {
 		TripSearchRequest request = new TripSearchRequest();
 		request.setCurrency(orderRequest.getCurrency());
 		request.setLang(orderRequest.getLang());
@@ -643,6 +665,8 @@ public class TripSearchController {
 		
 		updateOrderResponse(orderResponse, searchResult);
 		
+		updateIds(segmentIds, orderResponse.getSegments());
+		
 		if (result.getVehicles() == null) {
 			result.setVehicles(orderResponse.getVehicles());
 		} else if (orderResponse.getVehicles() != null) {
@@ -661,8 +685,28 @@ public class TripSearchController {
 		if (result.getSegments() == null) {
 			result.setSegments(orderResponse.getSegments());
 		} else if (orderResponse.getSegments() != null) {
-			orderResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
+			orderResponse.getSegments().forEach((id, s) -> {
+				Segment segment = result.getSegments().putIfAbsent(id, s);
+				if (segment != null) {
+					segment.update(s);
+				}
+			});
 		}
 	}
-
+	
+	/*
+	 * Проставляет рейсам ид, которые были при поиске
+	 */
+	private void updateIds(List<String> segmentIds, Map<String, Segment> segments) {
+		Set<String> keys = new HashSet<>(segments.keySet());
+		for (String id : keys) {
+			for (String presentId : segmentIds) {
+				if (new TripIdModel().create(id).getId().equals(new TripIdModel().create(presentId).getId())) {
+					segments.put(presentId, segments.remove(id));
+					break;
+				}
+			}
+		}
+	}
+	
 }

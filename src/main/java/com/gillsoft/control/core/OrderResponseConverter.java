@@ -53,7 +53,8 @@ public class OrderResponseConverter {
 	@Autowired
 	private TripSearchController searchController;
 	
-	public Order convertToNewOrder(OrderRequest createRequest, OrderResponse result, OrderResponse response) {
+	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
+			OrderResponse response) {
 		
 		// заказ для сохранения
 		Date created = new Date();
@@ -80,7 +81,7 @@ public class OrderResponseConverter {
 				ResourceOrder resourceOrder = new ResourceOrder();
 				resourceOrder.setResourceId(Long.parseLong(currRequest.getParams().getResource().getId()));
 				resourceOrder.setResourceNativeOrderId(
-						new IdModel(resourceOrder.getId(), orderResponse.getOrderId()).asString());
+						new IdModel(Long.parseLong(currRequest.getParams().getResource().getId()), orderResponse.getOrderId()).asString());
 				order.addResourceOrder(resourceOrder);
 				if (orderResponse.getError() != null) {
 					currRequest.getServices().forEach(s -> s.setError(orderResponse.getError()));
@@ -97,18 +98,20 @@ public class OrderResponseConverter {
 						// устанавливаем ид сегмента рейса
 						Segment segment = null;
 						if (item.getSegment() != null) {
-							if (item.getSegment() != null
-									&& result.getSegments() != null) {
+							if (result.getSegments() != null) {
 								setSegment(result.getSegments(), item);
 								segment = result.getSegments().get(item.getSegment().getId());
 							}
 							if (segment == null) {
 								
 								// маппим рейсы заказа из ответа
-								searchController.mapOrderSegment(currRequest, orderResponse, result);
+								searchController.mapScheduleSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
 								
 								setSegment(result.getSegments(), item);
 								segment = result.getSegments().get(item.getSegment().getId());
+							} else {
+								// маппим рейсы заказа из ответа
+								searchController.mapOrderSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
 							}
 							resultSegmentIds.add(item.getSegment().getId());
 						}
@@ -144,6 +147,11 @@ public class OrderResponseConverter {
 		// очищаем неиспользуемые данные из словарей
 		searchController.updateResponseDictionaries(resultSegmentIds, result.getSegments(), result.getVehicles(), result.getOrganisations(), result.getLocalities(), null);
 		return order;
+	}
+	
+	private List<String> getSegmentIds(OrderRequest request) {
+		return request.getServices().stream().filter(s -> s.getSegment() != null)
+				.map(s -> s.getSegment().getId()).collect(Collectors.toList());
 	}
 	
 	private void addReturnConditions(ServiceItem item, Segment segment) {
