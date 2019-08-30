@@ -490,8 +490,9 @@ public class TripSearchController {
 			Map<String, com.gillsoft.model.Resource> resources) {
 		
 		// перезаливаем рейсы
-		segments.keySet().removeIf(key -> !resultSegmentIds.contains(key));
-		
+		if (segments != null) {
+			segments.keySet().removeIf(key -> !resultSegmentIds.contains(key));
+		}
 		// перезаливаем словари
 		if (vehicles != null) {
 			vehicles.keySet().removeIf(key -> {

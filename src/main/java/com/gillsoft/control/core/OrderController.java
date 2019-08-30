@@ -2,7 +2,6 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -143,6 +142,9 @@ public class OrderController {
 				requests.put(serviceResource.getId(), resourceRequest);
 			}
 			resourceItem.getSegment().setId(idModel.getId());
+			if (resourceItem.getCarriage() != null) {
+				resourceItem.getCarriage().setId(new TripIdModel().create(resourceItem.getCarriage().getId()).getId());
+			}
 			if (resourceItem.getAdditionals() == null) {
 				resourceItem.setAdditionals(new HashMap<>());
 			}
@@ -547,29 +549,58 @@ public class OrderController {
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			if (layouts.containsKey(resourceOrder.getResourceId())) {
 				List<TicketLayout> ticketLayouts = layouts.get(resourceOrder.getResourceId());
+				
+				// сервисы, по которым уже создан билет
+				Set<ResourceService> processedServices = new HashSet<>();
 				for (ResourceService service : resourceOrder.getServices()) {
-					
-					// берем статус, по которому формируется документ
-					ServiceStatusEntity status = converter.getLastNotErrorStatusEntity(service.getStatuses());
-					if (status.getError() == null) {
+					if (!processedServices.contains(service)) {
 						
-						// берем макет соответствующий последнему статусу
-						if (ticketLayouts != null) {
-							Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
-							if (layout.isPresent()) {
-								TicketLayout ticketLayout = layout.get();
-								if (ticketLayout.getLayout() != null
-										&& !ticketLayout.getLayout().isEmpty()) {
-								
-									// TODO может стоит брать юзера со статуса ???
+						// берем статус, по которому формируется документ
+						ServiceStatusEntity status = converter.getLastNotErrorStatusEntity(service.getStatuses());
+						if (status.getError() == null) {
+							
+							// берем макет соответствующий последнему статусу
+							if (ticketLayouts != null) {
+								Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
+								if (layout.isPresent()) {
+									TicketLayout ticketLayout = layout.get();
+									if (ticketLayout.getLayout() != null
+											&& !ticketLayout.getLayout().isEmpty()) {
 									
-									ServiceItem item = items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get();
-									response.setServices(Collections.singletonList(item));
-									PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
-									orderWrapper.setOrder(response);
-									orderWrapper.setTicketLayout(layout.get().getLayout());
-									List<Document> documents = printService.create(orderWrapper);
-									converter.addDocuments(order, null, documents, item);
+										// TODO может стоит брать юзера со статуса ???
+										
+										ServiceItem item = null;
+										ServiceStatus orderStatus = null;
+										List<ServiceItem> services = new ArrayList<>();
+										switch (ticketLayout.getApplyingArea()) {
+										
+										// если печать для всего заказа, то выбираем все сервисы заказа ресурса со статусом текущей позиции
+										case RESOURCE_ORDER:
+											orderStatus = status.getStatus();
+											for (ResourceService otherService : resourceOrder.getServices()) {
+												ServiceStatusEntity otherStatus = converter.getLastNotErrorStatusEntity(otherService.getStatuses());
+												if (otherStatus.getError() == null
+														&& status.getStatus() == otherStatus.getStatus()) {
+													processedServices.add(otherService);
+													services.add(items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get());
+												}
+											}
+											break;
+										case SINGLE_SERVICE:
+											processedServices.add(service);
+											item = items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get();
+											services.add(item);
+											break;
+										default:
+											break;
+										}
+										response.setServices(services);
+										PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
+										orderWrapper.setOrder(response);
+										orderWrapper.setTicketLayout(layout.get().getLayout());
+										List<Document> documents = printService.create(orderWrapper);
+										converter.addDocuments(order, orderStatus, documents, item);
+									}
 								}
 							}
 						}

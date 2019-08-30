@@ -1,6 +1,7 @@
 package com.gillsoft.control.api;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,10 +11,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.gillsoft.control.service.model.PrintOrderWrapper;
 import com.gillsoft.model.response.OrderResponse;
@@ -52,6 +55,15 @@ public class PrintController {
 			value = trans.transform(value);
 		}
 		return StringUtil.jsonStringToObject(OrderResponse.class, value);
+	}
+	
+	@GetMapping("/generate/image")
+	public void generateImage(@RequestParam String base64, HttpServletResponse response) throws IOException {
+		
+		// отправляем файл в ответ
+		response.setContentType("image/gif");
+		StreamUtils.copy(new ByteArrayInputStream(StringUtil.fromBase64(base64.replace(' ', '+'))), response.getOutputStream());
+		response.flushBuffer();
 	}
 	
 	@GetMapping("/generate/qr/{value}/{width}")
