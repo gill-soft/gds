@@ -531,6 +531,13 @@ public class TripSearchMapping {
 		}
 	}
 	
+	private String replaceTripId(String newId, String oldId, Map<String, Segment> segments) {
+		if (segments.containsKey(oldId)) {
+			segments.put(newId, segments.remove(oldId));
+		}
+		return newId;
+	}
+	
 	/*
 	 * Проверяет и создает маппинг организации по номеру рейса.
 	 */
@@ -559,11 +566,6 @@ public class TripSearchMapping {
 			}
 		}
 		return null;
-	}
-	
-	private String replaceTripId(String newId, String oldId, Map<String, Segment> segments) {
-		segments.put(newId, segments.remove(oldId));
-		return newId;
 	}
 	
 	/*
