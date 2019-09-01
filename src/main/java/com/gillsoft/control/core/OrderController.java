@@ -582,7 +582,7 @@ public class OrderController {
 												if (otherStatus.getError() == null
 														&& status.getStatus() == otherStatus.getStatus()) {
 													processedServices.add(otherService);
-													services.add(items.stream().filter(s -> Long.valueOf(s.getId()) == service.getId()).findFirst().get());
+													services.add(items.stream().filter(s -> Long.valueOf(s.getId()) == otherService.getId()).findFirst().get());
 												}
 											}
 											break;
