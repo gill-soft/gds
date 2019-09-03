@@ -91,11 +91,11 @@ public class TripSearchMapping {
 		
 		// мапим словари
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
-		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.CARRIER,
+		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.ORGANIZATION,
 				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
 				(original) -> createUnmappingOrganisation(original),
 				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
-		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.BUS,
+		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.VEHICLE,
 				(mapping, lang, original) -> createVehicle(mapping, lang, original),
 				(original) -> createUnmappingVehicle(original), 
 				(resourceId, id, v) -> v.setId(getKey(resourceId, id)));
@@ -369,7 +369,7 @@ public class TripSearchMapping {
 					&& !result.getVehicles().containsKey(tripNumber)) {
 				Map<String, Vehicle> vehicles = new HashMap<>();
 				vehicles.put(tripNumber, null);
-				mappingObjects(request, vehicles, result.getVehicles(), MapType.BUS,
+				mappingObjects(request, vehicles, result.getVehicles(), MapType.VEHICLE,
 						(mapping, lang, original) -> createVehicle(mapping, lang, original),
 						(original) -> createUnmappingVehicle(original),
 						null);
@@ -382,7 +382,7 @@ public class TripSearchMapping {
 			// если перевозчика нет, то добавляем его с маппинга по уникальному номеру рейса
 			if (segment.getCarrier() == null
 					&& !result.getOrganisations().containsKey(tripNumber + "_carrier")) {
-				addOrganisationByTripNumber(tripNumber + "_carrier", result, request, MapType.CARRIER);
+				addOrganisationByTripNumber(tripNumber + "_carrier", result, request, MapType.ORGANIZATION);
 			}
 			// устанавливаем перевозчика с маппинга
 			String carrierKey = segment.getCarrier() != null ? getKey(resourceId, segment.getCarrier().getId()) : tripNumber + "_carrier";
@@ -392,7 +392,7 @@ public class TripSearchMapping {
 			// если страховой нет, то добавляем её с маппинга по уникальному номеру рейса
 			if (segment.getInsurance() == null
 					&& !result.getOrganisations().containsKey(tripNumber + "_insurance")) {
-				addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.INSURANCE);
+				addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.ORGANIZATION);
 			}
 			// устанавливаем страховую с маппинга
 			String insuranceKey = segment.getInsurance() != null ? getKey(resourceId, segment.getInsurance().getId()) : tripNumber + "_insurance";
@@ -544,7 +544,7 @@ public class TripSearchMapping {
 	private void addOrganisationByTripNumber(String key, TripSearchResponse result, TripSearchRequest request, MapType mapType) {
 		Map<String, Organisation> organisations = new HashMap<>();
 		organisations.put(key, null);
-		mappingObjects(request, organisations, result.getOrganisations(), MapType.CARRIER,
+		mappingObjects(request, organisations, result.getOrganisations(), MapType.ORGANIZATION,
 				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
 				(original) -> createUnmappingOrganisation(original),
 				null);
