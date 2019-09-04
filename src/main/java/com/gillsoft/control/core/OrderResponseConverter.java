@@ -93,6 +93,9 @@ public class OrderResponseConverter {
 								orderResponse.getError().getMessage()));
 					});
 				} else {
+					// маппим рейсы заказа из ответа
+					searchController.mapScheduleSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
+					
 					for (ServiceItem item : orderResponse.getServices()) {
 						
 						// устанавливаем ид сегмента рейса
@@ -101,17 +104,6 @@ public class OrderResponseConverter {
 							if (result.getSegments() != null) {
 								setSegment(result.getSegments(), item);
 								segment = result.getSegments().get(item.getSegment().getId());
-							}
-							if (segment == null) {
-								
-								// маппим рейсы заказа из ответа
-								searchController.mapScheduleSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
-								
-								setSegment(result.getSegments(), item);
-								segment = result.getSegments().get(item.getSegment().getId());
-							} else {
-								// маппим рейсы заказа из ответа
-								searchController.mapOrderSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
 							}
 							resultSegmentIds.add(item.getSegment().getId());
 						}

@@ -597,8 +597,12 @@ public class TripSearchController {
 		
 		// добавляем рейсы из расписания
 		for (String segmentId : orderResponse.getSegments().keySet()) {
-			TripSearchResponse segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
-			
+			TripSearchResponse segmentResponse = null;
+			try {
+				segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
+			} catch (Exception e) {
+				LOGGER.error("Can not get segment from schedule", e);
+			}
 			// заменяем данными из расписания так как там более подробные данные по рейсу
 			if (segmentResponse != null) {
 				if (orderResponse.getLocalities() == null) {
