@@ -413,7 +413,6 @@ public class TripSearchController {
 				TripIdModel model = new TripIdModel().create(tripId);
 				model.getRequest().setId(StringUtil.generateUUID());
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
-				model.getRequest().setLang(request.getLang());
 				model.getRequest().setCurrency(request.getCurrency());
 				requestContainer.add(model.getRequest());
 			}
@@ -653,7 +652,6 @@ public class TripSearchController {
 		
 		TripSearchRequest request = new TripSearchRequest();
 		request.setCurrency(orderRequest.getCurrency());
-		request.setLang(orderRequest.getLang());
 		request.setParams(orderRequest.getParams());
 		
 		TripSearchResponse searchResult = new TripSearchResponse();

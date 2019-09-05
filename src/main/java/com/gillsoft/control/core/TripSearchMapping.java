@@ -233,17 +233,19 @@ public class TripSearchMapping {
 	 * Создает организацию по данным мапинга.
 	 */
 	private Organisation createOrganisation(Mapping mapping, Lang lang, Organisation original) {
-		if (mapping.getAttributes() != null) {
+		if (mapping.getAttributes() != null
+				|| mapping.getLangAttributes() != null) {
 			Organisation organisation = new Organisation();
 			organisation.setId(String.valueOf(mapping.getId()));
-			if (lang == null) {
+			if (lang == null
+					&& mapping.getLangAttributes() != null) {
 				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
 					organisation.setName(entry.getKey(), entry.getValue().containsKey("NAME") ?
 							entry.getValue().get("NAME") : original.getName(entry.getKey()));
 					organisation.setAddress(entry.getKey(), entry.getValue().containsKey("ADDRESS") ?
 							entry.getValue().get("ADDRESS") : original.getAddress(entry.getKey()));
 				}
-			} else {
+			} else if (mapping.getAttributes() != null) {
 				if (mapping.getAttributes().containsKey("NAME")) {
 					organisation.setName(lang, mapping.getAttributes().get("NAME"));
 				} else {
@@ -255,17 +257,19 @@ public class TripSearchMapping {
 					organisation.setAddress(original.getAddress());
 				}
 			}
-			organisation.setTradeMark(mapping.getAttributes().containsKey("TRADEMARK") ?
-					mapping.getAttributes().get("TRADEMARK") : original.getTradeMark());
-			if (mapping.getAttributes().containsKey("PHONES")) {
-				organisation.setPhones(Arrays.asList(mapping.getAttributes().get("PHONES").split(";")));
-			} else {
-				organisation.setPhones(original.getPhones());
-			}
-			if (mapping.getAttributes().containsKey("EMAILS")) {
-				organisation.setEmails(Arrays.asList(mapping.getAttributes().get("EMAILS").split(";")));
-			} else {
-				organisation.setEmails(original.getEmails());
+			if (mapping.getAttributes() != null) {
+				organisation.setTradeMark(mapping.getAttributes().containsKey("TRADEMARK") ?
+						mapping.getAttributes().get("TRADEMARK") : original.getTradeMark());
+				if (mapping.getAttributes().containsKey("PHONES")) {
+					organisation.setPhones(Arrays.asList(mapping.getAttributes().get("PHONES").split(";")));
+				} else {
+					organisation.setPhones(original.getPhones());
+				}
+				if (mapping.getAttributes().containsKey("EMAILS")) {
+					organisation.setEmails(Arrays.asList(mapping.getAttributes().get("EMAILS").split(";")));
+				} else {
+					organisation.setEmails(original.getEmails());
+				}
 			}
 			return organisation;
 		} else {
@@ -293,33 +297,37 @@ public class TripSearchMapping {
 	 * Создает транспорт по данным мапинга.
 	 */
 	private Vehicle createVehicle(Mapping mapping, Lang lang, Vehicle original) {
-		if (mapping.getAttributes() != null) {
+		if (mapping.getAttributes() != null
+				|| mapping.getLangAttributes() != null) {
 			Vehicle vehicle = new Vehicle();
 			vehicle.setId(String.valueOf(mapping.getId()));
-			if (lang == null) {
+			if (lang == null
+					|| mapping.getLangAttributes() != null) {
 				for (Entry<Lang, ConcurrentMap<String, String>> entry : mapping.getLangAttributes().entrySet()) {
 					if (entry.getValue().containsKey("MODEL")) {
 						vehicle.setModel(entry.getValue().get("MODEL"));
 						break;
 					}
 				}
-			} else {
+			} else if (mapping.getAttributes() != null) {
 				vehicle.setModel(mapping.getAttributes().get("MODEL"));
 			}
 			if (vehicle.getModel() == null) {
 				vehicle.setModel(original.getModel());
 			}
-			if (mapping.getAttributes().containsKey("CAPACITY")) {
-				try {
-					vehicle.setCapacity(Integer.valueOf(mapping.getAttributes().get("CAPACITY")));
-				} catch (NumberFormatException e) {
-					LOGGER.error("Invalid capacity for busmodel id: " + mapping.getId(), e);
+			if (mapping.getAttributes() != null) {
+				if (mapping.getAttributes().containsKey("CAPACITY")) {
+					try {
+						vehicle.setCapacity(Integer.valueOf(mapping.getAttributes().get("CAPACITY")));
+					} catch (NumberFormatException e) {
+						LOGGER.error("Invalid capacity for busmodel id: " + mapping.getId(), e);
+					}
+				} else {
+					vehicle.setCapacity(original.getCapacity());
 				}
-			} else {
-				vehicle.setCapacity(original.getCapacity());
+				vehicle.setNumber(mapping.getAttributes().containsKey("NUMBER") ?
+						mapping.getAttributes().get("NUMBER") : original.getModel());
 			}
-			vehicle.setNumber(mapping.getAttributes().containsKey("NUMBER") ?
-					mapping.getAttributes().get("NUMBER") : original.getModel());
 			return vehicle;
 		} else {
 			original.setId(String.valueOf(mapping.getId()));
