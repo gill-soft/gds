@@ -226,6 +226,9 @@ public class OrderResponseConverter {
 								
 								// данные пользователя обновившего сервис
 								ServiceStatusEntity statusEntity = getLastNotErrorStatusEntity(resourceService.getStatuses());
+								if (statusEntity == null) {
+									statusEntity = getLastStatusEntity(resourceService.getStatuses());
+								}
 								service.setUpdated(convertUTCDateToUserTimeZone(statusEntity.getCreated()));
 								User user = dataController.getUser(statusEntity.getUserId());
 								if (user != null) {
@@ -521,7 +524,8 @@ public class OrderResponseConverter {
 	}
 	
 	public ServiceStatusEntity getLastStatusEntity(Set<ServiceStatusEntity> statuses) {
-		return statuses.stream().max(Comparator.comparing(ServiceStatusEntity::getId)).get();
+		Optional<ServiceStatusEntity> statusEntity = statuses.stream().max(Comparator.comparing(ServiceStatusEntity::getId));
+		return statusEntity.isPresent() ? statusEntity.get() : null;
 	}
 	
 	public ServiceStatusEntity getLastNotErrorStatusEntity(Set<ServiceStatusEntity> statuses) {
