@@ -515,7 +515,7 @@ public class MsDataController {
 		if (emails != null) {
 			converted.setEmails(Collections.singletonList(emails));
 		}
-		String phones = getValue("prhone", organisation);
+		String phones = getValue("phone", organisation);
 		if (phones != null) {
 			converted.setPhones(Collections.singletonList(phones));
 		}
