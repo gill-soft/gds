@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,6 +53,7 @@ import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.OrderResponse;
@@ -604,30 +606,54 @@ public class TripSearchController {
 			}
 			// заменяем данными из расписания так как там более подробные данные по рейсу
 			if (segmentResponse != null) {
-				if (orderResponse.getLocalities() == null) {
-					orderResponse.setLocalities(segmentResponse.getLocalities());
+				segmentResponse = getMappingResult(orderRequest, segmentResponse);
+				
+				updateIds(segmentIds, segmentResponse.getSegments());
+				
+				if (result.getLocalities() == null) {
+					result.setLocalities(segmentResponse.getLocalities());
 				} else if (segmentResponse.getLocalities() != null) {
-					orderResponse.getLocalities().putAll(segmentResponse.getLocalities());
+					result.getLocalities().putAll(segmentResponse.getLocalities());
 				}
-				if (orderResponse.getVehicles() == null) {
-					orderResponse.setVehicles(segmentResponse.getVehicles());
+				if (result.getVehicles() == null) {
+					result.setVehicles(segmentResponse.getVehicles());
 				} else if (segmentResponse.getVehicles() != null) {
-					orderResponse.getVehicles().putAll(segmentResponse.getVehicles());
+					result.getVehicles().putAll(segmentResponse.getVehicles());
 				}
-				if (orderResponse.getOrganisations() == null) {
-					orderResponse.setOrganisations(segmentResponse.getOrganisations());
+				if (result.getOrganisations() == null) {
+					result.setOrganisations(segmentResponse.getOrganisations());
 				} else if (segmentResponse.getOrganisations() != null) {
-					orderResponse.getOrganisations().putAll(segmentResponse.getOrganisations());
+					result.getOrganisations().putAll(segmentResponse.getOrganisations());
 				}
-				if (orderResponse.getSegments() == null) {
-					orderResponse.setSegments(segmentResponse.getSegments());
+				if (result.getSegments() == null) {
+					result.setSegments(segmentResponse.getSegments());
 				} else if (segmentResponse.getSegments() != null) {
-					orderResponse.getSegments().putAll(segmentResponse.getSegments());
+					result.getSegments().putAll(segmentResponse.getSegments());
 				}
 			}
 		}
 		// выполняем маппинг данных
 		mapOrderSegment(segmentIds, orderRequest, orderResponse, result);
+	}
+	
+	private TripSearchResponse getMappingResult(OrderRequest orderRequest, TripSearchResponse searchResponse) {
+		TripSearchRequest request = new TripSearchRequest();
+		request.setCurrency(orderRequest.getCurrency());
+		request.setParams((ResourceParams) SerializationUtils.deserialize(SerializationUtils.serialize(orderRequest.getParams())));
+		
+		
+		TripSearchResponse searchResult = new TripSearchResponse();
+		tripSearchMapping.createDictionaries(searchResult);
+		
+		// мапим словари
+		tripSearchMapping.mapDictionaries(request, searchResponse, searchResult);
+		
+		// обновляем мапингом рейсы
+		tripSearchMapping.updateSegments(request, searchResponse, searchResult, false);
+		
+		// меняем ключи мап на ид из мапинга
+		tripSearchMapping.updateResultDictionaries(searchResult);
+		return searchResult;
 	}
 	
 	/**
@@ -650,21 +676,7 @@ public class TripSearchController {
 		searchResponse.setOrganisations(orderResponse.getOrganisations());
 		searchResponse.setSegments(orderResponse.getSegments());
 		
-		TripSearchRequest request = new TripSearchRequest();
-		request.setCurrency(orderRequest.getCurrency());
-		request.setParams(orderRequest.getParams());
-		
-		TripSearchResponse searchResult = new TripSearchResponse();
-		tripSearchMapping.createDictionaries(searchResult);
-		
-		// мапим словари
-		tripSearchMapping.mapDictionaries(request, searchResponse, searchResult);
-		
-		// обновляем мапингом рейсы
-		tripSearchMapping.updateSegments(request, searchResponse, searchResult, false);
-		
-		// меняем ключи мап на ид из мапинга
-		tripSearchMapping.updateResultDictionaries(searchResult);
+		TripSearchResponse searchResult = getMappingResult(orderRequest, searchResponse);
 		
 		updateOrderResponse(orderResponse, searchResult);
 		
