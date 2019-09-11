@@ -8,7 +8,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,6 +35,7 @@ import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
+import com.gillsoft.model.Lang;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.PaymentMethod;
@@ -500,7 +500,7 @@ public class OrderController {
 		return order;
 	}
 	
-	public OrderResponse getDocuments(long orderId) {
+	public OrderResponse getDocuments(long orderId, Lang lang) {
 		
 		// проверяем билеты в заказе
 		Order order = getOrderDocuments(orderId);
@@ -509,7 +509,7 @@ public class OrderController {
 		}
 		if (order.getDocuments() != null
 				&& !order.getDocuments().isEmpty()) {
-			addSystemDocuments(order);
+			addSystemDocuments(order, lang);
 			return converter.getDocumentsResponse(order);
 		}
 		try {
@@ -529,14 +529,14 @@ public class OrderController {
 		} catch (Exception e) {
 			LOGGER.error("Can not get documents from resource.", e);
 		}
-		addSystemDocuments(order);
+		addSystemDocuments(order, lang);
 		return converter.getDocumentsResponse(order);
 	}
 	
-	private void addSystemDocuments(Order order) {
+	private void addSystemDocuments(Order order, Lang lang) {
 		
 		// макеты по ресурсам заказа и текущему пользователю
-		Map<Long, List<TicketLayout>> layouts = dataController.getTicketLayouts(order);
+		Map<Long, List<TicketLayout>> layoutsMap = dataController.getTicketLayouts(order);
 		
 		// конвертируем заказ в ответ
 		OrderResponse response = converter.getResponse(order);
@@ -547,8 +547,8 @@ public class OrderController {
 		
 		// формируем билет по каждой позиции отдельно
 		for (ResourceOrder resourceOrder : order.getOrders()) {
-			if (layouts.containsKey(resourceOrder.getResourceId())) {
-				List<TicketLayout> ticketLayouts = layouts.get(resourceOrder.getResourceId());
+			if (layoutsMap.containsKey(resourceOrder.getResourceId())) {
+				List<TicketLayout> ticketLayouts = layoutsMap.get(resourceOrder.getResourceId());
 				
 				// сервисы, по которым уже создан билет
 				Set<ResourceService> processedServices = new HashSet<>();
@@ -559,11 +559,10 @@ public class OrderController {
 						ServiceStatusEntity status = converter.getLastNotErrorStatusEntity(service.getStatuses());
 						if (status.getError() == null) {
 							
-							// берем макет соответствующий последнему статусу
+							// берем макеты соответствующие последнему статусу
 							if (ticketLayouts != null) {
-								Optional<TicketLayout> layout = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).findFirst();
-								if (layout.isPresent()) {
-									TicketLayout ticketLayout = layout.get();
+								List<TicketLayout> layouts = ticketLayouts.stream().filter(l -> l.getServiceStatus() == status.getStatus()).collect(Collectors.toList());
+								for (TicketLayout ticketLayout : layouts) {
 									if (ticketLayout.getLayout() != null
 											&& !ticketLayout.getLayout().isEmpty()) {
 									
@@ -596,8 +595,9 @@ public class OrderController {
 										}
 										response.setServices(services);
 										PrintOrderWrapper orderWrapper = new PrintOrderWrapper();
+										orderWrapper.setLang(lang);
 										orderWrapper.setOrder(response);
-										orderWrapper.setTicketLayout(layout.get().getLayout());
+										orderWrapper.setTicketLayout(ticketLayout.getLayout());
 										List<Document> documents = printService.create(orderWrapper);
 										converter.addDocuments(order, orderStatus, documents, item);
 									}

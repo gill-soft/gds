@@ -30,8 +30,8 @@ public class LocalityApiController {
 	@ApiOperation(value = "The list of all cities, stations, stoppings, etc wich are available for user",
 			response = Locality.class, responseContainer = "List")
 	@GetMapping("/all/{lang}")
-	public List<Locality> getAll(@ApiParam(value = "The lang of requested data", required = true)
-			@PathVariable(required = false) Lang lang) {
+	public List<Locality> getAll(
+			@ApiParam(value = "The lang of requested data", required = true) @PathVariable(required = true) Lang lang) {
 		return controller.getAll(createRequest(lang));
 	}
 	
@@ -45,8 +45,8 @@ public class LocalityApiController {
 	@ApiOperation(value = "The list of used cities, stations, stoppings, etc",
 			response = Locality.class, responseContainer = "List")
 	@GetMapping("/used/{lang}")
-	public List<Locality> getUsed(@ApiParam(value = "The lang of requested data", required = true)
-			@PathVariable(required = false) Lang lang) {
+	public List<Locality> getUsed(
+			@ApiParam(value = "The lang of requested data", required = true) @PathVariable(required = true) Lang lang) {
 		return controller.getUsed(createRequest(lang));
 	}
 	

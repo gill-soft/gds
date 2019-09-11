@@ -477,6 +477,9 @@ public class MsDataController {
 		converted.setType(ValueType.valueOf(commission.getValueType().name()));
 		converted.setCurrency(Currency.valueOf(commission.getCurrency().name()));
 		converted.setName(getValue("name", commission));
+		for (Lang lang : Lang.values()) {
+			converted.setName(lang, getValue("name_" + lang.name(), commission));
+		}
 		return converted;
 	}
 	
@@ -486,6 +489,9 @@ public class MsDataController {
 		converted.setMinutesBeforeDepart(returnCondition.getActiveTime());
 		converted.setReturnPercent(returnCondition.getValue());
 		converted.setTitle(getValue("name", returnCondition));
+		for (Lang lang : Lang.values()) {
+			converted.setTitle(lang, getValue("name_" + lang.name(), returnCondition));
+		}
 		return converted;
 	}
 	

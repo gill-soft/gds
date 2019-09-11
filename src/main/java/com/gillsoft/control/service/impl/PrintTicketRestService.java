@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.PrintTicketService;
 import com.gillsoft.control.service.model.PrintOrderWrapper;
 import com.gillsoft.model.Document;
+import com.gillsoft.model.Lang;
 import com.gillsoft.model.ResponseError;
 
 @Service
@@ -31,7 +33,10 @@ public class PrintTicketRestService extends AbstractRestService implements Print
 	public List<Document> create(PrintOrderWrapper orderWrapper) {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(Config.getPrintTicketUrl() + PRINT_METHOD);
 		URI uri = builder.build().toUri();
-		RequestEntity<PrintOrderWrapper> entity = new RequestEntity<PrintOrderWrapper>(orderWrapper, HttpMethod.POST, uri);
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(HttpHeaders.ACCEPT_LANGUAGE, orderWrapper.getLang() != null ?
+				orderWrapper.getLang().name().toLowerCase() : Lang.EN.name().toLowerCase());
+		RequestEntity<PrintOrderWrapper> entity = new RequestEntity<PrintOrderWrapper>(orderWrapper, headers, HttpMethod.POST, uri);
 		try {
 			return getResult(entity, new ParameterizedTypeReference<List<Document>>() { });
 		} catch (ResponseError e) {

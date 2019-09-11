@@ -4,11 +4,14 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
@@ -17,8 +20,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.LocaleResolver;
 
 import com.gillsoft.control.service.model.PrintOrderWrapper;
+import com.gillsoft.model.Lang;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.util.StringUtil;
 import com.google.common.base.Charsets;
@@ -36,15 +41,32 @@ import springfox.documentation.annotations.ApiIgnore;
 @Controller
 @ApiIgnore
 public class PrintController {
+	
+	@Autowired
+	private LocaleResolver localeResolver;
 
 	@PostMapping("/order/print")
-	public String printOrder(@RequestBody PrintOrderWrapper orderWrapper, Model model) {
+	public String printOrder(@RequestBody PrintOrderWrapper orderWrapper, Model model, HttpServletRequest request) {
+		model.addAttribute("lang", getLang(request));
 		model.addAttribute("order", orderWrapper.getOrder());
 		try {
 			model.addAttribute("translitOrder", transform(orderWrapper.getOrder()));
 		} catch (IOException e) {
 		}
 		return orderWrapper.getTicketLayout();
+	}
+	
+	public Lang getLang(HttpServletRequest request) {
+		Locale locale = localeResolver.resolveLocale(request);
+		Lang language = Lang.valueOf(locale.getLanguage().toUpperCase());
+		if (language == null) {
+			language = Lang.EN;
+		}
+		return language;
+	}
+	
+	public Locale resolveLocale(HttpServletRequest request) {
+		return localeResolver.resolveLocale(request);
 	}
 	
 	private OrderResponse transform(OrderResponse order) throws IOException {
