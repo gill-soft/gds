@@ -15,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
@@ -191,13 +192,9 @@ public class MsDataController {
 	}
 	
 	public String getUserTimeZone() {
-		User user = getUser();
-		if (user.getAttributeValues() != null) {
-			for (AttributeValue value : user.getAttributeValues()) {
-				if (value.getAttribute().getName().equals("timezone")) {
-					return value.getValue();
-				}
-			}
+		BaseEntity organisation = getUser().getParents().iterator().next();
+		if (organisation.getAttributeValues() != null) {
+			return getValue("timezone", organisation);
 		}
 		return null;
 	}
@@ -507,27 +504,49 @@ public class MsDataController {
 	}
 	
 	public com.gillsoft.model.Organisation convert(Organisation organisation) {
+		Set<String> keys = new HashSet<>();
 		com.gillsoft.model.Organisation converted = new com.gillsoft.model.Organisation();
-		converted.setAddress(getValue("address", organisation));
+		converted.setAddress(getValue("address", organisation, keys));
 		for (Lang lang : Lang.values()) {
-			converted.setAddress(lang, getValue("address_" + lang.name(), organisation));
+			converted.setAddress(lang, getValue("address_" + lang.name(), organisation, keys));
 		}
-		converted.setName(getValue("name", organisation));
+		converted.setName(getValue("name", organisation, keys));
 		for (Lang lang : Lang.values()) {
-			converted.setName(lang, getValue("name_" + lang.name(), organisation));
+			converted.setName(lang, getValue("name_" + lang.name(), organisation, keys));
 		}
 		
-		String emails = getValue("email", organisation);
+		String emails = getValue("email", organisation, keys);
 		if (emails != null) {
 			converted.setEmails(Collections.singletonList(emails));
 		}
-		String phones = getValue("phone", organisation);
+		String phones = getValue("phone", organisation, keys);
 		if (phones != null) {
 			converted.setPhones(Collections.singletonList(phones));
 		}
-		converted.setTradeMark(getValue("trade_mark", organisation));
+		converted.setTradeMark(getValue("trade_mark", organisation, keys));
+		converted.setTimezone(getValue("timezone", organisation, keys));
+		converted.setProperties(getOtherAttributes(organisation, keys));
 		converted.setId(String.valueOf(organisation.getId()));
 		return converted;
+	}
+	
+	private ConcurrentMap<String, String> getOtherAttributes(BaseEntity entity, Set<String> keys) {
+		ConcurrentMap<String, String> props = null;
+		for (AttributeValue value : entity.getAttributeValues()) {
+			if (value.getAttribute() != null
+					&& !keys.contains(value.getAttribute().getName())) {
+				if (props == null) {
+					props = new ConcurrentHashMap<>();
+				}
+				props.put(value.getAttribute().getName(), value.getValue());
+			}
+		}
+		return props;
+	}
+	
+	private String getValue(String name, BaseEntity entity, Set<String> keys) {
+		keys.add(name);
+		return getValue(name, entity);
 	}
 	
 	private String getValue(String name, BaseEntity entity) {

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -260,6 +261,8 @@ public class TripSearchMapping {
 			if (mapping.getAttributes() != null) {
 				organisation.setTradeMark(mapping.getAttributes().containsKey("TRADEMARK") ?
 						mapping.getAttributes().get("TRADEMARK") : original.getTradeMark());
+				organisation.setTimezone(mapping.getAttributes().containsKey("TIMEZONE") ?
+						mapping.getAttributes().get("TIMEZONE") : original.getTimezone());
 				if (mapping.getAttributes().containsKey("PHONES")) {
 					organisation.setPhones(Arrays.asList(mapping.getAttributes().get("PHONES").split(";")));
 				} else {
@@ -270,6 +273,17 @@ public class TripSearchMapping {
 				} else {
 					organisation.setEmails(original.getEmails());
 				}
+				List<String> keys = Arrays.asList(new String[] { "NAME", "ADDRESS", "TRADEMARK", "PHONES", "EMAILS", "TIMEZONE" });
+				ConcurrentMap<String, String> props = null;
+				for (Entry<String, String> attr : mapping.getAttributes().entrySet()) {
+					if (!keys.contains(attr.getKey())) {
+						if (props == null) {
+							props = new ConcurrentHashMap<>();
+						}
+						props.put(attr.getKey(), attr.getValue());
+					}
+				}
+				organisation.setProperties(props);
 			}
 			return organisation;
 		} else {
@@ -407,6 +421,8 @@ public class TripSearchMapping {
 			if (result.getOrganisations().containsKey(insuranceKey)) {
 				segment.setInsurance(result.getOrganisations().get(insuranceKey));
 			}
+			addInsuranceCompensation(segment);
+			
 			// мапинг пунктов маршрута
 			if (segment.getRoute() != null) {
 				for (RoutePoint point : segment.getRoute().getPath()) {
@@ -441,6 +457,17 @@ public class TripSearchMapping {
 		// проставляем время в пути
 		for (Segment segment : result.getSegments().values()) {
 			setTimeInWay(segment);
+		}
+	}
+	
+	private void addInsuranceCompensation(Segment segment) {
+		if (segment.getInsurance() != null) {
+			if (segment.getInsurance().getProperties() == null) {
+				segment.getInsurance().setProperties(new ConcurrentHashMap<>());
+			}
+			if (!segment.getInsurance().getProperties().containsKey("insurance_compensation")) {
+				segment.getInsurance().getProperties().put("insurance_compensation", "102000");
+			}
 		}
 	}
 	
