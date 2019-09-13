@@ -523,13 +523,12 @@ public class TripSearchMapping {
 						
 						TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
 						if (resultContainer != null) {
-							if (resultContainer.getTrips() == null
-									&& container.getTrips() != null) {
-								resultContainer.setTrips(container.getTrips());
-							}
-							if (resultContainer.getTrips() != null
-									&& container.getTrips() != null) {
-								resultContainer.getTrips().addAll(container.getTrips());
+							if (container.getTrips() != null) {
+								if (resultContainer.getTrips() == null) {
+									resultContainer.setTrips(container.getTrips());
+								} else {
+									resultContainer.getTrips().addAll(container.getTrips());
+								}
 							}
 						} else {
 							result.getTripContainers().add(container);
