@@ -36,18 +36,25 @@ public class ConnectionsController {
 	private SegmentsConnectionRestService restService;
 	
 	private ConnectionsResponse createConnections(ConnectionParams params) {
+		if (params == null) {
+			return null;
+		}
 		return restService.getConnections(params);
 	}
 	
 	private ConnectionParams createParams(TripSearchRequest request, Set<Long> resources) {
-		ConnectionParams params = new ConnectionParams();
-		params.setFrom(Integer.parseInt(request.getLocalityPairs().get(0)[0]));
-		params.setTo(Integer.parseInt(request.getLocalityPairs().get(0)[1]));
-		params.setMaxConnections(request.getMaxConnections());
-		params.setMinConnectionTime(request.getMinConnectionTime());
-		params.setMinConnectionTime(request.getMaxConnectionTime());
-		params.setResources(resources);
-		return params;
+		try {
+			ConnectionParams params = new ConnectionParams();
+			params.setFrom(Integer.parseInt(request.getLocalityPairs().get(0)[0]));
+			params.setTo(Integer.parseInt(request.getLocalityPairs().get(0)[1]));
+			params.setMaxConnections(request.getMaxConnections());
+			params.setMinConnectionTime(request.getMinConnectionTime());
+			params.setMinConnectionTime(request.getMaxConnectionTime());
+			params.setResources(resources);
+			return params;
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 	
 	public ConnectionsResponse createConnections(TripSearchRequest request, List<Resource> resources) {
