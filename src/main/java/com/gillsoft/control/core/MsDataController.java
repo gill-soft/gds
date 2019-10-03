@@ -57,6 +57,7 @@ import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
@@ -79,6 +80,8 @@ public class MsDataController {
 	private static final String ALL_FILTERS_KEY = "all.filters";
 	
 	private static final String ALL_ORDERS_ACCESS_KEY = "all.orders.access";
+	
+	private static final String ALL_RESOURCE_FILTERS_KEY = "all.resource.filters";
 	
 	private static final String USER_KEY = "user.";
 	
@@ -157,6 +160,15 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllOrdersAccessKey(),
 				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 600000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<Long, List<CodeEntity>> getAllResourceFilters() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllResourceFiltersKey(),
+				new AllResourceFiltersUpdateTask(), () -> toMap(msService.getAllResourceFilters()), 600000l);
 	}
 	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {
@@ -342,6 +354,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<ResourceFilter> getResourceFilters() {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return getResourceFilters(entities);
+		}
+		return null;
+	}
+	
 	public List<OrderAccess> getOrdersAccess(User user) {
 		List<BaseEntity> entities = getParentEntities(user, null);
 		if (entities != null) {
@@ -411,6 +431,14 @@ public class MsDataController {
 		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllFilters());
 		if (codeEntities != null) {
 			return codeEntities.stream().map(e -> (ServiceFilter) e).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<ResourceFilter> getResourceFilters(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllResourceFilters());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(e -> (ResourceFilter) e).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -733,6 +761,10 @@ public class MsDataController {
 	
 	public static String getAllOrdersAccessKey() {
 		return ALL_ORDERS_ACCESS_KEY;
+	}
+	
+	public static String getAllResourceFiltersKey() {
+		return ALL_RESOURCE_FILTERS_KEY;
 	}
 	
 	public static String getUserCacheKey(String userName) {

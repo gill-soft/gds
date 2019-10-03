@@ -14,18 +14,28 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.model.ResponseError;
+import com.gillsoft.ms.entity.BaseEntity;
+import com.gillsoft.ms.entity.BaseEntityDeserializer;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
@@ -45,6 +55,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_FILTERS = "filter/all_with_parents";
 	
 	private static final String ALL_ORDERS_ACCESS = "order_access/all_with_sub_main";
+	
+	private static final String ALL_RESOURCE_FILTERS = "resource_filter/all_with_sub_main";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -135,6 +147,23 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 			synchronized (MsDataRestService.class) {
 				if (template == null) {
 					template = createTemplate(Config.getMsUrl());
+					for (HttpMessageConverter<?> converter : template.getMessageConverters()) {
+						if (converter instanceof AbstractJackson2HttpMessageConverter) {
+							SimpleModule module = new SimpleModule();
+							module.setDeserializerModifier(new BeanDeserializerModifier() {
+								@Override
+								public JsonDeserializer<?> modifyDeserializer(DeserializationConfig config, BeanDescription beanDesc,
+										JsonDeserializer<?> deserializer) {
+									if (beanDesc.getBeanClass() == BaseEntity.class) {
+										return new BaseEntityDeserializer(deserializer);
+									}
+									return deserializer;
+								}
+							});
+							((AbstractJackson2HttpMessageConverter) converter).getObjectMapper()
+									.registerModule(module);
+						}
+					}
 				}
 			}
 		}
@@ -159,6 +188,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<OrderAccess> getAllOrdersAccess() {
 		return getResult(ALL_ORDERS_ACCESS, null, new ParameterizedTypeReference<List<OrderAccess>>() { });
+	}
+	
+	@Override
+	public List<ResourceFilter> getAllResourceFilters() {
+		return getResult(ALL_RESOURCE_FILTERS, null, new ParameterizedTypeReference<List<ResourceFilter>>() { });
 	}
 
 }
