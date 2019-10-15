@@ -1,21 +1,16 @@
 package com.gillsoft.control.core;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.gillsoft.cache.CacheHandler;
-import com.gillsoft.cache.IOCacheException;
-import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.service.AgregatorResourceInfoService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
@@ -33,8 +28,7 @@ public class ResourceInfoController {
 	private static final String ACTIVE_RESOURCES_CACHE_KEY = "methods.resource.";
 	
 	@Autowired
-    @Qualifier("RedisMemoryCache")
-	private CacheHandler cache;
+	private MsDataController dataController;
 	
 	@Autowired
 	private AgregatorResourceInfoService service;
@@ -49,42 +43,22 @@ public class ResourceInfoController {
 	
 	@SuppressWarnings("unchecked")
 	public List<Method> getAvailableMethods(Resource resource) {
+		ResourceRequest request = createRequest(resource);
 		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
-		Map<String, Object> params = new HashMap<>();
-		params.put(MemoryCacheHandler.OBJECT_NAME, getActiveResourcesCacheKey(resource.getId()));
-		try {
-			return (List<Method>) cache.read(params);
-		} catch (IOCacheException readException) {
-			return createCachedMethods(createRequest(resource));
-		}
+		return (List<Method>) dataController.getFromCache(getActiveResourcesCacheKey(resource.getId()), new MethodsUpdateTask(request),
+				() -> createMethods(request), 600000l);
 	}
 	
-	protected List<Method> createCachedMethods(ResourceRequest request) {
-		String key = getActiveResourcesCacheKey(Long.parseLong(request.getParams().getResource().getId()));
-		
-		// синхронизируем выгрузку методов по ресурсу
-		synchronized (key.intern()) {
-			Map<String, Object> params = new HashMap<>();
-			params.put(MemoryCacheHandler.OBJECT_NAME, key);
-			List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
-			List<Method> methods = null;
-			if (response == null
-					|| response.isEmpty()
-					|| Utils.isError(LOGGER, response.get(0))
-					|| !request.getId().equals(response.get(0).getId())) {
-				params.put(MemoryCacheHandler.UPDATE_DELAY, 300000l);
-			} else {
-				methods = response.get(0).getMethods();
-				params.put(MemoryCacheHandler.UPDATE_DELAY, 1800000l);
-			}
-			params.put(MemoryCacheHandler.IGNORE_AGE, true);
-			params.put(MemoryCacheHandler.UPDATE_TASK, new MethodsUpdateTask(request));
-			try {
-				cache.write(methods, params);
-			} catch (IOCacheException writeException) {
-			}
-			return methods;
+	protected List<Method> createMethods(ResourceRequest request) {
+		List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
+		if (response == null
+				|| response.isEmpty()
+				|| Utils.isError(LOGGER, response.get(0))
+				|| !request.getId().equals(response.get(0).getId())) {
+			return new ArrayList<>(0);
+		} else {
+			return response.get(0).getMethods();
 		}
 	}
 	
@@ -94,10 +68,6 @@ public class ResourceInfoController {
 		request.setId(StringUtil.generateUUID());
 		request.setParams(resource.createParams());
 		return request;
-	}
-
-	public CacheHandler getCache() {
-		return cache;
 	}
 
 	public static String getActiveResourcesCacheKey(long resourceId) {

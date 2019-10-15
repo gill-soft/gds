@@ -2,11 +2,10 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +25,6 @@ import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
-import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -63,49 +61,37 @@ public class ConnectionsController {
 	}
 	
 	public void connectSegments(TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer) {
-		if (tripSearchResponse.getTripContainers() != null) {
+		if (tripSearchResponse.getSegments() == null) {
+			return;
+		}
+		List<Trip> result = new ArrayList<>();
+		for (List<Long> route : requestContainer.getConnections().getRoutes()) {
+			List<List<String>> segments = new ArrayList<>(); // список возможных частей маршрута
 			
-			// подготавливаем контейнеры
-			// с ошибками оставляем
-			for (Iterator<TripContainer> iterator = tripSearchResponse.getTripContainers().iterator(); iterator.hasNext();) {
-				TripContainer container = iterator.next();
-				if (container.getError() == null) {
-					iterator.remove();
-				} else {
-					container.setTrips(null);
+			// идем по маршруту и находим рейсы-части
+			long currPoint = route.get(0);
+			for (int i = 1; i < route.size(); i++) {
+				long nextPoint = route.get(i);
+				List<String> currPart = getTripIds(currPoint, nextPoint, tripSearchResponse);
+				if (currPart.isEmpty()) {
+					break;
 				}
+				segments.add(currPart);
+				currPoint = nextPoint;
 			}
-			if (tripSearchResponse.getSegments() == null) {
-				return;
+			// соединяем сегменты с учетом времени пересадки
+			if (segments.size() == route.size() - 1) {
+				joinSegments(tripSearchResponse, requestContainer, result, segments);
 			}
-			List<Trip> result = new ArrayList<>();
-			for (List<Long> route : requestContainer.getConnections().getRoutes()) {
-				List<List<String>> segments = new ArrayList<>(); // список возможных частей маршрута
-				
-				// идем по маршруту и находим рейсы-части
-				long currPoint = route.get(0);
-				for (int i = 1; i < route.size(); i++) {
-					long nextPoint = route.get(i);
-					List<String> currPart = getTripIds(currPoint, nextPoint, tripSearchResponse);
-					if (currPart.isEmpty()) {
-						break;
-					}
-					segments.add(currPart);
-					currPoint = nextPoint;
-				}
-				// соединяем сегменты с учетом времени пересадки
-				if (segments.size() == route.size() - 1) {
-					joinSegments(tripSearchResponse, requestContainer, result, segments);
-				}
-			}
-			if (!result.isEmpty()) {
-				
-				// результат соединений
-				TripContainer container = new TripContainer();
-				container.setRequest(requestContainer.getOriginRequest());
-				container.setTrips(result);
-				tripSearchResponse.getTripContainers().add(container);
-			}
+		}
+		if (!result.isEmpty()) {
+			
+			// результат соединений
+			TripContainer container = new TripContainer();
+			container.setRequest(requestContainer.getOriginRequest());
+			container.getRequest().setSearchCompleted(true);
+			container.setTrips(result);
+			tripSearchResponse.getTripContainers().add(container);
 		}
 	}
 	
@@ -142,18 +128,7 @@ public class ConnectionsController {
 			}
 		}
 		// создаем md5 ид
-		for (Iterator<Trip> iterator = trips.iterator(); iterator.hasNext();) {
-			Trip trip = iterator.next();
-			String tripId = getSegmentsTripId(trip);
-			if (!requestContainer.isPresentTrip(tripId)) {
-				requestContainer.addTrip(tripId);
-				result.add(trip);
-			}
-		}
-	}
-	
-	private String getSegmentsTripId(Trip trip) {
-		return StringUtil.md5(String.join(";", trip.getSegments()));
+		result.addAll(trips);
 	}
 	
 	private boolean isConnected(List<SegmentConnection> connections, TripSearchResponse tripSearchResponse,
@@ -186,12 +161,16 @@ public class ConnectionsController {
 	
 	private List<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
 		List<String> segmentIds = new ArrayList<>();
-		for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
-			Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
-			Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
-			if (isEqualsPoints(String.valueOf(from), departure)
-					&& isEqualsPoints(String.valueOf(to), arrival)) {
-				segmentIds.add(entry.getKey());
+		for (TripContainer container : tripSearchResponse.getTripContainers()) {
+			if (container.getRequest().isSearchCompleted()) {
+				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
+					Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
+					Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
+					if (isEqualsPoints(String.valueOf(from), departure)
+							&& isEqualsPoints(String.valueOf(to), arrival)) {
+						segmentIds.add(entry.getKey());
+					}
+				}
 			}
 		}
 		return segmentIds;

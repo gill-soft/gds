@@ -23,9 +23,10 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gillsoft.model.Segment;
 import com.gillsoft.ms.entity.CodeEntity;
+import com.gillsoft.ms.entity.Comparison;
 import com.gillsoft.ms.entity.ServiceFilter;
 
-@Component
+@Component(value = "FilterController")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 @EnableScheduling
 public class FilterController {
@@ -33,45 +34,56 @@ public class FilterController {
 	private static Logger LOGGER = LogManager.getLogger(FilterController.class);
 	
 	@Autowired
-	private MsDataController dataController;
+	protected MsDataController dataController;
 	
-	private Map<String, Field> fields;
+	protected Map<String, Field> fields;
+	
+	protected Logger getLogger() {
+		return LOGGER;
+	}
 	
 	@PostConstruct
 	@Scheduled(initialDelay = 600000, fixedDelay = 600000)
 	public void updateFields() {
 		Map<String, Field> fieldsMap = new HashMap<>();
-		Map<Long, List<CodeEntity>> entities = dataController.getAllFilters();
+		updateServiceFilterFields(fieldsMap, dataController.getAllFilters());
+		this.fields = fieldsMap;
+	}
+	
+	protected void updateServiceFilterFields(Map<String, Field> fieldsMap, Map<Long, List<CodeEntity>> entities) {
 		if (entities != null) {
 			for (List<CodeEntity> filters : entities.values()) {
 				for (CodeEntity entity : filters) {
 					ServiceFilter filter = (ServiceFilter) entity;
 					String[] name = filter.getFilteredField().split("\\.");
-					try {
-						Field[] fields = Class.forName("com.gillsoft.model." + name[0]).getDeclaredFields();
-						for (int i = 1; i < name.length; i++) {
-							Field field = getField(name[i], fields);
-							if (field != null
-									&& name.length > i) {
-								fields = field.getType().getDeclaredFields();
-								field.setAccessible(true);
-								fieldsMap.put(getKey(name, i), field);
-							}
-						}
-					} catch (SecurityException | ClassNotFoundException e) {
-						LOGGER.error("Can not get class com.gillsoft.model." + name[0], e);
-					}
+					addFilteredField(fieldsMap, name);
 				}
 			}
 		}
-		this.fields = fieldsMap;
 	}
 	
-	public String getKey(String[] name, int i) {
+	protected void addFilteredField(Map<String, Field> fieldsMap, String[] name) {
+		try {
+			Field[] fields = Class.forName("com.gillsoft.model." + name[0]).getDeclaredFields();
+			for (int i = 1; i < name.length; i++) {
+				Field field = getField(name[i], fields);
+				if (field != null
+						&& name.length > i) {
+					fields = field.getType().getDeclaredFields();
+					field.setAccessible(true);
+					fieldsMap.put(getKey(name, i), field);
+				}
+			}
+		} catch (SecurityException | ClassNotFoundException e) {
+			getLogger().error("Can not get class com.gillsoft.model." + name[0], e);
+		}
+	}
+	
+	protected String getKey(String[] name, int i) {
 		return String.join(".", Arrays.copyOf(name, i + 1));
 	}
 	
-	public Field getField(String name, Field[] fields) {
+	protected Field getField(String name, Field[] fields) {
 		for (Field field : fields) {
 			Annotation[] annotations = field.getAnnotations();
 			String fieldName = field.getName();
@@ -98,7 +110,7 @@ public class FilterController {
 		segments.keySet().removeIf(key -> isRemove(segments.get(key), filters));
 	}
 	
-	private boolean isRemove(Segment segment, List<ServiceFilter> filters) {
+	protected boolean isRemove(Segment segment, List<ServiceFilter> filters) {
 		boolean remove = false;
 		if (filters != null) {
 			for (ServiceFilter filter : filters) {
@@ -114,7 +126,7 @@ public class FilterController {
 					try {
 						value = field.get(value);
 					} catch (IllegalArgumentException | IllegalAccessException e) {
-						LOGGER.error("Can not get value of field " + name[0], e);
+						getLogger().error("Can not get value of field " + name[0], e);
 						currFilter = true;
 						break;
 					}
@@ -140,28 +152,32 @@ public class FilterController {
 		return remove;
 	}
 	
-	private boolean isAccepted(String strValue, ServiceFilter filter) {
-		switch (filter.getComparison()) {
+	protected boolean isAccepted(String strValue, ServiceFilter filter) {
+		return isAccepted(strValue, filter.getComparison(), filter.getValue());
+	}
+	
+	protected boolean isAccepted(String strValue, Comparison comparison, String filterValue) {
+		switch (comparison) {
 		case EQUAL:
-			return compare(strValue, filter.getValue()) == 0;
+			return compare(strValue, filterValue) == 0;
 		case NOT_EQUAL:
-			return compare(strValue, filter.getValue()) != 0;
+			return compare(strValue, filterValue) != 0;
 		case GREATE:
-			return compare(strValue, filter.getValue()) > 0;				
+			return compare(strValue, filterValue) > 0;				
 		case GREATE_EQUAL:
-			return compare(strValue, filter.getValue()) >= 0;
+			return compare(strValue, filterValue) >= 0;
 		case LESS:
-			return compare(strValue, filter.getValue()) < 0;
+			return compare(strValue, filterValue) < 0;
 		case LESS_EQUAL:
-			return compare(strValue, filter.getValue()) <= 0;
+			return compare(strValue, filterValue) <= 0;
 		case REGEX:
-			return strValue.matches(filter.getValue());
+			return strValue.matches(filterValue);
 		default:
 			return true;
 		}
 	}
 	
-	private int compare(String value, String compared) {
+	protected int compare(String value, String compared) {
 		try {
 			BigDecimal numValue = new BigDecimal(value);
 			BigDecimal numCompared = new BigDecimal(compared);

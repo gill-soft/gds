@@ -2,7 +2,6 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -448,8 +447,7 @@ public class TripSearchMapping {
 			// добавляем рейсы в результат
 			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 		}
-		// объединяем контайнеры по смапленому запросу
-		joinContainers(resourceId, result, searchResponse.getTripContainers());
+		updateContainers(request, resourceId, result, searchResponse.getTripContainers());
 		
 		// проставляем ид словарей с маппинга
 		updateDictionaries(result);
@@ -503,44 +501,52 @@ public class TripSearchMapping {
 	}
 	
 	/*
-	 * Объединяет все запросы с одинаковым мапингом.
+	 * Обновляет ид рейсов и запросы.
 	 */
-	private void joinContainers(long resourceId, TripSearchResponse result, List<TripContainer> containers) {
+	private void updateContainers(TripSearchRequest request, long resourceId, TripSearchResponse result, List<TripContainer> containers) {
 		if (containers != null) {
 			for (TripContainer container : containers) {
-				List<Mapping> fromMappings = mappingService.getMappings(MapType.GEO, resourceId,
-						container.getRequest().getLocalityPairs().get(0)[0]);
-				if (fromMappings != null) {
-					List<Mapping> toMappings = mappingService.getMappings(MapType.GEO, resourceId,
-							container.getRequest().getLocalityPairs().get(0)[1]);
-					if (toMappings != null) {
-						List<String[]> pair = Collections.singletonList(
-								new String[] { String.valueOf(fromMappings.get(0).getId()), String.valueOf(toMappings.get(0).getId())});
 						
-						// обновляем ид рейсов, а потом подменяем запрос
-						updateTripIds(resourceId, result, container, pair.get(0));
-						container.getRequest().setLocalityPairs(pair);
-						
-						TripContainer resultContainer = getTripContainer(container.getRequest(), result.getTripContainers());
-						if (resultContainer != null) {
-							if (container.getTrips() != null) {
-								if (resultContainer.getTrips() == null) {
-									resultContainer.setTrips(container.getTrips());
-								} else {
-									resultContainer.getTrips().addAll(container.getTrips());
-								}
-							}
-						} else {
-							result.getTripContainers().add(container);
-						}
-					}
-				}
+				// обновляем ид рейсов, а потом подменяем запрос
+				updateTripIds(resourceId, result, container);
+				
+				// смапленный запрос
+				container.setRequest(request);
+				
+				result.getTripContainers().add(container);
 			}
 		}
 	}
 	
-	// Добавляем в ид рейса запрос, по которому он был найден и проставляем время в пути.
-	private void updateTripIds(long resourceId, TripSearchResponse result, TripContainer container, String[] pair) {
+	/*
+	 * Объединяет все запросы с одинаковым мапингом.
+	 */
+	private void joinContainers(TripSearchResponse result) {
+		if (result.getTripContainers() != null) {
+			List<TripContainer> containers = new ArrayList<>();
+			for (TripContainer container : result.getTripContainers()) {
+						
+				TripContainer resultContainer = getTripContainer(container.getRequest(), containers);
+				if (resultContainer != null) {
+					if (container.getTrips() != null) {
+						if (resultContainer.getTrips() == null) {
+							resultContainer.setTrips(container.getTrips());
+						} else {
+							resultContainer.getTrips().addAll(container.getTrips());
+						}
+					}
+				} else {
+					container.getRequest().setId(null);
+					container.getRequest().setParams(null);
+					containers.add(container);
+				}
+			}
+			result.setTripContainers(containers);
+		}
+	}
+	
+	// Добавляем в ид рейса запрос, по которому он был найден.
+	private void updateTripIds(long resourceId, TripSearchResponse result, TripContainer container) {
 		if (container.getTrips() == null) {
 			return;
 		}
@@ -661,6 +667,7 @@ public class TripSearchMapping {
 		if (result.getTripContainers().isEmpty()) {
 			result.setTripContainers(null);
 		}
+		joinContainers(result);
 	}
 	
 	private void updateDictionaries(TripSearchResponse result) {

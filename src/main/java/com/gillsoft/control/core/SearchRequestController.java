@@ -44,6 +44,7 @@ public class SearchRequestController {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			SearchRequestContainer requestContainer = new SearchRequestContainer();
+			searchRequest.setToResult(true);
 			requestContainer.setOriginRequest(searchRequest);
 			
 			// проверяем запрос на поиск стыковочных рейсов и делаем пары с учетом стыковок
@@ -58,7 +59,7 @@ public class SearchRequestController {
 					
 					// проверяем маппинг и формируем запрос на каждый ресурс
 					for (String[] pair : searchRequest.getLocalityPairs()) {
-						addSearchRequest(searchRequest, resource, pair, requestContainer, 0, null);
+						addSearchRequest(searchRequest, resource, pair, requestContainer, 0, null, true);
 					}
 				}
 			}
@@ -70,8 +71,8 @@ public class SearchRequestController {
 		throw new ResourceUnavailableException("User does not has available resources");
 	}
 	
-	public void addSearchRequest(TripSearchRequest searchRequest, Resource resource, String[] pair,
-			SearchRequestContainer requestContainer, int addedDays, Integer maxConnections) {
+	private void addSearchRequest(TripSearchRequest searchRequest, Resource resource, String[] pair,
+			SearchRequestContainer requestContainer, int addedDays, Integer maxConnections, boolean toResult) {
 		Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[0]));
 		if (fromIds != null) {
 			Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[1]));
@@ -80,6 +81,7 @@ public class SearchRequestController {
 				
 				// оригинальный ид, который будеи в ответе, плюс уникальный ид запроса
 				resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
+				resourceSearchRequest.setToResult(toResult);
 				resourceSearchRequest.setParams(resource.createParams());
 				resourceSearchRequest.setDates(addDays(searchRequest.getDates(), addedDays));
 				resourceSearchRequest.setMaxConnections(maxConnections);
@@ -94,7 +96,7 @@ public class SearchRequestController {
 						resourceSearchRequest.getLocalityPairs().add(new String[] { fromId, toId });
 					}
 				}
-				requestContainer.add(resourceSearchRequest);
+				requestContainer.add(String.join(";", pair), resourceSearchRequest);
 			}
 		}
 	}
@@ -125,7 +127,7 @@ public class SearchRequestController {
 					if (infoController.isMethodAvailable(resource, Method.SEARCH, MethodType.POST)) {
 						addSearchRequest(searchRequest, resource,
 								new String[]{ String.valueOf(pair.getFrom()), String.valueOf(pair.getTo()) },
-								requestContainer, pair.getAddedDays(), searchRequest.getMaxConnections());
+								requestContainer, pair.getAddedDays(), searchRequest.getMaxConnections(), false);
 					}
 				}
 			}

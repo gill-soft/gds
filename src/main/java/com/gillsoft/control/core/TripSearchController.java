@@ -5,9 +5,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -95,7 +97,12 @@ public class TripSearchController {
 	private TripSearchMapping tripSearchMapping;
 	
 	@Autowired
+	@Qualifier(value = "FilterController")
 	private FilterController filter;
+	
+	@Autowired
+	@Qualifier(value = "ResourceFilterController")
+	private ResourceFilterController resourceFilter;
 	
 	@Autowired
 	private ConnectionsController connectionsController;
@@ -180,59 +187,59 @@ public class TripSearchController {
 		}
 		if (response.getResult() != null
 				&& !response.getResult().isEmpty()) {
-			
 			TripSearchResponse result = new TripSearchResponse();
-			result.setId(requestContainer.getRequests().get(0).getId().split(";")[0]);
+			List<TripSearchRequest> requests = requestContainer.getRequests();
+			result.setId(requests.get(0).getId().split(";")[0]);
 			result.setSearchId(response.getSearchId());
 			tripSearchMapping.createDictionaries(result);
 			
-			TripSearchResponse transfersResult = null; // результат стыковок
-			if (isTransfer(requestContainer)) {
-				if (requestContainer.getResponse() == null) {
-					transfersResult = new TripSearchResponse();
-					tripSearchMapping.createDictionaries(transfersResult);
-				} else {
-					transfersResult = requestContainer.getResponse();
-				}
+			TripSearchResponse allResult = null; // все найденные рейсы
+			if (requestContainer.getResponse() == null) {
+				allResult = new TripSearchResponse();
+				tripSearchMapping.createDictionaries(allResult);
+			} else {
+				allResult = requestContainer.getResponse();
 			}
 			for (TripSearchResponse searchResponse : response.getResult()) {
 				
-				Stream<TripSearchRequest> stream = requestContainer.getRequests().stream().filter(r -> r.getId().equals(searchResponse.getId()));
+				Stream<TripSearchRequest> stream = requests.stream().filter(r -> r.getId().equals(searchResponse.getId()));
 				if (stream != null) {
-					
-					// запрос, по которому получен результат
-					TripSearchRequest request = stream.findFirst().get();
-					
-					// проверяем ошибки
-					if (searchResponse.getTripContainers() != null) {
+					Optional<TripSearchRequest> optional = stream.findFirst();
+					if (optional.isPresent()) {
 						
-						// логируем ошибки, если есть
-						logError(searchResponse);
-						prepareResult(request, searchResponse, request.isUseTranfers() ? transfersResult : result);
+						// запрос, по которому получен результат
+						TripSearchRequest request = optional.get();
+						request.setSearchCompleted(searchResponse.getSearchId() == null);
+						
+						// проверяем ошибки
+						if (searchResponse.getTripContainers() != null) {
+							
+							// логируем ошибки, если есть
+							logError(searchResponse);
+							requestContainer.setSearchPair(request);
+							prepareResult(request, searchResponse, allResult);
+						}
 					}
 				}
 			}
+			// сохранение промежуточного результата без очистки неиспользуемых данных
+			requestContainer.setResponse(allResult);
+			
+			// TODO check resource filter
+			resourceFilter.apply(requestContainer);
+			
+			// создаем сегменты и добавляем в результат
 			if (isTransfer(requestContainer)) {
-				
-				// сохранение промежуточного результата без очистки неиспользуемых данных
-				requestContainer.setResponse(transfersResult);
-				
-				// создаем сегменты и добавляем в результат
-				connectionsController.connectSegments(transfersResult, requestContainer);
-				
-				// добавляем в кэш запрос под новым searchId, для получения остального результата
-				// делаем это перед очисткой данных так как в дальнейшем поиск может еще продолжаться
-				// и понадобятся предыдущие результаты для создания стыковок
-				putRequestToCache(response.getSearchId(), requestContainer);
-				
-				// удаляем неиспользуемые данные
-				updateResponse(transfersResult, result);
-			} else {
-				putRequestToCache(response.getSearchId(), requestContainer);
-				
-				// удаляем неиспользуемые данные
-				updateResponse(result, null);
+				connectionsController.connectSegments(allResult, requestContainer);
 			}
+			// удаляем неиспользуемые данные
+			updateResponse(allResult, result, requestContainer);
+
+			// добавляем в кэш запрос под новым searchId, для получения остального результата
+			// делаем это перед очисткой данных так как в дальнейшем поиск может еще продолжаться
+			// и понадобятся предыдущие результаты для создания стыковок
+			putRequestToCache(response.getSearchId(), requestContainer);
+			
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
 			return result;
@@ -416,7 +423,7 @@ public class TripSearchController {
 				model.getRequest().setId(StringUtil.generateUUID());
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
 				model.getRequest().setCurrency(request.getCurrency());
-				requestContainer.add(model.getRequest());
+				requestContainer.add(String.join(";", model.getRequest().getLocalityPairs().get(0)), model.getRequest());
 			}
 			TripSearchResponse response = initSearch(requestContainer);
 			
@@ -434,7 +441,7 @@ public class TripSearchController {
 						segment.setSeats(null);
 					});
 					tripSearchMapping.createDictionaries(response);
-					updateResponse(response, result);
+					updateResponse(response, result, null);
 				}
 			} while (response.getSearchId() != null);
 			return result;
@@ -444,7 +451,7 @@ public class TripSearchController {
 		return null;
 	}
 	
-	private void updateResponse(TripSearchResponse response, TripSearchResponse result) {
+	private void updateResponse(TripSearchResponse response, TripSearchResponse result, SearchRequestContainer requestContainer) {
 		if (result != null) {
 			result.getTripContainers().addAll(response.getTripContainers());
 			result.getSegments().putAll(response.getSegments());
@@ -457,33 +464,69 @@ public class TripSearchController {
 		Map<String, Segment> segments = response.getSegments();
 		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
 		if (response.getTripContainers() != null) {
-			for (TripContainer container : response.getTripContainers()) {
-				if (container.getTrips() != null) {
-					for (Trip trip : container.getTrips()) {
-						if (!response.getSegments().containsKey(trip.getId())) {
-							trip.setId(null);
-						} else {
-							resultSegmentIds.add(trip.getId());
-						}
-						if (!response.getSegments().containsKey(trip.getBackId())) {
-							trip.setBackId(null);
-						} else {
-							resultSegmentIds.add(trip.getBackId());
-						}
-						if (trip.getSegments() != null) {
-							if (trip.getSegments().removeIf(id -> !segments.containsKey(id))) {
-								trip.setSegments(null);
+			for (Iterator<TripContainer> iterator = response.getTripContainers().iterator(); iterator.hasNext();) {
+				TripContainer container = iterator.next();
+				
+				// удаляем сразу контейнеры, по которым еще продолжается поиск и запрещен результат
+				if (container.getRequest() == null
+						|| !container.getRequest().isToResult()
+						|| !container.getRequest().isSearchCompleted()) {
+					iterator.remove();
+				} else {
+					if (container.getTrips() != null) {
+						for (Trip trip : container.getTrips()) {
+							if (!response.getSegments().containsKey(trip.getId())
+									|| isReturned(requestContainer, trip.getId())) {
+								trip.setId(null);
 							} else {
-								resultSegmentIds.addAll(trip.getSegments());
+								resultSegmentIds.add(trip.getId());
+							}
+							if (!response.getSegments().containsKey(trip.getBackId())
+									|| isReturned(requestContainer, trip.getBackId())) {
+								trip.setBackId(null);
+							} else {
+								resultSegmentIds.add(trip.getBackId());
+							}
+							// стыковочные рейсы уже помечены как возвращенные, их не проверяем
+							if (trip.getSegments() != null) {
+								if (isReturned(requestContainer, getSegmentsTripId(trip))
+										|| trip.getSegments().removeIf(id -> !segments.containsKey(id))) {
+									trip.setSegments(null);
+								} else {
+									resultSegmentIds.addAll(trip.getSegments());
+								}
 							}
 						}
+						container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
+						if (!container.getTrips().isEmpty()) {
+							container.setError(null);
+						} else {
+							container.setTrips(null);
+						}
 					}
-					container.getTrips().removeIf(t -> t.getId() == null && t.getBackId() == null && t.getSegments() == null);
+					if (container.getTrips() == null
+							&& container.getError() == null) {
+						iterator.remove();
+					}
 				}
 			}
 		}
 		// удаляем лишнее со словарей
 		updateResponseDictionaries(resultSegmentIds, segments, response.getVehicles(), response.getOrganisations(), response.getLocalities(), response.getResources());
+	}
+	
+	private boolean isReturned(SearchRequestContainer requestContainer, String tripId) {
+		if (requestContainer != null) {
+			if (requestContainer.isPresentTrip(tripId)) {
+				return true;
+			}
+			requestContainer.addTrip(tripId);
+		}
+		return false;
+	}
+	
+	private String getSegmentsTripId(Trip trip) {
+		return StringUtil.md5(String.join(";", trip.getSegments()));
 	}
 	
 	public void updateResponseDictionaries(Set<String> resultSegmentIds, Map<String, Segment> segments,
@@ -640,7 +683,6 @@ public class TripSearchController {
 		TripSearchRequest request = new TripSearchRequest();
 		request.setCurrency(orderRequest.getCurrency());
 		request.setParams((ResourceParams) SerializationUtils.deserialize(SerializationUtils.serialize(orderRequest.getParams())));
-		
 		
 		TripSearchResponse searchResult = new TripSearchResponse();
 		tripSearchMapping.createDictionaries(searchResult);

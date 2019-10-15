@@ -2,9 +2,14 @@ package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
@@ -15,7 +20,7 @@ public class SearchRequestContainer implements Serializable {
 
 	private TripSearchRequest originRequest;
 	
-	private List<TripSearchRequest> requests;
+	private Map<String, List<TripSearchRequest>> pairRequests;
 	
 	private ConnectionsResponse connections;
 	
@@ -30,24 +35,42 @@ public class SearchRequestContainer implements Serializable {
 	public void setOriginRequest(TripSearchRequest originRequest) {
 		this.originRequest = originRequest;
 	}
-
-	public void add(TripSearchRequest request) {
-		if (requests == null) {
-			requests = new ArrayList<>();
-		}
-		requests.add(request);
-	}
 	
 	public boolean isEmpty() {
-		return requests == null || requests.isEmpty();
+		return pairRequests == null || pairRequests.isEmpty();
 	}
-
-	public void setRequests(List<TripSearchRequest> requests) {
-		this.requests = requests;
+	
+	public void setSearchPair(TripSearchRequest request) {
+		for (Entry<String, List<TripSearchRequest>> requests : pairRequests.entrySet()) {
+			for (TripSearchRequest searchRequest : requests.getValue()) {
+				if (searchRequest.getId().equals(request.getId())) {
+					request.setLocalityPairs(Collections.singletonList(requests.getKey().split(";")));
+					return;
+				}
+			}
+		}
 	}
-
+	
 	public List<TripSearchRequest> getRequests() {
-		return requests;
+		return pairRequests.values().stream().flatMap(List::stream).collect(Collectors.toList());
+	}
+	
+	public void add(String pairKey, TripSearchRequest request) {
+		if (pairRequests == null) {
+			pairRequests = new HashMap<>();
+		}
+		if (!pairRequests.containsKey(pairKey)) {
+			pairRequests.put(pairKey, new ArrayList<>());
+		}
+		pairRequests.get(pairKey).add(request);
+	}
+
+	public Map<String, List<TripSearchRequest>> getPairRequests() {
+		return pairRequests;
+	}
+
+	public void setPairRequests(Map<String, List<TripSearchRequest>> pairRequests) {
+		this.pairRequests = pairRequests;
 	}
 
 	public ConnectionsResponse getConnections() {

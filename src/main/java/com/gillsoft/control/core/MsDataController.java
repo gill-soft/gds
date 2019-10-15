@@ -189,7 +189,7 @@ public class MsDataController {
 			});
 			return grouping;
 		} else {
-			return null;
+			return new HashMap<>(0);
 		}
 	}
 	
@@ -221,7 +221,7 @@ public class MsDataController {
 				new OrganisationUpdateTask(id), () -> msService.getOrganisation(id), 600000l);
 	}
 	
-	private Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
+	protected Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
 		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
 		Map<String, Object> params = new HashMap<>();
@@ -779,7 +779,7 @@ public class MsDataController {
 		return ORGANISATION_KEY + id;
 	}
 	
-	private interface CacheObjectGetter {
+	public interface CacheObjectGetter {
 		
 		public Object forCache();
 		
