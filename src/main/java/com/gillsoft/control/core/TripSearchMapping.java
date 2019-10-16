@@ -372,80 +372,84 @@ public class TripSearchMapping {
 		long resourceId = Long.parseLong(request.getParams().getResource().getId());
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
-			Segment segment = entry.getValue();
-			
-			// устанавливаем ресурс
-			segment.setResource(new Resource(String.valueOf(resourceId)));
-			
-			// устанавливаем ид пунктов с маппинга
-			segment.setDeparture(result.getLocalities().get(
-					getKey(resourceId, segment.getDeparture().getId())));
-			segment.setArrival(result.getLocalities().get(
-					getKey(resourceId, segment.getArrival().getId())));
-			
-			String tripNumber = mappingService.getResourceTripNumber(segment, resourceId);
-			
-			// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
-			if (segment.getVehicle() == null
-					&& !result.getVehicles().containsKey(tripNumber)) {
-				Map<String, Vehicle> vehicles = new HashMap<>();
-				vehicles.put(tripNumber, null);
-				mappingObjects(request, vehicles, result.getVehicles(), MapType.VEHICLE,
-						(mapping, lang, original) -> createVehicle(mapping, lang, original),
-						(original) -> createUnmappingVehicle(original),
-						null);
-			}
-			// устанавливаем транспорт с маппинга
-			String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
-			if (result.getVehicles().containsKey(vehicleKey)) {
-				segment.setVehicle(result.getVehicles().get(vehicleKey));
-			}
-			// если перевозчика нет, то добавляем его с маппинга по уникальному номеру рейса
-			if (segment.getCarrier() == null
-					&& !result.getOrganisations().containsKey(tripNumber + "_carrier")) {
-				addOrganisationByTripNumber(tripNumber + "_carrier", result, request, MapType.ORGANIZATION);
-			}
-			// устанавливаем перевозчика с маппинга
-			String carrierKey = segment.getCarrier() != null ? getKey(resourceId, segment.getCarrier().getId()) : tripNumber + "_carrier";
-			if (result.getOrganisations().containsKey(carrierKey)) {
-				segment.setCarrier(result.getOrganisations().get(carrierKey));
-			}
-			// если страховой нет, то добавляем её с маппинга по уникальному номеру рейса
-			if (segment.getInsurance() == null
-					&& !result.getOrganisations().containsKey(tripNumber + "_insurance")) {
-				addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.ORGANIZATION);
-			}
-			// устанавливаем страховую с маппинга
-			String insuranceKey = segment.getInsurance() != null ? getKey(resourceId, segment.getInsurance().getId()) : tripNumber + "_insurance";
-			if (result.getOrganisations().containsKey(insuranceKey)) {
-				segment.setInsurance(result.getOrganisations().get(insuranceKey));
-			}
-			addInsuranceCompensation(segment);
-			
-			// мапинг пунктов маршрута
-			if (segment.getRoute() != null) {
-				for (RoutePoint point : segment.getRoute().getPath()) {
-					point.setLocality(new Locality(result.getLocalities().get(
-							getKey(resourceId, point.getLocality().getId())).getId()));
-				}
-			}
-			// доавляем ресурс в ид вагона
-			if (segment.getCarriages() != null) {
-				segment.getCarriages().forEach(c -> c.setId(new IdModel(resourceId, c.getId()).asString()));
-			}
-			// TODO мапинг тарифа
-			
-			// начисление сборов
 			try {
-				segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
-				applyLang(segment.getPrice().getTariff(), request.getLang());
-			} catch (Exception e) {
-				if (onlyCalculated) {
-					continue;
+				Segment segment = entry.getValue();
+				
+				// устанавливаем ресурс
+				segment.setResource(new Resource(String.valueOf(resourceId)));
+				
+				// устанавливаем ид пунктов с маппинга
+				segment.setDeparture(result.getLocalities().get(
+						getKey(resourceId, segment.getDeparture().getId())));
+				segment.setArrival(result.getLocalities().get(
+						getKey(resourceId, segment.getArrival().getId())));
+				
+				String tripNumber = mappingService.getResourceTripNumber(segment, resourceId);
+				
+				// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
+				if (segment.getVehicle() == null
+						&& !result.getVehicles().containsKey(tripNumber)) {
+					Map<String, Vehicle> vehicles = new HashMap<>();
+					vehicles.put(tripNumber, null);
+					mappingObjects(request, vehicles, result.getVehicles(), MapType.VEHICLE,
+							(mapping, lang, original) -> createVehicle(mapping, lang, original),
+							(original) -> createUnmappingVehicle(original),
+							null);
 				}
+				// устанавливаем транспорт с маппинга
+				String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
+				if (result.getVehicles().containsKey(vehicleKey)) {
+					segment.setVehicle(result.getVehicles().get(vehicleKey));
+				}
+				// если перевозчика нет, то добавляем его с маппинга по уникальному номеру рейса
+				if (segment.getCarrier() == null
+						&& !result.getOrganisations().containsKey(tripNumber + "_carrier")) {
+					addOrganisationByTripNumber(tripNumber + "_carrier", result, request, MapType.ORGANIZATION);
+				}
+				// устанавливаем перевозчика с маппинга
+				String carrierKey = segment.getCarrier() != null ? getKey(resourceId, segment.getCarrier().getId()) : tripNumber + "_carrier";
+				if (result.getOrganisations().containsKey(carrierKey)) {
+					segment.setCarrier(result.getOrganisations().get(carrierKey));
+				}
+				// если страховой нет, то добавляем её с маппинга по уникальному номеру рейса
+				if (segment.getInsurance() == null
+						&& !result.getOrganisations().containsKey(tripNumber + "_insurance")) {
+					addOrganisationByTripNumber(tripNumber + "_insurance", result, request, MapType.ORGANIZATION);
+				}
+				// устанавливаем страховую с маппинга
+				String insuranceKey = segment.getInsurance() != null ? getKey(resourceId, segment.getInsurance().getId()) : tripNumber + "_insurance";
+				if (result.getOrganisations().containsKey(insuranceKey)) {
+					segment.setInsurance(result.getOrganisations().get(insuranceKey));
+				}
+				addInsuranceCompensation(segment);
+				
+				// мапинг пунктов маршрута
+				if (segment.getRoute() != null) {
+					for (RoutePoint point : segment.getRoute().getPath()) {
+						point.setLocality(new Locality(result.getLocalities().get(
+								getKey(resourceId, point.getLocality().getId())).getId()));
+					}
+				}
+				// доавляем ресурс в ид вагона
+				if (segment.getCarriages() != null) {
+					segment.getCarriages().forEach(c -> c.setId(new IdModel(resourceId, c.getId()).asString()));
+				}
+				// TODO мапинг тарифа
+				
+				// начисление сборов
+				try {
+					segment.setPrice(dataController.recalculate(segment, segment.getPrice(), request.getCurrency()));
+					applyLang(segment.getPrice().getTariff(), request.getLang());
+				} catch (Exception e) {
+					if (onlyCalculated) {
+						continue;
+					}
+				}
+				// добавляем рейсы в результат
+				result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
+			} catch (Exception e) {
+				LOGGER.error("Can not map segment " + entry.getKey(), e);
 			}
-			// добавляем рейсы в результат
-			result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 		}
 		updateContainers(request, resourceId, result, searchResponse.getTripContainers());
 		

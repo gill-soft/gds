@@ -653,25 +653,25 @@ public class TripSearchController {
 				
 				updateIds(segmentIds, segmentResponse.getSegments());
 				
-				if (result.getLocalities() == null) {
-					result.setLocalities(segmentResponse.getLocalities());
-				} else if (segmentResponse.getLocalities() != null) {
-					result.getLocalities().putAll(segmentResponse.getLocalities());
-				}
 				if (result.getVehicles() == null) {
 					result.setVehicles(segmentResponse.getVehicles());
 				} else if (segmentResponse.getVehicles() != null) {
-					result.getVehicles().putAll(segmentResponse.getVehicles());
+					segmentResponse.getVehicles().forEach((id, v) -> result.getVehicles().putIfAbsent(id, v));
 				}
 				if (result.getOrganisations() == null) {
 					result.setOrganisations(segmentResponse.getOrganisations());
 				} else if (segmentResponse.getOrganisations() != null) {
-					result.getOrganisations().putAll(segmentResponse.getOrganisations());
+					segmentResponse.getOrganisations().forEach((id, o) -> result.getOrganisations().putIfAbsent(id, o));
+				}
+				if (result.getLocalities() == null) {
+					result.setLocalities(segmentResponse.getLocalities());
+				} else if (segmentResponse.getLocalities() != null) {
+					segmentResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
 				}
 				if (result.getSegments() == null) {
 					result.setSegments(segmentResponse.getSegments());
 				} else if (segmentResponse.getSegments() != null) {
-					result.getSegments().putAll(segmentResponse.getSegments());
+					segmentResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
 				}
 			}
 		}
