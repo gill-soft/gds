@@ -82,87 +82,97 @@ public class ResourceFilterController extends FilterController {
 	
 	public void apply(SearchRequestContainer requestContainer) {
 		List<ResourceFilter> filters = dataController.getResourceFilters();
-		for (ResourceFilter resourceFilter : filters) {
-			
-			// ресурсы от которых зависит фильтр (главные - их надо ждать)
-			List<Resource> mainResources = resourceFilter.getChilds().stream()
-					.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> (Resource) child).collect(Collectors.toList());
-			if (!mainResources.isEmpty()) {
+		if (filters == null
+				|| filters.isEmpty()) {
+			for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
+				requests.forEach(r -> r.setSearchCompleted(true));
+			}
+		} else {
+			List<TripSearchRequest> allRequests = requestContainer.getPairRequests().values().stream().flatMap(List::stream).collect(Collectors.toList());
+			for (ResourceFilter resourceFilter : filters) {
 				
-				// фильтры главных рейсов
-				List<ServiceFilter> serviceFilters = resourceFilter.getChilds().stream()
-						.filter(child -> child.getType() == EntityType.FILTER).map(child -> (ServiceFilter) child).collect(Collectors.toList());
-				
-				// условия фильтрации зависимых рейсов
-				List<ResourceFilterCondition> filterConditions = resourceFilter.getChilds().stream()
-						.filter(child -> child.getType() == EntityType.RESOURCE_FILTER_CONDITION).map(child -> (ResourceFilterCondition) child).collect(Collectors.toList());
-				
-				// зависимый ресурс (его надо фильтровать)
-				Resource subResource = resourceFilter.getResource();
-				out:
-					for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
-						
-						// ищем есть ли зависимые запросы поиска
-						List<TripSearchRequest> subRequests = requests.stream()
-								.filter(r -> String.valueOf(subResource.getId()).equals(r.getParams().getResource().getId())).collect(Collectors.toList());
-						if (!subRequests.isEmpty()) {
-							subRequests.forEach(r -> r.setSearchCompleted(true)); // разрешаем для выдачи зависимые ресурсы
+				// ресурсы от которых зависит фильтр (главные - их надо ждать)
+				List<Resource> mainResources = resourceFilter.getChilds().stream()
+						.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> (Resource) child).collect(Collectors.toList());
+				if (!mainResources.isEmpty()) {
+					
+					// фильтры главных рейсов
+					List<ServiceFilter> serviceFilters = resourceFilter.getChilds().stream()
+							.filter(child -> child.getType() == EntityType.FILTER).map(child -> (ServiceFilter) child).collect(Collectors.toList());
+					
+					// условия фильтрации зависимых рейсов
+					List<ResourceFilterCondition> filterConditions = resourceFilter.getChilds().stream()
+							.filter(child -> child.getType() == EntityType.RESOURCE_FILTER_CONDITION).map(child -> (ResourceFilterCondition) child).collect(Collectors.toList());
+					
+					// зависимый ресурс (его надо фильтровать)
+					Resource subResource = resourceFilter.getResource();
+					out:
+						for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
 							
-							// проверяем есть ли главные ресурсы в запросах
-							List<TripSearchRequest> mainRequests = new ArrayList<>();
-							for (TripSearchRequest request : requests) {
-								if (mainResources.stream().filter(r -> String.valueOf(r.getId()).equals(request.getParams().getResource().getId()))
-										.findFirst().isPresent()) {
-									mainRequests.add(request);
-									
-									// если поиск на главном ресурсе не окончен, то зависимые тоже не завершаем
-									if (!request.isSearchCompleted()) {
-										subRequests.forEach(r -> r.setSearchCompleted(false));
-										break out;
+							// ищем есть ли зависимые запросы поиска
+							List<TripSearchRequest> subRequests = requests.stream()
+									.filter(r -> String.valueOf(subResource.getId()).equals(r.getParams().getResource().getId())).collect(Collectors.toList());
+							if (!subRequests.isEmpty()) {
+								allRequests.removeAll(subRequests);
+								subRequests.forEach(r -> r.setSearchCompleted(true)); // разрешаем для выдачи зависимые ресурсы
+								
+								// проверяем есть ли главные ресурсы в запросах
+								List<TripSearchRequest> mainRequests = new ArrayList<>();
+								for (TripSearchRequest request : requests) {
+									if (mainResources.stream().filter(r -> String.valueOf(r.getId()).equals(request.getParams().getResource().getId()))
+											.findFirst().isPresent()) {
+										mainRequests.add(request);
+										
+										// если поиск на главном ресурсе не окончен, то зависимые тоже не завершаем
+										if (!request.isSearchCompleted()) {
+											subRequests.forEach(r -> r.setSearchCompleted(false));
+											break out;
+										}
 									}
 								}
-							}
-							// проверяем рейсы зависимого ресурса с главными
-							if (!mainRequests.isEmpty()) {
-								for (TripSearchRequest subRequest : subRequests) {
-									List<TripContainer> subContainers = requestContainer.getResponse().getTripContainers().stream()
-											.filter(c -> Objects.equals(c.getRequest().getId(), subRequest.getId())).collect(Collectors.toList());
-									if (!subContainers.isEmpty()) {
-										for (TripContainer subContainer : subContainers) {
-											if (subContainer.getTrips() != null
-													&& !subContainer.getTrips().isEmpty()) {
-												for (Trip subTrip : subContainer.getTrips()) {
-													Segment subSegment = requestContainer.getResponse().getSegments().get(subTrip.getId());
-													if (subSegment != null
-															&& !subSegment.isChecked()) {
-														
-														// проверяем главные рейсы на прохождение фильтра
-														for (TripSearchRequest mainRequest : mainRequests) {
-															List<TripContainer> mainContainers = requestContainer.getResponse().getTripContainers().stream()
-																	.filter(c -> Objects.equals(c.getRequest().getId(), mainRequest.getId())).collect(Collectors.toList());
-															if (!mainContainers.isEmpty()) {
-																for (TripContainer mainContainer : mainContainers) {
-																	if (mainContainer.getTrips() != null
-																			&& !mainContainer.getTrips().isEmpty()) {
-																		for (Trip mainTrip : mainContainer.getTrips()) {
-																			Segment mainSegment = requestContainer.getResponse().getSegments().get(mainTrip.getId());
-																			if (mainSegment != null) {
-																				
-																				// если фильтров нет, то сравниваем зависимые рейсы со всеми главными
-																				// иначе только с теми, которые прошли фильтры
-																				if (!serviceFilters.isEmpty()) {
+								// проверяем рейсы зависимого ресурса с главными
+								if (!mainRequests.isEmpty()) {
+									allRequests.removeAll(mainRequests);
+									for (TripSearchRequest subRequest : subRequests) {
+										List<TripContainer> subContainers = requestContainer.getResponse().getTripContainers().stream()
+												.filter(c -> Objects.equals(c.getRequest().getId(), subRequest.getId())).collect(Collectors.toList());
+										if (!subContainers.isEmpty()) {
+											for (TripContainer subContainer : subContainers) {
+												if (subContainer.getTrips() != null
+														&& !subContainer.getTrips().isEmpty()) {
+													for (Trip subTrip : subContainer.getTrips()) {
+														Segment subSegment = requestContainer.getResponse().getSegments().get(subTrip.getId());
+														if (subSegment != null
+																&& !subSegment.isChecked()) {
+															
+															// проверяем главные рейсы на прохождение фильтра
+															for (TripSearchRequest mainRequest : mainRequests) {
+																List<TripContainer> mainContainers = requestContainer.getResponse().getTripContainers().stream()
+																		.filter(c -> Objects.equals(c.getRequest().getId(), mainRequest.getId())).collect(Collectors.toList());
+																if (!mainContainers.isEmpty()) {
+																	for (TripContainer mainContainer : mainContainers) {
+																		if (mainContainer.getTrips() != null
+																				&& !mainContainer.getTrips().isEmpty()) {
+																			for (Trip mainTrip : mainContainer.getTrips()) {
+																				Segment mainSegment = requestContainer.getResponse().getSegments().get(mainTrip.getId());
+																				if (mainSegment != null) {
 																					
-																					// если remove, то не проверяем зависимые рейсы
-																					// иначе - проверяем
-																					if (!isRemove(mainSegment, serviceFilters)
-																							
-																							// проверяем зависимый рейс на прохождение главного
-																							&& isRemove(subSegment, mainSegment, filterConditions, resourceFilter.getFilterType())) {
+																					// если фильтров нет, то сравниваем зависимые рейсы со всеми главными
+																					// иначе только с теми, которые прошли фильтры
+																					if (!serviceFilters.isEmpty()) {
+																						
+																						// если remove, то не проверяем зависимые рейсы
+																						// иначе - проверяем
+																						if (!isRemove(mainSegment, serviceFilters)
+																								
+																								// проверяем зависимый рейс на прохождение главного
+																								&& isRemove(subSegment, mainSegment, filterConditions, resourceFilter.getFilterType())) {
+																							requestContainer.getResponse().getSegments().remove(subTrip.getId());
+																						}
+																						// проверяем зависимый рейс на прохождение главного
+																					} else if (isRemove(subSegment, mainSegment, filterConditions, resourceFilter.getFilterType())) {
 																						requestContainer.getResponse().getSegments().remove(subTrip.getId());
 																					}
-																					// проверяем зависимый рейс на прохождение главного
-																				} else if (isRemove(subSegment, mainSegment, filterConditions, resourceFilter.getFilterType())) {
-																					requestContainer.getResponse().getSegments().remove(subTrip.getId());
 																				}
 																			}
 																		}
@@ -178,8 +188,9 @@ public class ResourceFilterController extends FilterController {
 								}
 							}
 						}
-					}
+				}
 			}
+			allRequests.forEach(r -> r.setSearchCompleted(true));
 		}
 	}
 	
