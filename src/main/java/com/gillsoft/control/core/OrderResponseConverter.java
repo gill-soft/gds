@@ -309,7 +309,7 @@ public class OrderResponseConverter {
 								
 								// добавляем статус об ошибке
 								if (confirmStatus != null) {
-									resourceService.addStatus(createStatus(created, user, confirmStatus, orderResponse.getError().getMessage(), null));
+									resourceService.addStatus(createStatus(created, user, errorStatus, orderResponse.getError().getMessage(), null));
 								}
 							}
 							break;

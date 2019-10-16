@@ -423,6 +423,7 @@ public class TripSearchController {
 				model.getRequest().setId(StringUtil.generateUUID());
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
 				model.getRequest().setCurrency(request.getCurrency());
+				model.getRequest().setToResult(true);
 				requestContainer.add(String.join(";", model.getRequest().getLocalityPairs().get(0)), model.getRequest());
 			}
 			TripSearchResponse response = initSearch(requestContainer);
@@ -613,14 +614,16 @@ public class TripSearchController {
 			orderResponse.setOrganisations(searchResponse.getOrganisations());
 			orderResponse.setLocalities(searchResponse.getLocalities());
 			orderResponse.setSegments(searchResponse.getSegments());
-			orderResponse.getSegments().values().forEach(s -> {
-				if (s.getResource() != null
-						&& searchResponse.getResources().containsKey(s.getResource().getId())) {
-					com.gillsoft.model.Resource resource = searchResponse.getResources().get(s.getResource().getId());
-					resource.setId(s.getResource().getId());
-					s.setResource(resource);
-				}
-			});
+			if (orderResponse.getSegments() != null) {
+				orderResponse.getSegments().values().forEach(s -> {
+					if (s.getResource() != null
+							&& searchResponse.getResources().containsKey(s.getResource().getId())) {
+						com.gillsoft.model.Resource resource = searchResponse.getResources().get(s.getResource().getId());
+						resource.setId(s.getResource().getId());
+						s.setResource(resource);
+					}
+				});
+			}
 		}
 	}
 	
@@ -755,12 +758,14 @@ public class TripSearchController {
 	 * Проставляет рейсам ид, которые были при поиске
 	 */
 	private void updateIds(List<String> segmentIds, Map<String, Segment> segments) {
-		Set<String> keys = new HashSet<>(segments.keySet());
-		for (String id : keys) {
-			for (String presentId : segmentIds) {
-				if (new TripIdModel().create(id).getId().equals(new TripIdModel().create(presentId).getId())) {
-					segments.put(presentId, segments.remove(id));
-					break;
+		if (segments != null) {
+			Set<String> keys = new HashSet<>(segments.keySet());
+			for (String id : keys) {
+				for (String presentId : segmentIds) {
+					if (new TripIdModel().create(id).getId().equals(new TripIdModel().create(presentId).getId())) {
+						segments.put(presentId, segments.remove(id));
+						break;
+					}
 				}
 			}
 		}
