@@ -106,8 +106,8 @@ public class ResourceFilterController extends FilterController {
 					
 					// зависимый ресурс (его надо фильтровать)
 					Resource subResource = resourceFilter.getResource();
-					out:
-						for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
+					for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
+						out: {
 							
 							// ищем есть ли зависимые запросы поиска
 							List<TripSearchRequest> subRequests = requests.stream()
@@ -188,6 +188,7 @@ public class ResourceFilterController extends FilterController {
 								}
 							}
 						}
+					}
 				}
 			}
 			allRequests.forEach(r -> r.setSearchCompleted(true));

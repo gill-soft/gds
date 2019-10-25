@@ -139,9 +139,9 @@ public class ConnectionsController {
 				|| fromSegment.getArrivalDate() == null) {
 			return false;
 		}
+		Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
+		Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());
 		for (SegmentConnection connection : connections) {
-			Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
-			Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());
 			
 			// проверяем возможность пересадки
 			if (isEqualsPoints(String.valueOf(connection.getFrom()), departure)

@@ -6,6 +6,7 @@ import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
@@ -108,5 +109,13 @@ public interface MsDataService {
 	 * @return Список условий фильтрации ресурсов.
 	 */
 	public List<ResourceFilter> getAllResourceFilters();
+	
+	/**
+	 * Возвращает список всех условий стыковок ресурсов с родетельскими
+	 * объектами, к которым принадлежит условие.
+	 * 
+	 * @return Список условий стыковок ресурсов.
+	 */
+	public List<ResourceConnection> getAllResourceConnections();
 	
 }

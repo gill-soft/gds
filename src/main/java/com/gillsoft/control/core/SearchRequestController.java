@@ -3,9 +3,12 @@ package com.gillsoft.control.core;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -17,11 +20,14 @@ import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.model.ConnectionsResponse;
 import com.gillsoft.control.service.model.Pair;
 import com.gillsoft.control.service.model.SearchRequestContainer;
+import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -120,10 +126,10 @@ public class SearchRequestController {
 		ConnectionsResponse connections = connectionsController.createConnections(searchRequest, resources);
 		if (connections != null) {
 			requestContainer.setConnections(connections);
-			for (Pair pair : connections.getPairs()) {
-				Stream<Resource> res = resources.stream().filter(r -> r.getId() == pair.getResourceId());
-				if (res != null) {
-					Resource resource = res.findFirst().get();
+			for (Pair pair : filterPairs(connections)) {
+				Optional<Resource> res = resources.stream().filter(r -> r.getId() == pair.getResourceId()).findFirst();
+				if (res.isPresent()) {
+					Resource resource = res.get();
 					if (infoController.isMethodAvailable(resource, Method.SEARCH, MethodType.POST)) {
 						addSearchRequest(searchRequest, resource,
 								new String[]{ String.valueOf(pair.getFrom()), String.valueOf(pair.getTo()) },
@@ -132,6 +138,119 @@ public class SearchRequestController {
 				}
 			}
 		}
+	}
+	
+	private Set<Pair> filterPairs(ConnectionsResponse connections) {
+		
+		// получаем разрешенные к стыковке ресурсы
+		List<ResourceConnection> resourceConnections = dataController.getResourceConnections();
+		if (resourceConnections == null) {
+			return connections.getPairs();
+		}
+		Map<Long, ResourceConnection> resourceConnectionsMap = dataController.getResourceConnections().stream()
+				.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc));
+		
+		Set<Pair> newPairs = new HashSet<>(); // список разрешенных пар поиска
+		for (List<Long> route : connections.getRoutes()) {
+			out: {
+				Set<Pair> routePairs = new HashSet<>(); // список частей маршрута
+				
+				// идем по маршруту и находим рейсы-части
+				Set<Pair> currPairs = null; // список частей маршрута
+				long currPoint = route.get(0);
+				for (int i = 1; i < route.size(); i++) {
+					long nextPoint = route.get(i);
+					Set<Pair> nextPairs = getPairs(connections.getPairs(), currPoint, nextPoint);
+					if (nextPairs.isEmpty()) {
+						break;
+					} else if (currPairs != null) {
+						
+						// если стыковать нельзя, то не отбрасываем весь маршрут
+						createAvailablePairs(resourceConnectionsMap, currPairs, nextPairs);
+						if (currPairs.isEmpty()
+								|| nextPairs.isEmpty()) {
+							break out;
+						}
+						routePairs.addAll(currPairs);
+						routePairs.addAll(nextPairs);
+					}
+					currPairs = nextPairs;
+					currPoint = nextPoint;
+				}
+				newPairs.addAll(routePairs);
+			}
+		}
+		return newPairs;
+	}
+	
+	/*
+	 * Сравнивает пары для стыковки.
+	 */
+	private void createAvailablePairs(Map<Long, ResourceConnection> resourceConnections, Set<Pair> currPairs, Set<Pair> nextPairs) {
+		Set<Pair> newCurrPairs = new HashSet<>();
+		Set<Pair> newNextPairs = new HashSet<>();
+		for (Pair pairFrom : currPairs) {
+			for (Pair pairTo : nextPairs) {
+				if (isPairsAvailable(resourceConnections, pairFrom, pairTo)
+						&& isPairsAvailable(resourceConnections, pairTo, pairFrom)) {
+					newCurrPairs.add(pairFrom);
+					newNextPairs.add(pairTo);
+				}
+			}
+		}
+		currPairs.clear();
+		currPairs.addAll(newCurrPairs);
+		nextPairs.clear();
+		nextPairs.addAll(newNextPairs);
+	}
+	
+	/*
+	 * Возвращает список пар для указанных пунктов.
+	 */
+	private Set<Pair> getPairs(Set<Pair> pairs, long fromId, long toId) {
+		Set<Pair> pairsPart = new HashSet<>();
+		for (Pair pair : pairs) {
+			Mapping from = mappingService.getMapping(pair.getFrom());
+			Mapping to = mappingService.getMapping(pair.getTo());
+			if (from != null && to != null
+					&& isEqualsPoints(fromId, from)
+					&& isEqualsPoints(toId, to)) {
+				pairsPart.add(pair);
+			}
+		}
+		return pairsPart;
+	}
+	
+	private boolean isEqualsPoints(long pointId, Mapping mapping) {
+		if (mapping.getId() == pointId) {
+			return true;
+		}
+		while (mapping.getParent() != null) {
+			mapping = mapping.getParent();
+			if (mapping.getId() == pointId) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/*
+	 * Проверяем можно ли стыковать пару.
+	 */
+	private boolean isPairsAvailable(Map<Long, ResourceConnection> resourceConnections, Pair pairFrom, Pair pairTo) {
+		ResourceConnection resourceConnectionFrom = resourceConnections.get(pairFrom.getResourceId());
+		if (resourceConnectionFrom == null) {
+			return true;
+		}
+		// фильтры главных рейсов
+		if (resourceConnectionFrom.getChilds().stream()
+				.filter(child -> child.getType() == EntityType.FILTER).findFirst().isPresent()) {
+			return true;
+		}
+		// условия фильтрации зависимых рейсов
+		Set<Long> resources = resourceConnectionFrom.getChilds().stream()
+				.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> child.getId()).collect(Collectors.toSet());
+		return resources.contains(pairTo.getResourceId());
 	}
 
 }

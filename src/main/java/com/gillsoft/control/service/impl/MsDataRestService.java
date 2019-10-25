@@ -35,6 +35,7 @@ import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
@@ -57,6 +58,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_ORDERS_ACCESS = "order_access/all_with_sub_main";
 	
 	private static final String ALL_RESOURCE_FILTERS = "resource_filter/all_with_sub_main";
+	
+	private static final String ALL_RESOURCE_CONNECTIONS = "resource_connection/all_with_sub_main";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -193,6 +196,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<ResourceFilter> getAllResourceFilters() {
 		return getResult(ALL_RESOURCE_FILTERS, null, new ParameterizedTypeReference<List<ResourceFilter>>() { });
+	}
+
+	@Override
+	public List<ResourceConnection> getAllResourceConnections() {
+		return getResult(ALL_RESOURCE_CONNECTIONS, null, new ParameterizedTypeReference<List<ResourceConnection>>() { });
 	}
 
 }
