@@ -147,7 +147,7 @@ public class SearchRequestController {
 		if (resourceConnections == null) {
 			return connections.getPairs();
 		}
-		Map<Long, ResourceConnection> resourceConnectionsMap = dataController.getResourceConnections().stream()
+		Map<Long, ResourceConnection> resourceConnectionsMap = resourceConnections.stream()
 				.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc));
 		
 		Set<Pair> newPairs = new HashSet<>(); // список разрешенных пар поиска
