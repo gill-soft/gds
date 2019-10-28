@@ -203,7 +203,11 @@ public class ConnectionsController {
 		// условия фильтрации зависимых рейсов
 		Set<Long> resources = resourceConnectionFrom.getChilds().stream()
 				.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> child.getId()).collect(Collectors.toSet());
-		return resources.contains(Long.parseLong(toSegment.getResource().getId()));
+		if (resourceConnectionFrom.isEnable()) {
+			return resources.contains(Long.parseLong(toSegment.getResource().getId()));
+		} else {
+			return !resources.contains(Long.parseLong(toSegment.getResource().getId()));
+		}
 	}
 	
 	private List<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {

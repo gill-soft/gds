@@ -250,7 +250,11 @@ public class SearchRequestController {
 		// условия фильтрации зависимых рейсов
 		Set<Long> resources = resourceConnectionFrom.getChilds().stream()
 				.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> child.getId()).collect(Collectors.toSet());
-		return resources.contains(pairTo.getResourceId());
+		if (resourceConnectionFrom.isEnable()) {
+			return resources.contains(pairTo.getResourceId());
+		} else {
+			return !resources.contains(pairTo.getResourceId());
+		}
 	}
 
 }
