@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -85,10 +86,11 @@ public class ResourceFilterController extends FilterController {
 		if (filters == null
 				|| filters.isEmpty()) {
 			for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
-				requests.forEach(r -> r.setSearchCompleted(true));
+				requests.forEach(r -> r.setPermittedToResult(true));
 			}
 		} else {
-			List<TripSearchRequest> allRequests = requestContainer.getPairRequests().values().stream().flatMap(List::stream).collect(Collectors.toList());
+			Set<String> disabledRequests = getDisabledSubRequests(requestContainer, filters);
+			
 			for (ResourceFilter resourceFilter : filters) {
 				
 				// ресурсы от которых зависит фильтр (главные - их надо ждать)
@@ -113,8 +115,6 @@ public class ResourceFilterController extends FilterController {
 							List<TripSearchRequest> subRequests = requests.stream()
 									.filter(r -> String.valueOf(subResource.getId()).equals(r.getParams().getResource().getId())).collect(Collectors.toList());
 							if (!subRequests.isEmpty()) {
-								allRequests.removeAll(subRequests);
-								subRequests.forEach(r -> r.setSearchCompleted(true)); // разрешаем для выдачи зависимые ресурсы
 								
 								// проверяем есть ли главные ресурсы в запросах
 								List<TripSearchRequest> mainRequests = new ArrayList<>();
@@ -125,14 +125,12 @@ public class ResourceFilterController extends FilterController {
 										
 										// если поиск на главном ресурсе не окончен, то зависимые тоже не завершаем
 										if (!request.isSearchCompleted()) {
-											subRequests.forEach(r -> r.setSearchCompleted(false));
 											break out;
 										}
 									}
 								}
 								// проверяем рейсы зависимого ресурса с главными
 								if (!mainRequests.isEmpty()) {
-									allRequests.removeAll(mainRequests);
 									for (TripSearchRequest subRequest : subRequests) {
 										List<TripContainer> subContainers = requestContainer.getResponse().getTripContainers().stream()
 												.filter(c -> Objects.equals(c.getRequest().getId(), subRequest.getId())).collect(Collectors.toList());
@@ -191,8 +189,56 @@ public class ResourceFilterController extends FilterController {
 					}
 				}
 			}
-			allRequests.forEach(r -> r.setSearchCompleted(true));
+			List<TripSearchRequest> allRequests = requestContainer.getPairRequests().values().stream().flatMap(List::stream).collect(Collectors.toList());
+			allRequests.forEach(r -> {
+				if (!disabledRequests.contains(r.getId())) {
+					r.setPermittedToResult(true);
+				} else {
+					r.setPermittedToResult(false);
+				}
+			});
 		}
+	}
+	
+	/*
+	 * Проверяет можно ли показывать зависимые запросы или нет.
+	 * Возвращает список заблокированных запросов ожидающих главных ресурсов.
+	 */
+	private Set<String> getDisabledSubRequests(SearchRequestContainer requestContainer, List<ResourceFilter> filters) {
+		Set<String> disabledRequests = new HashSet<>(); // результат, который нельзя показывать
+		for (ResourceFilter resourceFilter : filters) {
+						
+			// ресурсы от которых зависит фильтр (главные - их надо ждать)
+			List<Resource> mainResources = resourceFilter.getChilds().stream()
+					.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> (Resource) child).collect(Collectors.toList());
+			if (!mainResources.isEmpty()) {
+				
+				// зависимый ресурс (его надо фильтровать)
+				Resource subResource = resourceFilter.getResource();
+				for (List<TripSearchRequest> requests : requestContainer.getPairRequests().values()) {
+						
+					// ищем есть ли зависимые запросы поиска
+					List<TripSearchRequest> subRequests = requests.stream()
+							.filter(r -> String.valueOf(subResource.getId()).equals(r.getParams().getResource().getId())).collect(Collectors.toList());
+					if (!subRequests.isEmpty()) {
+						
+						// проверяем есть ли главные ресурсы в запросах
+						for (TripSearchRequest request : requests) {
+							if (mainResources.stream().filter(r -> String.valueOf(r.getId()).equals(request.getParams().getResource().getId()))
+									.findFirst().isPresent()) {
+								
+								// если поиск на главном ресурсе не окончен, то зависимые тоже не завершаем
+								if (!request.isSearchCompleted()) {
+									subRequests.forEach(r -> disabledRequests.add(r.getId()));
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return disabledRequests;
 	}
 	
 	private boolean isRemove(Segment subSegment, Segment mainSegment, List<ResourceFilterCondition> conditions, FilterType type) {

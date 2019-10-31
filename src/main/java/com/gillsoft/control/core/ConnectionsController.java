@@ -108,7 +108,7 @@ public class ConnectionsController {
 			// результат соединений
 			TripContainer container = new TripContainer();
 			container.setRequest(requestContainer.getOriginRequest());
-			container.getRequest().setSearchCompleted(true);
+			container.getRequest().setPermittedToResult(true);
 			container.setTrips(result);
 			tripSearchResponse.getTripContainers().add(container);
 		}
@@ -213,7 +213,7 @@ public class ConnectionsController {
 	private List<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
 		List<String> segmentIds = new ArrayList<>();
 		for (TripContainer container : tripSearchResponse.getTripContainers()) {
-			if (container.getRequest().isSearchCompleted()) {
+			if (container.getRequest().isPermittedToResult()) {
 				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
 					Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
 					Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());

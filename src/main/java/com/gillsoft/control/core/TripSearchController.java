@@ -210,6 +210,7 @@ public class TripSearchController {
 						// запрос, по которому получен результат
 						TripSearchRequest request = optional.get();
 						request.setSearchCompleted(searchResponse.getSearchId() == null);
+						request.setPermittedToResult(true);
 						
 						// проверяем ошибки
 						if (searchResponse.getTripContainers() != null) {
@@ -471,7 +472,7 @@ public class TripSearchController {
 				// удаляем сразу контейнеры, по которым еще продолжается поиск и запрещен результат
 				if (container.getRequest() == null
 						|| !container.getRequest().isToResult()
-						|| !container.getRequest().isSearchCompleted()) {
+						|| !container.getRequest().isPermittedToResult()) {
 					iterator.remove();
 				} else {
 					if (container.getTrips() != null) {
