@@ -97,6 +97,9 @@ public class MsDataController {
     @Qualifier("MemoryCacheHandler")
 	private CacheHandler cache;
 	
+	@Autowired
+	private Calculator calculator;
+	
 	@SuppressWarnings("unchecked")
 	public List<Resource> getUserResources() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -287,7 +290,7 @@ public class MsDataController {
 				}
 			}
 		}
-		Price calculated = Calculator.calculateResource(price, getUser(), currency);
+		Price calculated = calculator.calculateResource(price, getUser(), currency);
 		calculated.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		return calculated;
 	}
@@ -326,7 +329,7 @@ public class MsDataController {
 				}
 			}
 		}
-		price.setReturned(Calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
+		price.setReturned(calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
 				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
 		
 		// устанавливаем исходную сумму возврата от ресурса

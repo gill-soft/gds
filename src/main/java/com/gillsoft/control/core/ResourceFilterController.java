@@ -270,7 +270,7 @@ public class ResourceFilterController extends FilterController {
 			}
 			return type == FilterType.EXCLUDE;
 		}
-		return false;
+		return true;
 	}
 	
 	private String toString(Object value) {
