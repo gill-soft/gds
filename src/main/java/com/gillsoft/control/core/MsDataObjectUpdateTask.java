@@ -15,7 +15,7 @@ public abstract class MsDataObjectUpdateTask implements Runnable {
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, getCacheKey());
 		params.put(MemoryCacheHandler.IGNORE_AGE, true);
-		params.put(MemoryCacheHandler.UPDATE_DELAY, 600000l);
+		params.put(MemoryCacheHandler.UPDATE_DELAY, 120000l);
 		
 		MsDataService service = ContextProvider.getBean(MsDataService.class);
 		MsDataController dataController = ContextProvider.getBean(MsDataController.class);

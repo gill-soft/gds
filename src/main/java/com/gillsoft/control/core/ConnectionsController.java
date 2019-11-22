@@ -2,6 +2,8 @@ package com.gillsoft.control.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +32,7 @@ import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -147,8 +150,40 @@ public class ConnectionsController {
 				break;
 			}
 		}
-		// создаем md5 ид
+		// создаем md5 ид предыдущих частей - нужно для определения последовальности сегментов в заказе
+		updateIds(tripSearchResponse, trips);
+		
 		result.addAll(trips);
+	}
+	
+	private void updateIds(TripSearchResponse tripSearchResponse, List<Trip> trips) {
+		Map<String, TripIdModel> newIds = new HashMap<>();
+		for (Trip trip : trips) {
+			for (int i = 0; i < trip.getSegments().size() - 1; i++) {
+				TripIdModel id = newIds.get(trip.getSegments().get(i));
+				if (id == null) {
+					id = new TripIdModel().create(trip.getSegments().get(i));
+					newIds.put(trip.getSegments().get(i), id);
+				}
+				TripIdModel next = new TripIdModel().create(trip.getSegments().get(i + 1));
+				next.setNext(null);
+				if (id.getNext() == null) {
+					id.setNext(new HashSet<>());
+				}
+				id.getNext().add(StringUtil.md5(next.asString()));
+			}
+		}
+		Map<String, String> newStrIds = new HashMap<>(newIds.size());
+		newIds.forEach((k, v) -> newStrIds.put(k, v.asString()));
+		for (Trip trip : trips) {
+			for (int i = 0; i < trip.getSegments().size(); i++) {
+				if (newStrIds.containsKey(trip.getSegments().get(i))) {
+					String newId = newStrIds.get(trip.getSegments().get(i));
+					tripSearchResponse.getSegments().put(newId, tripSearchResponse.getSegments().get(trip.getSegments().get(i)));
+					trip.getSegments().set(i, newId);
+				}
+			}
+		}
 	}
 	
 	private boolean isConnected(Map<Long, ResourceConnection> resourceConnectionsMap,
@@ -215,11 +250,14 @@ public class ConnectionsController {
 		for (TripContainer container : tripSearchResponse.getTripContainers()) {
 			if (container.getRequest().isPermittedToResult()) {
 				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
-					Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
-					Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
-					if (isEqualsPoints(String.valueOf(from), departure)
-							&& isEqualsPoints(String.valueOf(to), arrival)) {
-						segmentIds.add(entry.getKey());
+					if (entry.getValue().getDeparture() != null
+							&& entry.getValue().getArrival() != null) {
+						Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
+						Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
+						if (isEqualsPoints(String.valueOf(from), departure)
+								&& isEqualsPoints(String.valueOf(to), arrival)) {
+							segmentIds.add(entry.getKey());
+						}
 					}
 				}
 			}

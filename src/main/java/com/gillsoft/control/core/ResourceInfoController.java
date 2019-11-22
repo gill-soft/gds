@@ -47,7 +47,7 @@ public class ResourceInfoController {
 		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
 		return (List<Method>) dataController.getFromCache(getActiveResourcesCacheKey(resource.getId()), new MethodsUpdateTask(request),
-				() -> createMethods(request), 600000l);
+				() -> createMethods(request), 120000l);
 	}
 	
 	protected List<Method> createMethods(ResourceRequest request) {

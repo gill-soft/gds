@@ -3,6 +3,7 @@ package com.gillsoft.control.service;
 import java.util.List;
 
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.ConnectionDiscount;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -117,5 +118,13 @@ public interface MsDataService {
 	 * @return Список условий стыковок ресурсов.
 	 */
 	public List<ResourceConnection> getAllResourceConnections();
+	
+	/**
+	 * Возвращает список всех скидок на стыковки между ресурсами с родетельскими
+	 * объектами, к которым принадлежит скидка.
+	 * 
+	 * @return Список скидок на стыковки ресурсов.
+	 */
+	public List<ConnectionDiscount> getAllResourceConnectionDiscounts();
 	
 }

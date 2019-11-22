@@ -34,6 +34,7 @@ import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
+import com.gillsoft.model.Trip;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Organisation;
@@ -52,6 +53,9 @@ public class OrderResponseConverter {
 	
 	@Autowired
 	private TripSearchController searchController;
+	
+	@Autowired
+	private DiscountController discountController;
 	
 	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
 			OrderResponse response) {
@@ -138,12 +142,73 @@ public class OrderResponseConverter {
 		}
 		// очищаем неиспользуемые данные из словарей
 		searchController.updateResponseDictionaries(resultSegmentIds, result.getSegments(), result.getVehicles(), result.getOrganisations(), result.getLocalities(), null);
+		
+		// проверяем наличие стыковки по каждому заказчику и насчитываем скидку
+		for (String customerId : result.getCustomers().keySet()) {
+			List<ServiceItem> services = result.getServices().stream()
+					.filter(s -> s.getCustomer() != null && customerId.equals(s.getCustomer().getId())).collect(Collectors.toList());
+			for (Trip trip : getTrips(services)) {
+				
+				// проставляем стоимость на сегменты с текущих сервисов, чтобы ее пересчитали
+				for (ServiceItem service : services) {
+					if (service.getSegment() != null) {
+						result.getSegments().get(service.getSegment().getId()).setPrice(service.getPrice());
+					}
+				}
+				discountController.applyConnectionDiscount(trip, result.getSegments());
+			}
+		}
+		// сбрасываем стоимости с рейсов - они в сервисах
+		result.getSegments().values().forEach(s -> s.setPrice(null));
+		
 		return order;
 	}
 	
+	private List<Trip> getTrips(List<ServiceItem> services) {
+		List<Trip> trips = new ArrayList<>();
+		List<String> ids = services.stream().filter(s -> s.getSegment() != null)
+				.map(s -> s.getSegment().getId()).collect(Collectors.toList());
+		for (String tripId : ids) {
+			TripIdModel idModel = new TripIdModel().create(tripId);
+			if (idModel.getNext() != null) {
+				Set<String> next = idModel.getNext();
+				idModel.setNext(null);
+				String currId = idModel.asString();
+				for (String nextId : next) {
+					boolean added = false;
+					for (Trip trip : trips) {
+						if (trip.getSegments() == null) {
+							trip.setSegments(new ArrayList<>());
+						} else {
+							if (trip.getSegments().get(0).equals(nextId)) {
+								trip.getSegments().add(0, currId);
+							}
+							if (trip.getSegments().get(trip.getSegments().size() - 1).equals(currId)) {
+								trip.getSegments().add(nextId);
+							}
+						}
+					}
+					if (!added) {
+						Trip trip = new Trip();
+						trip.setSegments(new ArrayList<>());
+						trip.getSegments().add(currId);
+						trip.getSegments().add(nextId);
+						trips.add(trip);
+					}
+				}
+			}
+		}
+		return trips;
+	}
+	
+	
 	private List<String> getSegmentIds(OrderRequest request) {
 		return request.getServices().stream().filter(s -> s.getSegment() != null)
-				.map(s -> s.getSegment().getId()).collect(Collectors.toList());
+				.map(s -> {
+					TripIdModel id = new TripIdModel().create(s.getSegment().getId());
+					id.setNext(null);
+					return id.asString();
+				}).collect(Collectors.toList());
 	}
 	
 	private void addReturnConditions(ServiceItem item, Segment segment) {

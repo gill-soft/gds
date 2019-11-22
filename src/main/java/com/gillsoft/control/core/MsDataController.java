@@ -54,6 +54,7 @@ import com.gillsoft.ms.entity.AttributeValue;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.ConnectionDiscount;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -86,6 +87,8 @@ public class MsDataController {
 	
 	private static final String ALL_RESOURCE_CONNECTIONS_KEY = "all.resource.connections";
 	
+	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS_KEY = "all.resource.connection.discounts";
+	
 	private static final String USER_KEY = "user.";
 	
 	private static final String ORGANISATION_KEY = "organisation.";
@@ -108,7 +111,7 @@ public class MsDataController {
 		}
 		String userName = authentication.getName();
 		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
-				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 600000l);
+				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 120000l);
 	}
 	
 	public ResourceParams createResourceParams(long resourceId) {
@@ -129,7 +132,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllCommissionsKey(),
-				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 600000l);
+				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -138,7 +141,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllReturnConditionsKey(),
-				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 600000l);
+				new AllReturnConditionsUpdateTask(), () -> toMap(msService.getAllReturnConditions()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -147,7 +150,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllTicketLayoutsKey(),
-				new AllTicketLayoutsUpdateTask(), () -> toMap(msService.getAllTicketLayouts()), 600000l);
+				new AllTicketLayoutsUpdateTask(), () -> toMap(msService.getAllTicketLayouts()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -156,7 +159,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllFiltersKey(),
-				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 600000l);
+				new AllFiltersUpdateTask(), () -> toMap(msService.getAllFilters()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -165,7 +168,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllOrdersAccessKey(),
-				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 600000l);
+				new AllOrdersAccessUpdateTask(), () -> toMap(msService.getAllOrdersAccess()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -174,7 +177,7 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllResourceFiltersKey(),
-				new AllResourceFiltersUpdateTask(), () -> toMap(msService.getAllResourceFilters()), 600000l);
+				new AllResourceFiltersUpdateTask(), () -> toMap(msService.getAllResourceFilters()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -183,7 +186,16 @@ public class MsDataController {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllResourceConnectionsKey(),
-				new AllResourceConnectionsUpdateTask(), () -> toMap(msService.getAllResourceConnections()), 600000l);
+				new AllResourceConnectionsUpdateTask(), () -> toMap(msService.getAllResourceConnections()), 120000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<Long, List<CodeEntity>> getAllResourceConnectionDiscounts() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllResourceConnectionDiscountsKey(),
+				new AllConnectionDiscountsUpdateTask(), () -> toMap(msService.getAllResourceConnectionDiscounts()), 120000l);
 	}
 	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {
@@ -192,14 +204,16 @@ public class MsDataController {
 			// entity id -> list of entities
 			Map<Long, List<BaseEntity>> grouping = new ConcurrentHashMap<>();
 			entities.forEach(entity -> {
-				entity.setParents(new CopyOnWriteArraySet<>(entity.getParents()));
-				for (BaseEntity parent : entity.getParents()) {
-					List<BaseEntity> groupe = grouping.get(parent.getId());
-					if (groupe == null) {
-						groupe = new CopyOnWriteArrayList<>();
-						grouping.put(parent.getId(), groupe);
+				if (entity.getParents() != null) {
+					entity.setParents(new CopyOnWriteArraySet<>(entity.getParents()));
+					for (BaseEntity parent : entity.getParents()) {
+						List<BaseEntity> groupe = grouping.get(parent.getId());
+						if (groupe == null) {
+							groupe = new CopyOnWriteArrayList<>();
+							grouping.put(parent.getId(), groupe);
+						}
+						groupe.add(entity);
 					}
-					groupe.add(entity);
 				}
 			});
 			return grouping;
@@ -215,25 +229,27 @@ public class MsDataController {
 		}
 		String userName = authentication.getName();
 		return (User) getFromCache(getUserCacheKey(userName),
-				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 600000l);
+				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 120000l);
 	}
 	
 	public String getUserTimeZone() {
-		BaseEntity organisation = getUser().getParents().iterator().next();
-		if (organisation.getAttributeValues() != null) {
-			return getValue("timezone", organisation);
+		if (getUser().getParents() != null) {
+			BaseEntity organisation = getUser().getParents().iterator().next();
+			if (organisation.getAttributeValues() != null) {
+				return getValue("timezone", organisation);
+			}
 		}
 		return null;
 	}
 	
 	public User getUser(long id) {
 		return (User) getFromCache(getUserCacheKey(id),
-				new UserByIdUpdateTask(id), () -> msService.getUser(id), 600000l);
+				new UserByIdUpdateTask(id), () -> msService.getUser(id), 120000l);
 	}
 	
 	public Organisation getOrganisation(long id) {
 		return (Organisation) getFromCache(getOrganisationCacheKey(id),
-				new OrganisationUpdateTask(id), () -> msService.getOrganisation(id), 600000l);
+				new OrganisationUpdateTask(id), () -> msService.getOrganisation(id), 120000l);
 	}
 	
 	protected Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
@@ -385,6 +401,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<ConnectionDiscount> getResourceConnectionDiscounts() {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return getResourceConnectionDiscounts(entities);
+		}
+		return null;
+	}
+	
 	public List<OrderAccess> getOrdersAccess(User user) {
 		List<BaseEntity> entities = getParentEntities(user, null);
 		if (entities != null) {
@@ -474,6 +498,14 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<ConnectionDiscount> getResourceConnectionDiscounts(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllResourceConnectionDiscounts());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(e -> (ConnectionDiscount) e).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
 	public List<OrderAccess> getOrdersAccess(List<BaseEntity> entities) {
 		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllOrdersAccess());
 		if (codeEntities != null) {
@@ -505,14 +537,16 @@ public class MsDataController {
 				Map<String, CodeEntity> result = new HashMap<>();
 				Set<Long> entityIds = entities.stream().map(BaseEntity::getId).collect(Collectors.toSet());
 				for (CodeEntity child : mappedChilds.values()) {
-					Set<Long> parentIds = child.getParents().stream().map(BaseEntity::getId).collect(Collectors.toSet());
-					if (entityIds.containsAll(parentIds)) {
-						
-						// берем сущности с одинаковым кодом и оставляем только те, у которых больше веса всех родителей
-						BaseEntity compared = result.get(child.getCode());
-						if (compared == null
-								|| getWeight(child) > getWeight(compared)) {
-							result.put(child.getCode(), child);
+					if (child.getParents() != null) {
+						Set<Long> parentIds = child.getParents().stream().map(BaseEntity::getId).collect(Collectors.toSet());
+						if (entityIds.containsAll(parentIds)) {
+							
+							// берем сущности с одинаковым кодом и оставляем только те, у которых больше веса всех родителей
+							BaseEntity compared = result.get(child.getCode());
+							if (compared == null
+									|| getWeight(child) > getWeight(compared)) {
+								result.put(child.getCode(), child);
+							}
 						}
 					}
 				}
@@ -522,7 +556,7 @@ public class MsDataController {
 		return null;
 	}
 	
-	private com.gillsoft.model.Commission convert(Commission commission) {
+	public com.gillsoft.model.Commission convert(Commission commission) {
 		com.gillsoft.model.Commission converted = new com.gillsoft.model.Commission();
 		converted.setId(String.valueOf(commission.getId()));
 		converted.setCode(commission.getCode());
@@ -539,7 +573,7 @@ public class MsDataController {
 		return converted;
 	}
 	
-	private com.gillsoft.model.ReturnCondition convert(ReturnCondition returnCondition) {
+	public com.gillsoft.model.ReturnCondition convert(ReturnCondition returnCondition) {
 		com.gillsoft.model.ReturnCondition converted = new com.gillsoft.model.ReturnCondition();
 		converted.setId(String.valueOf(returnCondition.getId()));
 		converted.setMinutesBeforeDepart(returnCondition.getActiveTime());
@@ -638,13 +672,19 @@ public class MsDataController {
 		Map<Long, List<CodeEntity>> all = getAllTicketLayouts();
 		
 		// получаем макеты билетов для каждого ресурса заказа
+		long currTime = System.currentTimeMillis();
 		Map<Long, List<TicketLayout>> layouts = order.getOrders().stream().collect(
 				Collectors.toMap(
 						ResourceOrder::getResourceId,
 						r -> {
 							if (all != null
 									&& all.containsKey(r.getResourceId())) {
-								return (List<TicketLayout>)(List<?>) all.get(r.getResourceId());
+								
+								// проверяем период действия
+								return (List<TicketLayout>)(List<?>) all.get(r.getResourceId()).stream().filter(c ->
+											(c.getStart() == null || c.getStart().getTime() <= currTime)
+											&& (c.getEnd() == null || c.getEnd().getTime() >= currTime))
+										.collect(Collectors.toList());
 							}
 							return null;
 						},
@@ -800,6 +840,10 @@ public class MsDataController {
 	
 	public static String getAllResourceConnectionsKey() {
 		return ALL_RESOURCE_CONNECTIONS_KEY;
+	}
+	
+	public static String getAllResourceConnectionDiscountsKey() {
+		return ALL_RESOURCE_CONNECTION_DISCOUNTS_KEY;
 	}
 	
 	public static String getUserCacheKey(String userName) {

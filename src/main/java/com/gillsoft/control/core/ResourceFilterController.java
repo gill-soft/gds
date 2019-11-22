@@ -48,7 +48,7 @@ public class ResourceFilterController extends FilterController {
 	}
 
 	@PostConstruct
-	@Scheduled(initialDelay = 600000, fixedDelay = 600000)
+	@Scheduled(initialDelay = 120000, fixedDelay = 120000)
 	public void updateFields() {
 		Map<String, Field> fieldsMap = new HashMap<>();
 		

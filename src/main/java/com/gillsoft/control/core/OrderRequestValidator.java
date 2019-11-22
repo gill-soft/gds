@@ -101,7 +101,10 @@ public class OrderRequestValidator {
 							String tripId = new TripIdModel().create(item.getSegment().getId()).getId();
 							if (Objects.equals(tripId, detailsRequest.getTripId())) {
 								Customer customer = request.getCustomers().get(item.getCustomer().getId());
-								
+								if (customer == null) {
+									errorMsg.append("Customer ").append(item.getCustomer().getId()).append(" is absent\r\n");
+									break;
+								}
 								// валидируем поля
 								for (RequiredField field : response.getFields()) {
 									switch (field) {

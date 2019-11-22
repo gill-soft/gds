@@ -2,7 +2,9 @@ package com.gillsoft.control.service.impl;
 
 import java.net.URI;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -18,6 +20,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.SerializationUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -32,6 +35,7 @@ import com.gillsoft.model.ResponseError;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.BaseEntityDeserializer;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.ConnectionDiscount;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -60,6 +64,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_RESOURCE_FILTERS = "resource_filter/all_with_sub_main";
 	
 	private static final String ALL_RESOURCE_CONNECTIONS = "resource_connection/all_with_sub_main";
+	
+	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS = "connection_discount/all_with_sub_main";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -201,6 +207,29 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<ResourceConnection> getAllResourceConnections() {
 		return getResult(ALL_RESOURCE_CONNECTIONS, null, new ParameterizedTypeReference<List<ResourceConnection>>() { });
+	}
+
+	@Override
+	public List<ConnectionDiscount> getAllResourceConnectionDiscounts() {
+		List<ConnectionDiscount> discounts =
+				getResult(ALL_RESOURCE_CONNECTION_DISCOUNTS, null, new ParameterizedTypeReference<List<ConnectionDiscount>>() { });
+		
+		// размножаем скидку на каждого родителя так как она применяется к ресурсам,
+		// а назначается на организацию и пользователя
+		List<ConnectionDiscount> newDiscounts = new ArrayList<>();
+		long i = -1;
+		for (ConnectionDiscount connectionDiscount : discounts) {
+			if (connectionDiscount.getParents() != null) {
+				for (BaseEntity parent : connectionDiscount.getParents()) {
+					ConnectionDiscount newDiscount = (ConnectionDiscount) SerializationUtils.deserialize(
+							SerializationUtils.serialize(connectionDiscount));
+					newDiscount.setId(i--);
+					newDiscount.setParents(Collections.singleton(parent));
+					newDiscounts.add(newDiscount);
+				}
+			}
+		}
+		return newDiscounts;
 	}
 
 }

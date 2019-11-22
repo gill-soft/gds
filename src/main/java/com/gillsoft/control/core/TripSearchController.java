@@ -110,6 +110,9 @@ public class TripSearchController {
 	@Autowired
 	private ScheduleService scheduleService;
 	
+	@Autowired
+	private DiscountController discountController;
+	
 	/**
 	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
 	 */
@@ -226,7 +229,7 @@ public class TripSearchController {
 			// сохранение промежуточного результата без очистки неиспользуемых данных
 			requestContainer.setResponse(allResult);
 			
-			// TODO check resource filter
+			// фильтруем результат для выдачи приоритетных ресурсов
 			resourceFilter.apply(requestContainer);
 			
 			// создаем сегменты и добавляем в результат
@@ -235,7 +238,11 @@ public class TripSearchController {
 			}
 			// удаляем неиспользуемые данные
 			updateResponse(allResult, result, requestContainer);
-
+			
+			// применяем скидку на пересадки уже на очищенный
+			if (isTransfer(requestContainer)) {
+				discountController.applyConnectionDiscount(result);
+			}
 			// добавляем в кэш запрос под новым searchId, для получения остального результата
 			// делаем это перед очисткой данных так как в дальнейшем поиск может еще продолжаться
 			// и понадобятся предыдущие результаты для создания стыковок
