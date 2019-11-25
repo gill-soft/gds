@@ -72,6 +72,7 @@ public class OrderResponseConverter {
 		User user = dataController.getUser();
 		
 		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
+		Map<String, String> segmentIds = getSegmentIds(originalRequest);
 		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : response.getResources()) {
@@ -88,6 +89,22 @@ public class OrderResponseConverter {
 						new IdModel(Long.parseLong(currRequest.getParams().getResource().getId()), orderResponse.getOrderId()).asString());
 				order.addResourceOrder(resourceOrder);
 				if (orderResponse.getError() != null) {
+					
+					// маппим рейсы заказа из запроса так как в ответе ошибка и их нет
+					orderResponse.setSegments(currRequest.getServices().stream().map(
+							s -> s.getSegment() != null ? s.getSegment().getId() : null).filter(v -> v != null).collect(
+									Collectors.toMap(v -> v, v -> new Segment(), (v1, v2) -> v1)));
+					searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), currRequest, orderResponse, result);
+					for (ServiceItem item : currRequest.getServices()) {
+						
+						// устанавливаем ид сегмента рейса
+						if (item.getSegment() != null) {
+							if (result.getSegments() != null) {
+								setSegment(result.getSegments(), item);
+							}
+							resultSegmentIds.add(item.getSegment().getId());
+						}
+					}
 					currRequest.getServices().forEach(s -> s.setError(orderResponse.getError()));
 					result.getServices().addAll(currRequest.getServices());
 					
@@ -98,7 +115,7 @@ public class OrderResponseConverter {
 					});
 				} else {
 					// маппим рейсы заказа из ответа
-					searchController.mapScheduleSegment(getSegmentIds(originalRequest), currRequest, orderResponse, result);
+					searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), currRequest, orderResponse, result);
 					
 					for (ServiceItem item : orderResponse.getServices()) {
 						
@@ -143,57 +160,114 @@ public class OrderResponseConverter {
 		// очищаем неиспользуемые данные из словарей
 		searchController.updateResponseDictionaries(resultSegmentIds, result.getSegments(), result.getVehicles(), result.getOrganisations(), result.getLocalities(), null);
 		
+		// ид сегментов должны быть с next
+		updateResultSegmentIds(result, segmentIds);
+		
 		// проверяем наличие стыковки по каждому заказчику и насчитываем скидку
-		for (String customerId : result.getCustomers().keySet()) {
-			List<ServiceItem> services = result.getServices().stream()
-					.filter(s -> s.getCustomer() != null && customerId.equals(s.getCustomer().getId())).collect(Collectors.toList());
-			for (Trip trip : getTrips(services)) {
-				
-				// проставляем стоимость на сегменты с текущих сервисов, чтобы ее пересчитали
-				for (ServiceItem service : services) {
-					if (service.getSegment() != null) {
-						result.getSegments().get(service.getSegment().getId()).setPrice(service.getPrice());
-					}
-				}
-				discountController.applyConnectionDiscount(trip, result.getSegments());
-			}
-		}
+		applyConnectionDiscount(result, order);
+		
 		// сбрасываем стоимости с рейсов - они в сервисах
 		result.getSegments().values().forEach(s -> s.setPrice(null));
 		
 		return order;
 	}
 	
+	private void applyConnectionDiscount(OrderResponse result, Order order) {
+		for (String customerId : result.getCustomers().keySet()) {
+			List<ServiceItem> services = result.getServices().stream()
+					.filter(s -> s.getError() == null && s.getCustomer() != null && customerId.equals(s.getCustomer().getId())).collect(Collectors.toList());
+			for (Trip trip : getTrips(services)) {
+				
+				// проставляем стоимость на сегменты с текущих сервисов, чтобы ее пересчитали (сервисов из ResourceService)
+				for (ServiceItem service : services) {
+					if (service.getSegment() != null) {
+						out:
+							for (ResourceOrder resourceOrder : order.getOrders()) {
+								for (ResourceService resourceService : resourceOrder.getServices()) {
+									if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+										result.getSegments().get(service.getSegment().getId()).setPrice(
+												resourceService.getStatuses().iterator().next().getPrice().getPrice());
+										break out;
+									}
+								}
+							}
+					}
+				}
+				discountController.applyConnectionDiscount(trip, result.getSegments());
+				
+				// обновляем стоимости в сервисах
+				for (ServiceItem service : services) {
+					if (service.getSegment() != null) {
+						out:
+							for (ResourceOrder resourceOrder : order.getOrders()) {
+								for (ResourceService resourceService : resourceOrder.getServices()) {
+									if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+										resourceService.getStatuses().iterator().next().getPrice().setPrice(
+												result.getSegments().get(service.getSegment().getId()).getPrice());
+										break out;
+									}
+								}
+							}
+					}
+				}
+			}
+		}
+	}
+	
+	private void updateResultSegmentIds(OrderResponse result, Map<String, String> segmentIds) {
+		if (result.getSegments() != null) {
+			for (Entry<String, String> entry : segmentIds.entrySet()) {
+				if (result.getSegments().containsKey(entry.getKey())) {
+					Segment segment = result.getSegments().get(entry.getKey());
+					result.getSegments().remove(entry.getKey());
+					result.getSegments().put(entry.getValue(), segment);
+					for (ServiceItem service : result.getServices()) {
+						if (service.getSegment() != null
+								&& entry.getKey().equals(service.getSegment().getId())) {
+							service.getSegment().setId(entry.getValue());
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	private List<Trip> getTrips(List<ServiceItem> services) {
 		List<Trip> trips = new ArrayList<>();
 		List<String> ids = services.stream().filter(s -> s.getSegment() != null)
 				.map(s -> s.getSegment().getId()).collect(Collectors.toList());
-		for (String tripId : ids) {
+		for (int i = 0; i < ids.size(); i++) {
+			String tripId = ids.get(i);
 			TripIdModel idModel = new TripIdModel().create(tripId);
 			if (idModel.getNext() != null) {
 				Set<String> next = idModel.getNext();
 				idModel.setNext(null);
-				String currId = idModel.asString();
 				for (String nextId : next) {
-					boolean added = false;
-					for (Trip trip : trips) {
-						if (trip.getSegments() == null) {
-							trip.setSegments(new ArrayList<>());
-						} else {
-							if (trip.getSegments().get(0).equals(nextId)) {
-								trip.getSegments().add(0, currId);
-							}
-							if (trip.getSegments().get(trip.getSegments().size() - 1).equals(currId)) {
-								trip.getSegments().add(nextId);
+					
+					// nextId в md5
+					// ищем его в имеющемся результате
+					nextId = getSegmentId(nextId, ids);
+					if (nextId != null) {
+						boolean added = false;
+						for (Trip trip : trips) {
+							if (trip.getSegments() == null) {
+								trip.setSegments(new ArrayList<>());
+							} else {
+								if (trip.getSegments().get(0).equals(nextId)) {
+									trip.getSegments().add(0, tripId);
+								}
+								if (trip.getSegments().get(trip.getSegments().size() - 1).equals(tripId)) {
+									trip.getSegments().add(nextId);
+								}
 							}
 						}
-					}
-					if (!added) {
-						Trip trip = new Trip();
-						trip.setSegments(new ArrayList<>());
-						trip.getSegments().add(currId);
-						trip.getSegments().add(nextId);
-						trips.add(trip);
+						if (!added) {
+							Trip trip = new Trip();
+							trip.setSegments(new ArrayList<>());
+							trip.getSegments().add(tripId);
+							trip.getSegments().add(nextId);
+							trips.add(trip);
+						}
 					}
 				}
 			}
@@ -201,14 +275,24 @@ public class OrderResponseConverter {
 		return trips;
 	}
 	
+	private String getSegmentId(String md5Id, List<String> ids) {
+		for (String id : ids) {
+			TripIdModel idModel = new TripIdModel().create(id);
+			idModel.setNext(null);
+			if (md5Id.equals(StringUtil.md5(idModel.asString()))) {
+				return id;
+			}
+		}
+		return null;
+	}
 	
-	private List<String> getSegmentIds(OrderRequest request) {
+	private Map<String, String> getSegmentIds(OrderRequest request) {
 		return request.getServices().stream().filter(s -> s.getSegment() != null)
-				.map(s -> {
+				.collect(Collectors.toMap(s -> {
 					TripIdModel id = new TripIdModel().create(s.getSegment().getId());
 					id.setNext(null);
 					return id.asString();
-				}).collect(Collectors.toList());
+				}, s -> s.getSegment().getId(), (s1, s2) -> s1));
 	}
 	
 	private void addReturnConditions(ServiceItem item, Segment segment) {
