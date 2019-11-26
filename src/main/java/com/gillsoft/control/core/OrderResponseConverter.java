@@ -322,7 +322,9 @@ public class OrderResponseConverter {
 		resourceService.addStatus(createStatus(created, user, statusType, error, service.getPrice()));
 		
 		// оригинальную стоимость сохраняем в response
-		service.setPrice(service.getPrice().getSource());
+		if (service.getPrice() != null) {
+			service.setPrice(service.getPrice().getSource());
+		}
 		return resourceService;
 	}
 	
