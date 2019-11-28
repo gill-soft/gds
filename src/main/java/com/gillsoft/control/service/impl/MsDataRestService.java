@@ -213,7 +213,9 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	public List<ConnectionDiscount> getAllResourceConnectionDiscounts() {
 		List<ConnectionDiscount> discounts =
 				getResult(ALL_RESOURCE_CONNECTION_DISCOUNTS, null, new ParameterizedTypeReference<List<ConnectionDiscount>>() { });
-		
+		if (discounts == null) {
+			return null;
+		}
 		// размножаем скидку на каждого родителя так как она применяется к ресурсам,
 		// а назначается на организацию и пользователя
 		List<ConnectionDiscount> newDiscounts = new ArrayList<>();
