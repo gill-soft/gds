@@ -656,6 +656,10 @@ public class OrderController {
 	}
 	
 	private List<OrderRequest> returnRequests(Order order, OrderRequest request, String method) {
+		
+		// проверяем возврат скидки
+		converter.checkDiscountForReturn(order, request);
+		
 		Set<ServiceStatus> statuses = getStatusesForReturn();
 		List<OrderRequest> requests = operationRequests(order, method, statuses);
 		

@@ -77,6 +77,9 @@ public class DiscountController {
 							iterator.remove();
 						}
 					}
+					for (Discount discount : s.getPrice().getDiscounts()) {
+						s.getPrice().setAmount(s.getPrice().getAmount().add(discount.getValue()));
+					}
 				}
 			});
 		}

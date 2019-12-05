@@ -20,6 +20,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderDocument;
@@ -1011,6 +1012,12 @@ public class OrderResponseConverter {
 		return orders;
 	}
 	
+	/**
+	 * Заполняем сегменты данными из словарей.
+	 * 
+	 * @param response
+	 *            Заказ.
+	 */
 	public void updateSegments(OrderResponse response) {
 		if (response.getLocalities() != null) {
 			for (Entry<String, Locality> entry : response.getLocalities().entrySet()) {
@@ -1074,6 +1081,47 @@ public class OrderResponseConverter {
 					}
 				}
 			}
+		}
+	}
+	
+	public void checkDiscountForReturn(Order order, OrderRequest request) {
+		
+		// список сервисов из запроса на возврат
+		Set<String> requestItems = request.getServices().stream().map(ServiceItem::getId).collect(Collectors.toSet());
+		
+		OrderResponse response = getResponse(order);
+		
+		// список сервисов сгруппированных по заказчику
+		Map<String, List<ServiceItem>> customersItems = response.getServices().stream().collect(
+				Collectors.groupingBy(s -> s.getCustomer().getId()));
+		
+		StringBuilder errorMsg = new StringBuilder();
+		for (Entry<String, List<ServiceItem>> customerItems : customersItems.entrySet()) {
+			Set<String> requestCustomerItems = customerItems.getValue().stream()
+					.filter(s -> requestItems.contains(s.getId())).map(ServiceItem::getId).collect(Collectors.toSet());
+			if (!requestCustomerItems.isEmpty()) {
+				Set<String> idsWithDiscounts = new HashSet<>();
+				for (ServiceItem service : customerItems.getValue()) {
+					if (service.getError() == null
+							&& service.getPrice() != null
+							&& service.getPrice().getDiscounts() != null) {
+						idsWithDiscounts.add(service.getId());
+					}
+				}
+				if (!idsWithDiscounts.isEmpty()) {
+					Set<String> customerItemIds = customerItems.getValue().stream().map(ServiceItem::getId).collect(Collectors.toSet());
+					
+					// если список сервисов на возврат не содержит всех скидочных сервисов или всех сервисов пользователя
+					if (!requestCustomerItems.containsAll(idsWithDiscounts)
+							|| !requestCustomerItems.containsAll(customerItemIds)) {
+						errorMsg.append("You can return services only in groupe ").append(String.join(";", idsWithDiscounts))
+							.append(" or ").append(String.join(";", customerItemIds)).append("\r\n");
+					}
+				}
+			}
+		}
+		if (errorMsg.length() > 0) {
+			throw new MethodUnavalaibleException(errorMsg.toString().trim());
 		}
 	}
 
