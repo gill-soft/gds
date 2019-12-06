@@ -675,7 +675,7 @@ public class OrderController {
 				if (Objects.equals(orderRequest.getOrderId(), new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId())) {
 					for (ServiceItem service : request.getServices()) {
 						for (ResourceService resourceService : resourceOrder.getServices()) {
-							if (Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
+							if (converter.isServiceOfResourceService(service, resourceService)) {
 								if (statuses.contains(converter.getLastStatus(resourceService.getStatuses()))) {
 									
 									// устанавливаем ид ресурса и добавляем в запрос

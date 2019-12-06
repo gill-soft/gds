@@ -185,7 +185,7 @@ public class OrderResponseConverter {
 						out:
 							for (ResourceOrder resourceOrder : order.getOrders()) {
 								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+									if (isServiceOfResourceService(service, resourceService)) {
 										result.getSegments().get(service.getSegment().getId()).setPrice(
 												resourceService.getStatuses().iterator().next().getPrice().getPrice());
 										break out;
@@ -202,7 +202,7 @@ public class OrderResponseConverter {
 						out:
 							for (ResourceOrder resourceOrder : order.getOrders()) {
 								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+									if (isServiceOfResourceService(service, resourceService)) {
 										resourceService.getStatuses().iterator().next().getPrice().setPrice(
 												result.getSegments().get(service.getSegment().getId()).getPrice());
 										break out;
@@ -374,7 +374,7 @@ public class OrderResponseConverter {
 				out:
 					for (ResourceOrder resourceOrder : order.getOrders()) {
 						for (ResourceService resourceService : resourceOrder.getServices()) {
-							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+							if (isServiceOfResourceService(service, resourceService)) {
 								
 								// данные пользователя обновившего сервис
 								ServiceStatusEntity statusEntity = getLastNotErrorStatusEntity(resourceService.getStatuses());
@@ -473,8 +473,7 @@ public class OrderResponseConverter {
 						if (Objects.equals(currRequest.getOrderId(), new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId())) {
 							for (ServiceItem service : orderResponse.getServices()) {
 								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (Objects.equals(service.getId(), new IdModel().create(resourceService.getResourceNativeServiceId()).getId())
-											|| Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
+									if (isServiceOfResourceService(service, resourceService)) {
 										service.setId(resourceService.getResourceNativeServiceId());
 										services.add(service);
 										
@@ -586,9 +585,9 @@ public class OrderResponseConverter {
 	private ServiceItem getOrderService(Order order, ServiceItem service) {
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			for (ResourceService resourceService : resourceOrder.getServices()) {
-				if (Objects.equals(String.valueOf(resourceService.getId()), service.getId())) {
+				if (isServiceOfResourceService(service, resourceService)) {
 					for (ServiceItem item : order.getResponse().getServices()) {
-						if (Objects.equals(item.getId(), resourceService.getResourceNativeServiceId())) {
+						if (isServiceOfResourceService(item, resourceService)) {
 							return item;
 						}
 					}
@@ -819,7 +818,7 @@ public class OrderResponseConverter {
 						// удаляем сервисы из заказа
 						for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {
 							ServiceItem service = iterator.next();
-							if (Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())) {
+							if (isServiceOfResourceService(service, resourceService)) {
 								iterator.remove();
 								break;
 							}
@@ -902,9 +901,7 @@ public class OrderResponseConverter {
 					out:
 						for (ResourceOrder resourceOrder : order.getOrders()) {
 							for (ResourceService resourceService : resourceOrder.getServices()) {
-								if (Objects.equals(service.getId(),
-										new IdModel().create(resourceService.getResourceNativeServiceId()).getId())
-										|| Objects.equals(service.getId(), String.valueOf(resourceService.getId()))) {
+								if (isServiceOfResourceService(service, resourceService)) {
 									orderDocument.setServiceId(resourceService.getId());
 									orderDocument.setStatus(getLastNotErrorStatus(resourceService.getStatuses()));
 									break out;
@@ -915,6 +912,12 @@ public class OrderResponseConverter {
 				order.addOrderDocument(orderDocument);
 			}
 		}
+	}
+	
+	public boolean isServiceOfResourceService(ServiceItem service, ResourceService resourceService) {
+		return Objects.equals(service.getId(), resourceService.getResourceNativeServiceId())
+				|| Objects.equals(service.getId(), new IdModel().create(resourceService.getResourceNativeServiceId()).getId())
+				|| Objects.equals(service.getId(), String.valueOf(resourceService.getId()));
 	}
 	
 	/**
@@ -1114,8 +1117,11 @@ public class OrderResponseConverter {
 					// если список сервисов на возврат не содержит всех скидочных сервисов или всех сервисов пользователя
 					if (!requestCustomerItems.containsAll(idsWithDiscounts)
 							|| !requestCustomerItems.containsAll(customerItemIds)) {
-						errorMsg.append("You can return services only in groupe ").append(String.join(";", idsWithDiscounts))
-							.append(" or ").append(String.join(";", customerItemIds)).append("\r\n");
+						errorMsg.append("You can return services only in groupe ").append(String.join(";", idsWithDiscounts));
+						if (!idsWithDiscounts.containsAll(customerItemIds)) {
+							errorMsg.append(" or ").append(String.join(";", customerItemIds));
+						}
+						errorMsg.append("\r\n");
 					}
 				}
 			}
