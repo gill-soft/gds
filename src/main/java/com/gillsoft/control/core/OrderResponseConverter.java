@@ -513,7 +513,7 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		updateResponse(order, joinServices(order, requests, responses, confirmStatus, errorStatus));
+		updateResponse(order, responses, joinServices(order, requests, responses, confirmStatus, errorStatus));
 		return order;
 	}
 	
@@ -597,7 +597,8 @@ public class OrderResponseConverter {
 		return null;
 	}
 	
-	private void updateResponse(Order order, List<ServiceItem> services) {
+	private void updateResponse(Order order, List<OrderResponse> responses, List<ServiceItem> services) {
+		updateOrderData(order, responses);
 		for (ServiceItem dbItem : order.getResponse().getServices()) {
 			for (ServiceItem service : services) {
 				if (Objects.equals(dbItem.getId(), service.getId())) {
@@ -614,8 +615,26 @@ public class OrderResponseConverter {
 		}
 	}
 	
+	private void updateOrderData(Order order, List<OrderResponse> responses) {
+		for (OrderResponse orderResponse : responses) {
+			for (ResourceOrder resourceOrder : order.getOrders()) {
+				IdModel idModel = new IdModel().create(resourceOrder.getResourceNativeOrderId());
+				if (Objects.equals(orderResponse.getOrderId(), idModel.getId())) {
+					if (orderResponse.getNewOrderId() != null
+							&& !orderResponse.getNewOrderId().isEmpty()) {
+						idModel.setId(orderResponse.getNewOrderId());
+						resourceOrder.setResourceNativeOrderId(idModel.asString());
+					}
+				}
+			}
+		}
+	}
+	
 	private void updateServiceData(ServiceItem service, ServiceItem newData) {
-		
+		if (newData.getNewId() != null
+				&& !newData.getNewId().isEmpty()) {
+			service.setId(newData.getNewId());
+		}
 		// проверяем возможность аннулирования заказа
 		if (newData.getTimeToCancel() != null) {
 			service.setCanceled(true);

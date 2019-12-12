@@ -7,8 +7,6 @@ public class IdModel extends AbstractJsonModel {
 	private static final long serialVersionUID = 651911356161511195L;
 	
 	private long resourceId;
-	
-	private String id;
 
 	public IdModel() {
 		
@@ -16,7 +14,7 @@ public class IdModel extends AbstractJsonModel {
 
 	public IdModel(long resourceId, String id) {
 		this.resourceId = resourceId;
-		this.id = id;
+		setId(id);
 	}
 
 	public long getResourceId() {
@@ -25,14 +23,6 @@ public class IdModel extends AbstractJsonModel {
 
 	public void setResourceId(long resourceId) {
 		this.resourceId = resourceId;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
 	}
 
 	@Override
