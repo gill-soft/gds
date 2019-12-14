@@ -686,7 +686,7 @@ public class MsDataController {
 											&& (c.getEnd() == null || c.getEnd().getTime() >= currTime))
 										.collect(Collectors.toList());
 							}
-							return null;
+							return Collections.EMPTY_LIST;
 						},
 						(r1, r2) -> r1));
 		// получаем макеты переопределенные для конкретного пользователя
@@ -697,7 +697,7 @@ public class MsDataController {
 				&& !userLayouts.isEmpty()) {
 			for (TicketLayout ticketLayout : userLayouts) {
 				for (Entry<Long, List<TicketLayout>> entry : layouts.entrySet()) {
-					if (entry.getValue() != null) {
+					if (entry.getValue().isEmpty()) {
 						Optional<TicketLayout> optional = entry.getValue().stream().filter(l -> Objects.equals(l.getCode(), ticketLayout.getCode())).findFirst();
 						if (optional.isPresent()) {
 							entry.getValue().remove(optional.get());

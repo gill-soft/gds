@@ -625,6 +625,17 @@ public class OrderResponseConverter {
 						idModel.setId(orderResponse.getNewOrderId());
 						resourceOrder.setResourceNativeOrderId(idModel.asString());
 					}
+					for (ServiceItem service : orderResponse.getServices()) {
+						for (ResourceService resourceService : resourceOrder.getServices()) {
+							if (isServiceOfResourceService(service, resourceService)
+									&& service.getNewId() != null
+									&& !service.getNewId().isEmpty()) {
+								IdModel serviceIdModel = new IdModel().create(resourceService.getResourceNativeServiceId());
+								serviceIdModel.setId(service.getNewId());
+								resourceService.setResourceNativeServiceId(serviceIdModel.asString());
+							}
+						}
+					}
 				}
 			}
 		}
