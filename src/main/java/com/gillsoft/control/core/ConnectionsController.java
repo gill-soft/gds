@@ -1,9 +1,9 @@
 package com.gillsoft.control.core;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -80,21 +80,21 @@ public class ConnectionsController {
 			return;
 		}
 		// получаем разрешенные к стыковке ресурсы
-		Map<Long, ResourceConnection> resourceConnectionsMap = null;
+		Map<Long, List<ResourceConnection>> resourceConnectionsMap = null;
 		List<ResourceConnection> resourceConnections = dataController.getResourceConnections();
 		if (resourceConnections != null) {
 			resourceConnectionsMap = resourceConnections.stream()
-					.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc));
+					.collect(Collectors.groupingBy(rc -> rc.getResource().getId(), Collectors.toList()));
 		}
-		List<Trip> result = new ArrayList<>();
+		List<Trip> result = new LinkedList<>();
 		for (List<Long> route : requestContainer.getConnections().getRoutes()) {
-			List<List<String>> segments = new ArrayList<>(); // список возможных частей маршрута
+			List<Set<String>> segments = new LinkedList<>(); // список возможных частей маршрута
 			
 			// идем по маршруту и находим рейсы-части
 			long currPoint = route.get(0);
 			for (int i = 1; i < route.size(); i++) {
 				long nextPoint = route.get(i);
-				List<String> currPart = getTripIds(currPoint, nextPoint, tripSearchResponse);
+				Set<String> currPart = getTripIds(currPoint, nextPoint, tripSearchResponse);
 				if (currPart.isEmpty()) {
 					break;
 				}
@@ -117,21 +117,21 @@ public class ConnectionsController {
 		}
 	}
 	
-	private void joinSegments(Map<Long, ResourceConnection> resourceConnectionsMap,
+	private void joinSegments(Map<Long, List<ResourceConnection>> resourceConnectionsMap,
 			TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer, List<Trip> result,
-			List<List<String>> segments) {
+			List<Set<String>> segments) {
 		
 		// соединяем сегменты с учетом времени пересадки
-		List<String> first = segments.get(0);
-		List<Trip> trips = new ArrayList<>(first.size()); // соединенные в рейсы части маршрута
+		Set<String> first = segments.get(0);
+		List<Trip> trips = new LinkedList<>(); // соединенные в рейсы части маршрута
 		for (String id : first) {
 			Trip trip = new Trip();
 			trip.setSegments(Collections.singletonList(id));
 			trips.add(trip);
 		}
 		for (int i = 1; i < segments.size(); i++) {
-			List<Trip> nextParts = new ArrayList<>();
-			List<String> next = segments.get(i);
+			List<Trip> nextParts = new LinkedList<>();
+			Set<String> next = segments.get(i);
 			for (String id : next) {
 				
 				// берем последний сегмент с рейса и пробуем присоединить текущую часть
@@ -139,7 +139,7 @@ public class ConnectionsController {
 					if (isConnected(resourceConnectionsMap, requestContainer.getConnections().getConnections(), tripSearchResponse,
 							trip.getSegments().get(trip.getSegments().size() - 1), id)) {
 						Trip newTrip = new Trip();
-						newTrip.setSegments(new ArrayList<>(trip.getSegments()));
+						newTrip.setSegments(new LinkedList<>(trip.getSegments()));
 						newTrip.getSegments().add(id);
 						nextParts.add(newTrip);
 					}
@@ -186,7 +186,7 @@ public class ConnectionsController {
 		}
 	}
 	
-	private boolean isConnected(Map<Long, ResourceConnection> resourceConnectionsMap,
+	private boolean isConnected(Map<Long, List<ResourceConnection>> resourceConnectionsMap,
 			List<SegmentConnection> connections, TripSearchResponse tripSearchResponse, String fromSegmentId,
 			String toSegmentId) {
 		Segment fromSegment = tripSearchResponse.getSegments().get(fromSegmentId);
@@ -203,54 +203,66 @@ public class ConnectionsController {
 						|| !isResourceConnectionAvailable(resourceConnectionsMap, toSegment, fromSegment))) {
 			return false;
 		}
-		Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
-		Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());
-		for (SegmentConnection connection : connections) {
-			
-			// проверяем возможность пересадки
-			if (isEqualsPoints(String.valueOf(connection.getFrom()), departure)
-					&& isEqualsPoints(String.valueOf(connection.getTo()), arrival)) {
+		int betweenSegments = (int) ((toSegment.getDepartureDate().getTime() - fromSegment.getArrivalDate().getTime()) / 60000);
+		if (betweenSegments > 0) {
+			Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
+			Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());
+			for (SegmentConnection connection : connections) {
 				
-				// проверяем время пересадки
-				int betweenSegments = (int) ((toSegment.getDepartureDate().getTime() - fromSegment.getArrivalDate().getTime()) / 60000);
-				if (betweenSegments >= connection.getMinConnectionTime()
-						&& (connection.getMaxConnectionTime() == 0
-						|| betweenSegments <= connection.getMaxConnectionTime())) {
-					return true;
+				// проверяем возможность пересадки
+				if (isEqualsPoints(String.valueOf(connection.getFrom()), departure)
+						&& isEqualsPoints(String.valueOf(connection.getTo()), arrival)) {
+					
+					// проверяем время пересадки
+					if (betweenSegments >= connection.getMinConnectionTime()
+							&& (connection.getMaxConnectionTime() == 0
+							|| betweenSegments <= connection.getMaxConnectionTime())) {
+						return true;
+					}
 				}
 			}
 		}
 		return false;
 	}
 	
-	private boolean isResourceConnectionAvailable(Map<Long, ResourceConnection> resourceConnectionsMap, Segment fromSegment, Segment toSegment) {
-		ResourceConnection resourceConnectionFrom = resourceConnectionsMap.get(Long.parseLong(fromSegment.getResource().getId()));
-		if (resourceConnectionFrom == null) {
+	private boolean isResourceConnectionAvailable(Map<Long, List<ResourceConnection>> resourceConnectionsMap, Segment fromSegment, Segment toSegment) {
+		List<ResourceConnection> resourceConnectionFroms = resourceConnectionsMap.get(Long.parseLong(fromSegment.getResource().getId()));
+		if (resourceConnectionFroms == null) {
 			return true;
 		}
-		// фильтры главных рейсов
-		List<ServiceFilter> filters = resourceConnectionFrom.getChilds().stream()
-				.filter(child -> child.getType() == EntityType.FILTER).map(child -> (ServiceFilter) child).collect(Collectors.toList());
-		if (!filters.isEmpty()
-				&& filter.isRemove(fromSegment, filters)) {
-			return false;
+		// если хоть одно условие разрешает стыковку, то разрешаем
+		boolean enabled = false;
+		for (ResourceConnection resourceConnectionFrom : resourceConnectionFroms) {
+			
+			// фильтры главных рейсов
+			List<ServiceFilter> filters = resourceConnectionFrom.getChilds().stream()
+					.filter(child -> child.getType() == EntityType.FILTER).map(child -> (ServiceFilter) child).collect(Collectors.toList());
+			if (!filters.isEmpty()
+					&& filter.isRemove(fromSegment, filters)) {
+				continue;
+			}
+			// условия фильтрации зависимых рейсов
+			Set<Long> resources = resourceConnectionFrom.getChilds().stream()
+					.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> child.getId()).collect(Collectors.toSet());
+			if (resourceConnectionFrom.isEnable()) {
+				enabled = enabled || resources.contains(Long.parseLong(toSegment.getResource().getId()));
+			} else {
+				enabled = enabled || !resources.contains(Long.parseLong(toSegment.getResource().getId()));
+			}
+			if (enabled) {
+				return true;
+			}
 		}
-		// условия фильтрации зависимых рейсов
-		Set<Long> resources = resourceConnectionFrom.getChilds().stream()
-				.filter(child -> child.getType() == EntityType.RESOURCE).map(child -> child.getId()).collect(Collectors.toSet());
-		if (resourceConnectionFrom.isEnable()) {
-			return resources.contains(Long.parseLong(toSegment.getResource().getId()));
-		} else {
-			return !resources.contains(Long.parseLong(toSegment.getResource().getId()));
-		}
+		return enabled;
 	}
 	
-	private List<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
-		List<String> segmentIds = new ArrayList<>();
+	private Set<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
+		Set<String> segmentIds = new HashSet<>();
 		for (TripContainer container : tripSearchResponse.getTripContainers()) {
 			if (container.getRequest().isPermittedToResult()) {
 				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
-					if (entry.getValue().getDeparture() != null
+					if (!segmentIds.contains(entry.getKey())
+							&& entry.getValue().getDeparture() != null
 							&& entry.getValue().getArrival() != null) {
 						Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
 						Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
