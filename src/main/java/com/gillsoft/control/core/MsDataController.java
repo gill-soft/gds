@@ -103,19 +103,31 @@ public class MsDataController {
 	@Autowired
 	private Calculator calculator;
 	
-	@SuppressWarnings("unchecked")
-	public List<Resource> getUserResources() {
+	public String getUserName() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication == null) {
 			return null;
 		}
-		String userName = authentication.getName();
+		return authentication.getName();
+	}
+	
+	public List<Resource> getUserResources() {
+		String userName = getUserName();
+		return getUserResources(userName);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public List<Resource> getUserResources(String userName) {
 		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
 				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 120000l);
 	}
 	
 	public ResourceParams createResourceParams(long resourceId) {
-		List<Resource> resources = getUserResources();
+		return createResourceParams(resourceId, getUserName());
+	}
+	
+	public ResourceParams createResourceParams(long resourceId, String userName) {
+		List<Resource> resources = getUserResources(userName);
 		if (resources != null) {
 			for (Resource resource : resources) {
 				if (resource.getId() == resourceId) {
@@ -223,11 +235,7 @@ public class MsDataController {
 	}
 	
 	public User getUser() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		if (authentication == null) {
-			return null;
-		}
-		String userName = authentication.getName();
+		String userName = getUserName();
 		return (User) getFromCache(getUserCacheKey(userName),
 				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 120000l);
 	}

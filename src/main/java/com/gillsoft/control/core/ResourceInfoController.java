@@ -43,14 +43,15 @@ public class ResourceInfoController {
 	
 	@SuppressWarnings("unchecked")
 	public List<Method> getAvailableMethods(Resource resource) {
-		ResourceRequest request = createRequest(resource);
+		String userName = dataController.getUserName();
 		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
-		return (List<Method>) dataController.getFromCache(getActiveResourcesCacheKey(resource.getId()), new MethodsUpdateTask(request),
-				() -> createMethods(request), 120000l);
+		return (List<Method>) dataController.getFromCache(getActiveResourcesCacheKey(resource.getId(), userName), new MethodsUpdateTask(resource, userName),
+				() -> createMethods(resource, userName), 120000l);
 	}
 	
-	protected List<Method> createMethods(ResourceRequest request) {
+	protected List<Method> createMethods(Resource resource, String userName) {
+		ResourceRequest request = createRequest(resource, userName);
 		List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
 		if (response == null
 				|| response.isEmpty()
@@ -63,15 +64,15 @@ public class ResourceInfoController {
 	}
 	
 	// создание запроса получения информации о ресурсе 
-	private ResourceRequest createRequest(Resource resource) {
+	protected ResourceRequest createRequest(Resource resource, String userName) {
 		ResourceRequest request = new ResourceRequest();
 		request.setId(StringUtil.generateUUID());
-		request.setParams(resource.createParams());
+		request.setParams(dataController.createResourceParams(resource.getId(), userName));
 		return request;
 	}
 
-	public static String getActiveResourcesCacheKey(long resourceId) {
-		return ACTIVE_RESOURCES_CACHE_KEY + resourceId;
+	public static String getActiveResourcesCacheKey(long resourceId, String userName) {
+		return ACTIVE_RESOURCES_CACHE_KEY + String.join(".", String.valueOf(resourceId), userName);
 	}
 
 }
