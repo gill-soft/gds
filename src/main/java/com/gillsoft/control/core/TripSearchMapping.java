@@ -111,9 +111,11 @@ public class TripSearchMapping {
 			long resourceId = Long.parseLong(request.getParams().getResource().getId());
 			List<Locality> localities = new ArrayList<>(objects.values());
 			for (Locality locality : localities) {
-				if (locality.getParent() != null) {
-					objects.put(locality.getParent().getId(), locality.getParent());
-					locality.setParent(new Locality(getKey(resourceId, locality.getParent().getId())));
+				Locality parent = null;
+				while ((parent = locality.getParent()) != null) {
+					objects.put(parent.getId(), parent);
+					locality.setParent(new Locality(getKey(resourceId, parent.getId())));
+					locality = parent;
 				}
 			}
 		}
@@ -121,11 +123,9 @@ public class TripSearchMapping {
 				(mapping, lang, original) -> createLocality(mapping, lang, original),
 				(original) -> createUnmappingLocality(original),
 				(resId, id, l) -> l.setId(getKey(resId, id)));
-		for (Locality locality : result.values()) {
-			if (locality.getParent() != null
-					&& result.containsKey(locality.getParent().getId())) {
-				locality.setParent(result.get(locality.getParent().getId()));
-			}
+		List<Locality> localities = new ArrayList<>(result.values());
+		for (Locality locality : localities) {
+			fillMapByParents(locality, result);
 			Locality parent = null;
 			while ((parent = locality.getParent()) != null) {
 				removeUnselectedLang(request, parent);
@@ -134,17 +134,29 @@ public class TripSearchMapping {
 		}
 	}
 	
+	private void fillMapByParents(Locality locality, Map<String, Locality> result) {
+		Locality parent = locality.getParent();
+		if (parent != null) {
+			if (parent.getParent() != null) {
+				fillMapByParents(parent, result);
+			}
+			result.putIfAbsent(parent.getId(), parent);
+			locality.setParent(new Locality(result.get(parent.getId()).getId()));
+		}
+	}
+	
 	/*
 	 * из-за того, что не все возвращаемые пункты ресурса смаплены, необходимо
 	 * проверять маппинг родителей, если они есть
 	 */
 	private Locality createLocality(Mapping mapping, Lang lang, Locality original) {
-		if (original.getParent() == null) {
-			return localityController.createFullLocality(mapping, lang, original);
-		}
 		Locality locality = localityController.createLocality(mapping, lang, original);
-		locality.setParent(original.getParent());
-		return locality;
+		Locality result = locality;
+		while ((mapping = mapping.getParent()) != null) {
+			locality.setParent(localityController.createLocality(mapping, lang, original));
+			locality = locality.getParent();
+		}
+		return result;
 	}
 	
 	private Unmapping createUnmappingLocality(Locality original) {

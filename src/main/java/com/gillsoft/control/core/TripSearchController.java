@@ -583,6 +583,7 @@ public class TripSearchController {
 			});
 		}
 		if (localities != null) {
+			Map<String, Locality> copy = new HashMap<>(localities);
 			localities.keySet().removeIf(key -> {
 				for (Segment segment : segments.values()) {
 					if (Objects.equals(key, segment.getDeparture().getId())
@@ -602,6 +603,17 @@ public class TripSearchController {
 				};
 				return true;
 			});
+			List<Locality> localitiesList = new ArrayList<>(localities.values());
+			for (Locality locality : localitiesList) {
+				Locality parent = locality.getParent();
+				while (parent != null
+						&& !localities.containsKey(parent.getId())
+						&& copy.containsKey(parent.getId())) {
+					parent = copy.get(parent.getId());
+					localities.put(parent.getId(), parent);
+					parent = parent.getParent();
+				}
+			}
 		}
 	}
 	
