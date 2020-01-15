@@ -205,13 +205,13 @@ public class ConnectionsController {
 		}
 		int betweenSegments = (int) ((toSegment.getDepartureDate().getTime() - fromSegment.getArrivalDate().getTime()) / 60000);
 		if (betweenSegments > 0) {
-			Locality departure = tripSearchResponse.getLocalities().get(fromSegment.getArrival().getId());
-			Locality arrival = tripSearchResponse.getLocalities().get(toSegment.getDeparture().getId());
+			String departureId = fromSegment.getArrival().getId();
+			String arrivalId = toSegment.getDeparture().getId();
 			for (SegmentConnection connection : connections) {
 				
 				// проверяем возможность пересадки
-				if (isEqualsPoints(String.valueOf(connection.getFrom()), departure)
-						&& isEqualsPoints(String.valueOf(connection.getTo()), arrival)) {
+				if (isEqualsPoints(String.valueOf(connection.getFrom()), departureId, tripSearchResponse.getLocalities())
+						&& isEqualsPoints(String.valueOf(connection.getTo()), arrivalId, tripSearchResponse.getLocalities())) {
 					
 					// проверяем время пересадки
 					if (betweenSegments >= connection.getMinConnectionTime()
@@ -264,10 +264,10 @@ public class ConnectionsController {
 					if (!segmentIds.contains(entry.getKey())
 							&& entry.getValue().getDeparture() != null
 							&& entry.getValue().getArrival() != null) {
-						Locality departure = tripSearchResponse.getLocalities().get(entry.getValue().getDeparture().getId());
-						Locality arrival = tripSearchResponse.getLocalities().get(entry.getValue().getArrival().getId());
-						if (isEqualsPoints(String.valueOf(from), departure)
-								&& isEqualsPoints(String.valueOf(to), arrival)) {
+						String departureId = entry.getValue().getDeparture().getId();
+						String arrivalId = entry.getValue().getArrival().getId();
+						if (isEqualsPoints(String.valueOf(from), departureId, tripSearchResponse.getLocalities())
+								&& isEqualsPoints(String.valueOf(to), arrivalId, tripSearchResponse.getLocalities())) {
 							segmentIds.add(entry.getKey());
 						}
 					}
@@ -277,12 +277,13 @@ public class ConnectionsController {
 		return segmentIds;
 	}
 	
-	private boolean isEqualsPoints(String pointId, Locality locality) {
+	private boolean isEqualsPoints(String pointId, String segmentPointId, Map<String, Locality> localities) {
+		Locality locality = localities.get(segmentPointId);
 		if (Objects.equals(locality.getId(), pointId)) {
 			return true;
 		}
 		while (locality.getParent() != null) {
-			locality = locality.getParent();
+			locality = localities.get(locality.getParent().getId());
 			if (Objects.equals(locality.getId(), pointId)) {
 				return true;
 			}
