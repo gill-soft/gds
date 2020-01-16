@@ -201,37 +201,54 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	@Override
 	public List<ResourceFilter> getAllResourceFilters() {
-		return getResult(ALL_RESOURCE_FILTERS, null, new ParameterizedTypeReference<List<ResourceFilter>>() { });
+		List<ResourceFilter> resourceFilters =
+				getResult(ALL_RESOURCE_FILTERS, null, new ParameterizedTypeReference<List<ResourceFilter>>() { });
+		return new EntityMultiplier<ResourceFilter>().multiplyChilds(resourceFilters);
 	}
 
 	@Override
 	public List<ResourceConnection> getAllResourceConnections() {
-		return getResult(ALL_RESOURCE_CONNECTIONS, null, new ParameterizedTypeReference<List<ResourceConnection>>() { });
+		List<ResourceConnection> resourceConnections =
+				getResult(ALL_RESOURCE_CONNECTIONS, null, new ParameterizedTypeReference<List<ResourceConnection>>() { });
+		return new EntityMultiplier<ResourceConnection>().multiplyChilds(resourceConnections);
 	}
 
 	@Override
 	public List<ConnectionDiscount> getAllResourceConnectionDiscounts() {
 		List<ConnectionDiscount> discounts =
 				getResult(ALL_RESOURCE_CONNECTION_DISCOUNTS, null, new ParameterizedTypeReference<List<ConnectionDiscount>>() { });
-		if (discounts == null) {
-			return null;
-		}
-		// размножаем скидку на каждого родителя так как она применяется к ресурсам,
-		// а назначается на организацию и пользователя
-		List<ConnectionDiscount> newDiscounts = new ArrayList<>();
-		long i = -1;
-		for (ConnectionDiscount connectionDiscount : discounts) {
-			if (connectionDiscount.getParents() != null) {
-				for (BaseEntity parent : connectionDiscount.getParents()) {
-					ConnectionDiscount newDiscount = (ConnectionDiscount) SerializationUtils.deserialize(
-							SerializationUtils.serialize(connectionDiscount));
-					newDiscount.setId(i--);
-					newDiscount.setParents(Collections.singleton(parent));
-					newDiscounts.add(newDiscount);
+		return new EntityMultiplier<ConnectionDiscount>().multiplyChilds(discounts);
+	}
+	
+	private class EntityMultiplier<T extends BaseEntity> {
+		
+		@SuppressWarnings("unchecked")
+		public List<T> multiplyChilds(List<T> entities) {
+			if (entities == null) {
+				return null;
+			}
+			// размножаем сущность на каждого родителя так как она применяется к ресурсам,
+			// а назначается на организацию и пользователя
+			List<T> newEntities = new ArrayList<>();
+			long i = -1;
+			for (T entity : entities) {
+				if (entity.getParents() != null) {
+					if (entity.getParents().size() > 1) {
+						for (BaseEntity parent : entity.getParents()) {
+							T newEntity = (T) SerializationUtils.deserialize(
+									SerializationUtils.serialize(entity));
+							newEntity.setId(i--);
+							newEntity.setParents(Collections.singleton(parent));
+							newEntities.add(newEntity);
+						}
+					} else {
+						newEntities.add(entity);
+					}
 				}
 			}
+			return newEntities;
 		}
-		return newDiscounts;
+		
 	}
 
 }
