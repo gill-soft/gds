@@ -117,7 +117,8 @@ public class AppConfig {
 			if (session == null) {
 				session = newSession();
 			}
-			if (!session.isConnected()) {
+			if (session != null
+					&& !session.isConnected()) {
 				session.disconnect();
 				session = newSession();
 			}

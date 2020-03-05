@@ -564,6 +564,10 @@ public class MsDataController {
 		return null;
 	}
 	
+	private int getWeight(BaseEntity entity) {
+		return entity.getParents().stream().mapToInt(e -> e.getType().getWeight()).sum();
+	}
+	
 	public com.gillsoft.model.Commission convert(Commission commission) {
 		com.gillsoft.model.Commission converted = new com.gillsoft.model.Commission();
 		converted.setId(String.valueOf(commission.getId()));
@@ -723,16 +727,7 @@ public class MsDataController {
 	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
 		
 		// список пользователей заказа
-		Set<Long> users = new HashSet<>();
-		for (ResourceOrder resourceOrder : order.getOrders()) {
-			for (ResourceService resourceService : resourceOrder.getServices()) {
-				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
-					users.add(statusEntity.getUserId());
-				}
-			}
-		}
-		// результат
-		boolean available = false;
+		Set<Long> users = getOrderUsers(order);
 		
 		// текущий пользователь
 		User curr = getUser();
@@ -748,20 +743,30 @@ public class MsDataController {
 			if (curr.getId() == id) {
 				
 				// если доступов нет, то все разрешено
-				if (access == null
-						|| access.isEmpty()) {
-					available = true;
-				} else {
-					available = isServiceStatusAvalaible(order, newStatus, access, id);
+				if (access != null
+						&& !access.isEmpty()) {
+					setUnavalaibleServiceStatus(order, newStatus, access, id);
 				}
 			// для сервисов других пользователей
 			} else {
 				// получаем статусы, у которых есть дети из списка userEntities
 				List<OrderAccess> currUserAccess = getAvalaibleOrdersAccess(getUser(id), userEntities);
-				available = isServiceStatusAvalaible(order, newStatus, currUserAccess, id);
+				setUnavalaibleServiceStatus(order, newStatus, currUserAccess, id);
 			}
 		}
-		return available;
+		return isPresentAvalaibleStatus(order);
+	}
+	
+	private Set<Long> getOrderUsers(Order order) {
+		Set<Long> users = new HashSet<>();
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
+					users.add(statusEntity.getUserId());
+				}
+			}
+		}
+		return users;
 	}
 	
 	private List<OrderAccess> getAvalaibleOrdersAccess(User user, List<BaseEntity> userEntities) {
@@ -782,8 +787,7 @@ public class MsDataController {
 		return userAccess;
 	}
 	
-	private boolean isServiceStatusAvalaible(Order order, ServiceStatus newStatus, List<OrderAccess> access, long userId) {
-		boolean available = false;
+	private void setUnavalaibleServiceStatus(Order order, ServiceStatus newStatus, List<OrderAccess> access, long userId) {
 		
 		// если доступы есть, то проверяем статус сервисов
 		// пользователя и статус, в который хотим перевести
@@ -791,9 +795,7 @@ public class MsDataController {
 			for (ResourceService resourceService : resourceOrder.getServices()) {
 				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
 					if (statusEntity.getUserId() == userId) {
-						if (isPresentStatus(access, newStatus)) {
-							available = true;
-						} else {
+						if (!isPresentStatus(access, newStatus)) {
 							
 							// проставляем сервису статус UNAVAILABLE, чтобы пользователь не мог его обрабатывать
 							statusEntity.setPrevStatus(statusEntity.getStatus());
@@ -803,15 +805,23 @@ public class MsDataController {
 				}
 			}
 		}
-		return available;
 	}
 	
 	private boolean isPresentStatus(List<OrderAccess> access, ServiceStatus status) {
 		return access.stream().anyMatch(a -> a.getAvailableStatus() == status);
 	}
 	
-	private int getWeight(BaseEntity entity) {
-		return entity.getParents().stream().mapToInt(e -> e.getType().getWeight()).sum();
+	private boolean isPresentAvalaibleStatus(Order order) {
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				for (ServiceStatusEntity statusEntity : resourceService.getStatuses()) {
+					if (statusEntity.getStatus() != ServiceStatus.UNAVAILABLE) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
 	}
 	
 	public CacheHandler getCache() {

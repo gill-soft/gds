@@ -57,7 +57,7 @@ public class PrintController {
 	}
 	
 	public Lang getLang(HttpServletRequest request) {
-		Locale locale = localeResolver.resolveLocale(request);
+		Locale locale = resolveLocale(request);
 		Lang language = Lang.valueOf(locale.getLanguage().toUpperCase());
 		if (language == null) {
 			language = Lang.EN;
