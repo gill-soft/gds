@@ -15,7 +15,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
@@ -44,13 +43,10 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
-import com.gillsoft.model.Lang;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
-import com.gillsoft.model.ValueType;
 import com.gillsoft.model.request.ResourceParams;
-import com.gillsoft.ms.entity.AttributeValue;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
@@ -89,9 +85,9 @@ public class MsDataController {
 	
 	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS_KEY = "all.resource.connection.discounts";
 	
-	private static final String USER_KEY = "user.";
+	private static final String ALL_ORGANISATIONS_KEY = "all.organisations";
 	
-	private static final String ORGANISATION_KEY = "organisation.";
+	private static final String USER_KEY = "user.";
 	
 	@Autowired
 	private MsDataService msService;
@@ -210,6 +206,33 @@ public class MsDataController {
 				new AllConnectionDiscountsUpdateTask(), () -> toMap(msService.getAllResourceConnectionDiscounts()), 120000l);
 	}
 	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<String, Organisation> getAllOrganisations() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<String, Organisation>) getFromCache(getAllOrganisationsCacheKey(),
+				new AllOrganisationsUpdateTask(), () -> createOrganisationsMap(msService.getAllOrganisations()), 120000l);
+	}
+	
+	public Map<String, Organisation> createOrganisationsMap(List<Organisation> entities) {
+		if (entities != null) {
+			Map<String, Organisation> result = entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o));
+			result.putAll(entities.stream().collect(Collectors.toMap(o -> getMappingId(o.getMappingId()), o -> o)));
+			return result;
+		} else {
+			return new HashMap<>(0);
+		}
+	}
+	
+	private String getEntityId(long id) {
+		return "entity_id_" + id;
+	}
+	
+	private String getMappingId(long id) {
+		return "mapping_id_" + id;
+	}
+	
 	public Map<Long, List<BaseEntity>> toMap(List<? extends BaseEntity> entities) {
 		if (entities != null) {
 			
@@ -244,7 +267,7 @@ public class MsDataController {
 		if (getUser().getParents() != null) {
 			BaseEntity organisation = getUser().getParents().iterator().next();
 			if (organisation.getAttributeValues() != null) {
-				return getValue("timezone", organisation);
+				return DataConverter.getValue("timezone", organisation);
 			}
 		}
 		return null;
@@ -256,8 +279,11 @@ public class MsDataController {
 	}
 	
 	public Organisation getOrganisation(long id) {
-		return (Organisation) getFromCache(getOrganisationCacheKey(id),
-				new OrganisationUpdateTask(id), () -> msService.getOrganisation(id), 120000l);
+		return getAllOrganisations().get(getEntityId(id));
+	}
+	
+	public Organisation getMappedOrganisation(long mappingId) {
+		return getAllOrganisations().get(getMappingId(mappingId));
 	}
 	
 	protected Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
@@ -459,7 +485,7 @@ public class MsDataController {
 		if (codeEntities != null) {
 			
 			// конвертируем из комиссий базы в комиссии апи gds-commons
-			return codeEntities.stream().map(c -> convert((Commission) c)).collect(Collectors.toList());
+			return codeEntities.stream().map(c -> DataConverter.convert((Commission) c)).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -469,7 +495,7 @@ public class MsDataController {
 		if (codeEntities != null) {
 			
 			// конвертируем из условий возврата базы в условия возврата апи gds-commons
-			return codeEntities.stream().map(c -> convert((ReturnCondition) c)).collect(Collectors.toList());
+			return codeEntities.stream().map(c -> DataConverter.convert((ReturnCondition) c)).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -566,110 +592,6 @@ public class MsDataController {
 	
 	private int getWeight(BaseEntity entity) {
 		return entity.getParents().stream().mapToInt(e -> e.getType().getWeight()).sum();
-	}
-	
-	public com.gillsoft.model.Commission convert(Commission commission) {
-		com.gillsoft.model.Commission converted = new com.gillsoft.model.Commission();
-		converted.setId(String.valueOf(commission.getId()));
-		converted.setCode(commission.getCode());
-		converted.setValue(commission.getValue());
-		converted.setValueCalcType(CalcType.valueOf(commission.getValueCalcType().name()));
-		converted.setVat(commission.getVat());
-		converted.setVatCalcType(CalcType.valueOf(commission.getVatCalcType().name()));
-		converted.setType(ValueType.valueOf(commission.getValueType().name()));
-		converted.setCurrency(Currency.valueOf(commission.getCurrency().name()));
-		converted.setName(getValue("name", commission));
-		for (Lang lang : Lang.values()) {
-			converted.setName(lang, getValue("name_" + lang.name(), commission));
-		}
-		return converted;
-	}
-	
-	public com.gillsoft.model.ReturnCondition convert(ReturnCondition returnCondition) {
-		com.gillsoft.model.ReturnCondition converted = new com.gillsoft.model.ReturnCondition();
-		converted.setId(String.valueOf(returnCondition.getId()));
-		converted.setMinutesBeforeDepart(returnCondition.getActiveTime());
-		converted.setReturnPercent(returnCondition.getValue());
-		converted.setTitle(getValue("name", returnCondition));
-		for (Lang lang : Lang.values()) {
-			converted.setTitle(lang, getValue("name_" + lang.name(), returnCondition));
-		}
-		return converted;
-	}
-	
-	public com.gillsoft.model.User convert(User user) {
-		com.gillsoft.model.User converted = new com.gillsoft.model.User();
-		converted.setId(String.valueOf(user.getId()));
-		converted.setName(getValue("name", user));
-		converted.setEmail(getValue("email", user));
-		converted.setPhone(getValue("phone", user));
-		converted.setSurname(getValue("surname", user));
-		converted.setPatronymic(getValue("patronymic", user));
-		return converted;
-	}
-	
-	public com.gillsoft.model.Organisation convert(Organisation organisation) {
-		Set<String> keys = new HashSet<>();
-		com.gillsoft.model.Organisation converted = new com.gillsoft.model.Organisation();
-		converted.setAddress(getValue("address", organisation, keys));
-		for (Lang lang : Lang.values()) {
-			converted.setAddress(lang, getValue("address_" + lang.name(), organisation, keys));
-		}
-		converted.setName(getValue("name", organisation, keys));
-		for (Lang lang : Lang.values()) {
-			converted.setName(lang, getValue("name_" + lang.name(), organisation, keys));
-		}
-		
-		String emails = getValue("email", organisation, keys);
-		if (emails != null) {
-			converted.setEmails(Collections.singletonList(emails));
-		}
-		String phones = getValue("phone", organisation, keys);
-		if (phones != null) {
-			converted.setPhones(Collections.singletonList(phones));
-		}
-		converted.setTradeMark(getValue("trade_mark", organisation, keys));
-		converted.setTimezone(getValue("timezone", organisation, keys));
-		converted.setProperties(getOtherAttributes(organisation, keys));
-		converted.setId(String.valueOf(organisation.getId()));
-		return converted;
-	}
-	
-	private ConcurrentMap<String, String> getOtherAttributes(BaseEntity entity, Set<String> keys) {
-		ConcurrentMap<String, String> props = null;
-		for (AttributeValue value : entity.getAttributeValues()) {
-			if (value.getAttribute() != null
-					&& !keys.contains(value.getAttribute().getName())) {
-				if (props == null) {
-					props = new ConcurrentHashMap<>();
-				}
-				props.put(value.getAttribute().getName(), value.getValue());
-			}
-		}
-		return props;
-	}
-	
-	private String getValue(String name, BaseEntity entity, Set<String> keys) {
-		keys.add(name);
-		return getValue(name, entity);
-	}
-	
-	private String getValue(String name, BaseEntity entity) {
-		AttributeValue value = getAttributeValue(name, entity);
-		if (value != null) {
-			return value.getValue();
-		}
-		return null;
-	}
-	
-	private AttributeValue getAttributeValue(String name, BaseEntity entity) {
-		for (AttributeValue value : entity.getAttributeValues()) {
-			if (value.getAttribute() != null
-					&& name.equals(value.getAttribute().getName())) {
-				return value;
-			}
-		}
-		return null;
 	}
 	
 	/**
@@ -864,16 +786,16 @@ public class MsDataController {
 		return ALL_RESOURCE_CONNECTION_DISCOUNTS_KEY;
 	}
 	
+	public static String getAllOrganisationsCacheKey() {
+		return ALL_ORGANISATIONS_KEY;
+	}
+	
 	public static String getUserCacheKey(String userName) {
 		return USER_KEY + userName;
 	}
 	
 	public static String getUserCacheKey(long id) {
 		return USER_KEY + id;
-	}
-	
-	public static String getOrganisationCacheKey(long id) {
-		return ORGANISATION_KEY + id;
 	}
 	
 	public interface CacheObjectGetter {

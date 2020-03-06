@@ -77,6 +77,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String GET_ORGANISATION = "organisation/{0}";
 	
+	private static final String ALL_ORGANISATIONS = "organisation";
+	
 	private RestTemplate template;
 	
 	@Autowired
@@ -120,6 +122,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public Organisation getOrganisation(long id) {
 		return getResult(MessageFormat.format(GET_ORGANISATION, id), null, new ParameterizedTypeReference<Organisation>() { });
+	}
+	
+	@Override
+	public List<Organisation> getAllOrganisations() {
+		return getResult(ALL_ORGANISATIONS, null, new ParameterizedTypeReference<List<Organisation>>() { });
 	}
 
 	@Override

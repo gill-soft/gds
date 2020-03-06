@@ -384,11 +384,11 @@ public class OrderResponseConverter {
 								service.setUpdated(convertUTCDateToUserTimeZone(statusEntity.getCreated()));
 								User user = dataController.getUser(statusEntity.getUserId());
 								if (user != null) {
-									com.gillsoft.model.User modelUser = dataController.convert(user);
+									com.gillsoft.model.User modelUser = DataConverter.convert(user);
 									service.setUpdateUser(modelUser);
 									Organisation organisation = dataController.getOrganisation(statusEntity.getOrganisationId());
 									if (organisation != null) {
-										modelUser.setOrganisation(dataController.convert(organisation));
+										modelUser.setOrganisation(DataConverter.convert(organisation));
 									}
 								}
 								// данные пользователя создавшего сервис
@@ -399,11 +399,11 @@ public class OrderResponseConverter {
 								service.setCreated(convertUTCDateToUserTimeZone(createdEntity.getCreated()));
 								user = dataController.getUser(createdEntity.getUserId());
 								if (user != null) {
-									com.gillsoft.model.User modelUser = dataController.convert(user);
+									com.gillsoft.model.User modelUser = DataConverter.convert(user);
 									service.setCreateUser(modelUser);
 									Organisation organisation = dataController.getOrganisation(createdEntity.getOrganisationId());
 									if (organisation != null) {
-										modelUser.setOrganisation(dataController.convert(organisation));
+										modelUser.setOrganisation(DataConverter.convert(organisation));
 									}
 								}
 								service.setId(String.valueOf(resourceService.getId()));

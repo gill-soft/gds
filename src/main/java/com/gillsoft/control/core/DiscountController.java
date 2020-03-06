@@ -193,7 +193,7 @@ public class DiscountController {
 				&& preparedDiscounts.containsKey(key)) {
 			return preparedDiscounts.get(key);
 		}
-		Commission commission = dataController.convert(connectionDiscount);
+		Commission commission = DataConverter.convert(connectionDiscount);
 		Price price = updatePrice ? discountSegment.getPrice() : (Price) SerializationUtils.deserialize(SerializationUtils.serialize(discountSegment.getPrice()));
 		if (price.getCommissions() == null) {
 			price.setCommissions(new ArrayList<>());
