@@ -106,8 +106,7 @@ public class FilterController {
 	}
 	
 	public void apply(Map<String, Segment> segments) {
-		List<ServiceFilter> filters = dataController.getFilters();
-		segments.keySet().removeIf(key -> isRemove(segments.get(key), filters));
+		segments.keySet().removeIf(key -> isRemove(segments.get(key), dataController.getFilters(segments.get(key))));
 	}
 	
 	protected boolean isRemove(Segment segment, List<ServiceFilter> filters) {

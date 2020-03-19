@@ -411,8 +411,8 @@ public class MsDataController {
 		return null;
 	}
 	
-	public List<ServiceFilter> getFilters() {
-		List<BaseEntity> entities = getParentEntities(null);
+	public List<ServiceFilter> getFilters(Segment segment) {
+		List<BaseEntity> entities = getParentEntities(segment);
 		if (entities != null) {
 			return getFilters(entities);
 		}
