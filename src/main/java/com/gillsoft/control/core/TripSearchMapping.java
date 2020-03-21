@@ -20,6 +20,7 @@ import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.model.Unmapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.mapper.service.UnmappingConverter;
 import com.gillsoft.model.Address;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
@@ -88,11 +89,11 @@ public class TripSearchMapping {
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
 		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.ORGANIZATION,
 				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
-				(original) -> DataConverter.createUnmappingOrganisation(original),
+				(original) -> UnmappingConverter.createUnmappingOrganisation(original),
 				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
 		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.VEHICLE,
 				(mapping, lang, original) -> DataConverter.createVehicle(mapping, lang, original),
-				(original) -> DataConverter.createUnmappingVehicle(original), 
+				(original) -> UnmappingConverter.createUnmappingVehicle(original), 
 				(resourceId, id, v) -> v.setId(getKey(resourceId, id)));
 	}
 	
@@ -116,7 +117,7 @@ public class TripSearchMapping {
 		}
 		mappingObjects(request, objects, result, MapType.GEO,
 				(mapping, lang, original) -> createLocality(mapping, lang, original),
-				(original) -> DataConverter.createUnmappingLocality(original),
+				(original) -> UnmappingConverter.createUnmappingLocality(original),
 				(resId, id, l) -> l.setId(getKey(resId, id)));
 		List<Locality> localities = new ArrayList<>(result.values());
 		for (Locality locality : localities) {
@@ -264,7 +265,7 @@ public class TripSearchMapping {
 					vehicles.put(tripNumber, null);
 					mappingObjects(request, vehicles, result.getVehicles(), MapType.VEHICLE,
 							(mapping, lang, original) -> DataConverter.createVehicle(mapping, lang, original),
-							(original) -> DataConverter.createUnmappingVehicle(original),
+							(original) -> UnmappingConverter.createUnmappingVehicle(original),
 							null);
 				}
 				// устанавливаем транспорт с маппинга
@@ -461,7 +462,7 @@ public class TripSearchMapping {
 		organisations.put(key, null);
 		mappingObjects(request, organisations, result.getOrganisations(), MapType.ORGANIZATION,
 				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
-				(original) -> DataConverter.createUnmappingOrganisation(original),
+				(original) -> UnmappingConverter.createUnmappingOrganisation(original),
 				null);
 	}
 	

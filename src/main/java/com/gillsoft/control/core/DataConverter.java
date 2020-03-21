@@ -3,11 +3,10 @@ package com.gillsoft.control.core;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.gillsoft.mapper.model.Mapping;
-import com.gillsoft.mapper.model.Unmapping;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Lang;
@@ -179,21 +177,11 @@ public class DataConverter {
 		}
 	}
 	
-	public static Unmapping createUnmappingVehicle(Vehicle original) {
-		Unmapping unmapping = new Unmapping();
-		unmapping.setProperties(new HashMap<>());
-		unmapping.getProperties().put("MODEL", original.getModel());
-		if (original.getCapacity() != null) {
-			unmapping.getProperties().put("CAPACITY", String.valueOf(original.getCapacity()));
-		}
-		return unmapping;
-	}
-	
 	/*
 	 * Создает организацию по данным мапинга.
 	 */
 	public static com.gillsoft.model.Organisation createOrganisation(Mapping mapping, Lang lang, com.gillsoft.model.Organisation original) {
-		//TODO
+		//TODO get organisation from ms-gds
 		if (mapping.getAttributes() != null
 				|| mapping.getLangAttributes() != null) {
 			com.gillsoft.model.Organisation organisation = new com.gillsoft.model.Organisation();
@@ -250,37 +238,6 @@ public class DataConverter {
 			original.setId(String.valueOf(mapping.getId()));
 			return original;
 		}
-	}
-	
-	public static Unmapping createUnmappingOrganisation(com.gillsoft.model.Organisation original) {
-		Unmapping unmapping = new Unmapping();
-		unmapping.setProperties(new HashMap<>());
-		unmapping.getProperties().put("NAME", original.getName(Lang.EN));
-		unmapping.getProperties().put("ADDRESS", original.getAddress(Lang.EN));
-		unmapping.getProperties().put("TRADEMARK", original.getTradeMark());
-		if (original.getPhones() != null) {
-			unmapping.getProperties().put("PHONE", String.join("; ", original.getPhones()));
-		}
-		if (original.getEmails() != null) {
-			unmapping.getProperties().put("EMAIL", String.join("; ", original.getEmails()));
-		}
-		return unmapping;
-	}
-	
-	public static Unmapping createUnmappingLocality(Locality original) {
-		Unmapping unmapping = new Unmapping();
-		unmapping.setProperties(new HashMap<>());
-		unmapping.getProperties().put("NAME", original.getName(Lang.EN));
-		unmapping.getProperties().put("ADDRESS", original.getAddress(Lang.EN));
-		unmapping.getProperties().put("DETAILS", original.getDetails());
-		unmapping.getProperties().put("TIMEZONE", original.getTimezone());
-		if (original.getLatitude() != null) {
-			unmapping.getProperties().put("LATITUDE", String.valueOf(original.getLatitude()));
-		}
-		if (original.getLongitude() != null) {
-			unmapping.getProperties().put("LONGITUDE", String.valueOf(original.getLongitude()));
-		}
-		return unmapping;
 	}
 	
 	public static Locality createLocality(Mapping mapping, Lang lang, Locality original) {
