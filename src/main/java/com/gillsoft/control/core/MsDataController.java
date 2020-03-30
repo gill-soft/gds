@@ -218,7 +218,7 @@ public class MsDataController {
 	public Map<String, Organisation> createOrganisationsMap(List<Organisation> entities) {
 		if (entities != null) {
 			Map<String, Organisation> result = entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o));
-			result.putAll(entities.stream().collect(Collectors.toMap(o -> getMappingId(o.getMappingId()), o -> o)));
+			result.putAll(entities.stream().filter(o -> o.getMappingId() != 0).collect(Collectors.toMap(o -> getMappingId(o.getMappingId()), o -> o, (o1, o2) -> o1)));
 			return result;
 		} else {
 			return new HashMap<>(0);
