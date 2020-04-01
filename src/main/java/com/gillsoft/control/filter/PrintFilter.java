@@ -3,6 +3,7 @@ package com.gillsoft.control.filter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,12 +16,17 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.util.StringUtil;
 import com.itextpdf.html2pdf.HtmlConverter;
 
 public class PrintFilter implements Filter {
+	
+	private static Logger LOGGER = LogManager.getLogger(PrintFilter.class);
 	
 	@Override
 	public void destroy() {
@@ -30,6 +36,7 @@ public class PrintFilter implements Filter {
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
+		LOGGER.info(request.getCharacterEncoding());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		final PrintWriter writer = new PrintWriter(out);
 		chain.doFilter(request, new HttpServletResponseWrapper((HttpServletResponse) response) {
@@ -39,7 +46,7 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		HtmlConverter.convertToPdf(new String(out.toByteArray()), pdfOut);
+		HtmlConverter.convertToPdf(new String(out.toByteArray(), StandardCharsets.UTF_8), pdfOut);
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();

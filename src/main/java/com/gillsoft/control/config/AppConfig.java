@@ -132,6 +132,7 @@ public class AppConfig {
 			Session session = jsch.getSession(env.getProperty(SSH_USER),
 					env.getProperty(SSH_HOST), Integer.valueOf(env.getProperty(SSH_PORT)));
 			session.setConfig("StrictHostKeyChecking", "no");
+			session.setPassword(getPassword());
 			session.connect();
 			session.setPortForwardingL(Integer.valueOf(env.getProperty(SSH_LOCAL_PORT)),
 					env.getProperty(SSH_LOCAL_HOST), Integer.valueOf(env.getProperty(SSH_REMOTE_PORT)));
