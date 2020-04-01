@@ -1,8 +1,10 @@
 package com.gillsoft.control.filter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,12 +17,21 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import org.springframework.core.io.DefaultResourceLoader;
+
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.util.StringUtil;
+import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.layout.font.FontProvider;
 
 public class PrintFilter implements Filter {
+	
+	private static DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
+
+	private static ConverterProperties properties;
+	private static FontProvider CJKFontProvider;
 	
 	@Override
 	public void destroy() {
@@ -39,7 +50,8 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		HtmlConverter.convertToPdf(new String(out.toByteArray()), pdfOut);
+		
+		HtmlConverter.convertToPdf(new ByteArrayInputStream(out.toByteArray()), pdfOut, getDefaultConverterProperties());
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();
@@ -48,6 +60,31 @@ public class PrintFilter implements Filter {
 		documents.add(document);
 		response.setContentType("application/json");
 		response.getOutputStream().print(StringUtil.objectToJsonString(documents));
+	}
+	
+	private ConverterProperties getDefaultConverterProperties() {
+		if (properties == null) {
+			synchronized (resourceLoader) {
+				if (properties == null) {
+					properties = new ConverterProperties();
+					properties.setFontProvider(getDefaultCJKFontProvider());
+					properties.setCharset(StandardCharsets.UTF_8.name());
+				}
+			}
+		}
+		return properties;
+	}
+
+	private FontProvider getDefaultCJKFontProvider() {
+		if (CJKFontProvider == null) {
+			synchronized (resourceLoader) {
+				if (CJKFontProvider == null) {
+					CJKFontProvider = new FontProvider();
+					CJKFontProvider.addFont("fonts/arialuni.ttf");
+				}
+			}
+		}
+		return CJKFontProvider;
 	}
 
 	@Override
