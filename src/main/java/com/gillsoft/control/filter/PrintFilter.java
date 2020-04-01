@@ -88,7 +88,7 @@ public class PrintFilter implements Filter {
 				if (fontProvider == null) {
 					try {
 						fontProvider = new DefaultFontProvider();
-						FontProgram fontProgram = FontProgramFactory.createFont("fonts/arialuni.ttf");
+						FontProgram fontProgram = FontProgramFactory.createFont("fonts/open-sans.ttf");
 						fontProvider.addFont(fontProgram);
 					} catch (IOException e) {
 						LOGGER.error("Load arialuni font error", e);
