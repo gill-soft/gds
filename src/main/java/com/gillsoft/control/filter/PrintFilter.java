@@ -56,10 +56,10 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		LOGGER.info(response.getCharacterEncoding());
-		String body = new String(out.toByteArray(), response.getCharacterEncoding());
-		LOGGER.info(body);
-		HtmlConverter.convertToPdf(body, pdfOut, getDefaultConverterProperties());
+//		LOGGER.info(response.getCharacterEncoding());
+//		String body = new String(out.toByteArray(), response.getCharacterEncoding());
+//		LOGGER.info(body);
+		HtmlConverter.convertToPdf(new String(out.toByteArray()), pdfOut);
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();
