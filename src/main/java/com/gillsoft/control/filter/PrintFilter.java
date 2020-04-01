@@ -56,7 +56,8 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		String body = new String(out.toByteArray(), StandardCharsets.UTF_8);
+		LOGGER.info(response.getCharacterEncoding());
+		String body = new String(out.toByteArray(), response.getCharacterEncoding());
 		LOGGER.info(body);
 		HtmlConverter.convertToPdf(body, pdfOut, getDefaultConverterProperties());
 		
@@ -74,7 +75,7 @@ public class PrintFilter implements Filter {
 			synchronized (resourceLoader) {
 				if (properties == null) {
 					properties = new ConverterProperties();
-					properties.setFontProvider(getDefaultCJKFontProvider());
+					properties.setFontProvider(getDefaultFontProvider());
 					properties.setCharset(StandardCharsets.UTF_8.name());
 				}
 			}
@@ -82,7 +83,7 @@ public class PrintFilter implements Filter {
 		return properties;
 	}
 
-	private FontProvider getDefaultCJKFontProvider() {
+	private FontProvider getDefaultFontProvider() {
 		if (fontProvider == null) {
 			synchronized (resourceLoader) {
 				if (fontProvider == null) {
@@ -91,7 +92,7 @@ public class PrintFilter implements Filter {
 						FontProgram fontProgram = FontProgramFactory.createFont("fonts/arial.ttf");
 						fontProvider.addFont(fontProgram);
 					} catch (IOException e) {
-						LOGGER.error("Load arialuni font error", e);
+						LOGGER.error("Load arial font error", e);
 					}
 				}
 			}
