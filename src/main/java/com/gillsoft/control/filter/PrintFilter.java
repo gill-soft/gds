@@ -80,7 +80,7 @@ public class PrintFilter implements Filter {
 			synchronized (resourceLoader) {
 				if (CJKFontProvider == null) {
 					CJKFontProvider = new FontProvider();
-					CJKFontProvider.addFont("fonts/ARIAL.TTF");
+					CJKFontProvider.addFont("fonts/arialuni.ttf");
 				}
 			}
 		}
