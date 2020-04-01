@@ -87,7 +87,7 @@ public class PrintFilter implements Filter {
 			synchronized (resourceLoader) {
 				if (fontProvider == null) {
 					try {
-						fontProvider = new DefaultFontProvider();
+						fontProvider = new DefaultFontProvider(false, false, false);
 						FontProgram fontProgram = FontProgramFactory.createFont("fonts/open-sans.ttf");
 						fontProvider.addFont(fontProgram);
 					} catch (IOException e) {
