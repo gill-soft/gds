@@ -51,7 +51,7 @@ public class PrintFilter implements Filter {
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
 		
-		HtmlConverter.convertToPdf(new ByteArrayInputStream(out.toByteArray()), pdfOut, getDefaultConverterProperties());
+		HtmlConverter.convertToPdf(new ByteArrayInputStream(out.toByteArray()), pdfOut);
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();
