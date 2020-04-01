@@ -3,7 +3,6 @@ package com.gillsoft.control.filter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,28 +15,12 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.core.io.DefaultResourceLoader;
-
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.util.StringUtil;
-import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
-import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider;
-import com.itextpdf.io.font.FontProgram;
-import com.itextpdf.io.font.FontProgramFactory;
-import com.itextpdf.layout.font.FontProvider;
 
 public class PrintFilter implements Filter {
-	
-	private static Logger LOGGER = LogManager.getLogger(PrintFilter.class);
-	
-	private static DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
-
-	private static ConverterProperties properties;
-	private static FontProvider fontProvider;
 	
 	@Override
 	public void destroy() {
@@ -56,9 +39,6 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-//		LOGGER.info(response.getCharacterEncoding());
-//		String body = new String(out.toByteArray(), response.getCharacterEncoding());
-//		LOGGER.info(body);
 		HtmlConverter.convertToPdf(new String(out.toByteArray()), pdfOut);
 		
 		List<Document> documents = new ArrayList<>();
@@ -68,36 +48,6 @@ public class PrintFilter implements Filter {
 		documents.add(document);
 		response.setContentType("application/json");
 		response.getOutputStream().print(StringUtil.objectToJsonString(documents));
-	}
-	
-	private ConverterProperties getDefaultConverterProperties() {
-		if (properties == null) {
-			synchronized (resourceLoader) {
-				if (properties == null) {
-					properties = new ConverterProperties();
-					properties.setFontProvider(getDefaultFontProvider());
-					properties.setCharset(StandardCharsets.UTF_8.name());
-				}
-			}
-		}
-		return properties;
-	}
-
-	private FontProvider getDefaultFontProvider() {
-		if (fontProvider == null) {
-			synchronized (resourceLoader) {
-				if (fontProvider == null) {
-					try {
-						fontProvider = new DefaultFontProvider(false, false, false);
-						FontProgram fontProgram = FontProgramFactory.createFont("fonts/arial.ttf");
-						fontProvider.addFont(fontProgram);
-					} catch (IOException e) {
-						LOGGER.error("Load arial font error", e);
-					}
-				}
-			}
-		}
-		return fontProvider;
 	}
 
 	@Override
