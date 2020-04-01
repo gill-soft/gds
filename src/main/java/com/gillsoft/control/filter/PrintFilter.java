@@ -17,6 +17,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.core.io.DefaultResourceLoader;
 
 import com.gillsoft.model.Document;
@@ -24,14 +26,19 @@ import com.gillsoft.model.DocumentType;
 import com.gillsoft.util.StringUtil;
 import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
+import com.itextpdf.html2pdf.resolver.font.DefaultFontProvider;
+import com.itextpdf.io.font.FontProgram;
+import com.itextpdf.io.font.FontProgramFactory;
 import com.itextpdf.layout.font.FontProvider;
 
 public class PrintFilter implements Filter {
 	
+	private static Logger LOGGER = LogManager.getLogger(PrintFilter.class);
+	
 	private static DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
 
 	private static ConverterProperties properties;
-	private static FontProvider CJKFontProvider;
+	private static FontProvider fontProvider;
 	
 	@Override
 	public void destroy() {
@@ -76,16 +83,20 @@ public class PrintFilter implements Filter {
 	}
 
 	private FontProvider getDefaultCJKFontProvider() {
-		if (CJKFontProvider == null) {
+		if (fontProvider == null) {
 			synchronized (resourceLoader) {
-				if (CJKFontProvider == null) {
-					CJKFontProvider = new FontProvider();
-					CJKFontProvider.addFont("fonts/open-sans.ttf");
-					CJKFontProvider.addFont("fonts/arialuni.ttf");
+				if (fontProvider == null) {
+					try {
+						fontProvider = new DefaultFontProvider();
+						FontProgram fontProgram = FontProgramFactory.createFont("fonts/arialuni.ttf");
+						fontProvider.addFont(fontProgram);
+					} catch (IOException e) {
+						LOGGER.error("Load arialuni font error", e);
+					}
 				}
 			}
 		}
-		return CJKFontProvider;
+		return fontProvider;
 	}
 
 	@Override
