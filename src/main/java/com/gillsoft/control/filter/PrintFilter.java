@@ -1,6 +1,5 @@
 package com.gillsoft.control.filter;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -57,8 +56,9 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		
-		HtmlConverter.convertToPdf(new ByteArrayInputStream(out.toByteArray()), pdfOut, getDefaultConverterProperties());
+		String body = new String(out.toByteArray(), StandardCharsets.UTF_8);
+		LOGGER.info(body);
+		HtmlConverter.convertToPdf(body, pdfOut, getDefaultConverterProperties());
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();
