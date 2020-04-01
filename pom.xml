@@ -230,6 +230,12 @@
 			<artifactId>core</artifactId>
 			<version>3.4.0</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.gillsoft.fonts</groupId>
+			<artifactId>arial</artifactId>
+			<version>0.0.1</version>
+		</dependency>
 
 	</dependencies>
 
