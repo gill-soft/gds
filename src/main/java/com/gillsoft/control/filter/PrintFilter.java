@@ -1,8 +1,10 @@
 package com.gillsoft.control.filter;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.util.StringUtil;
+import com.itextpdf.html2pdf.ConverterProperties;
 import com.itextpdf.html2pdf.HtmlConverter;
 
 public class PrintFilter implements Filter {
@@ -39,7 +42,10 @@ public class PrintFilter implements Filter {
 			}
 		});
 		ByteArrayOutputStream pdfOut = new ByteArrayOutputStream();
-		HtmlConverter.convertToPdf(new String(out.toByteArray()), pdfOut);
+		
+		ConverterProperties properties = new ConverterProperties();
+		properties.setCharset(StandardCharsets.UTF_8.name());
+		HtmlConverter.convertToPdf(new ByteArrayInputStream(out.toByteArray()), pdfOut, properties);
 		
 		List<Document> documents = new ArrayList<>();
 		Document document = new Document();
