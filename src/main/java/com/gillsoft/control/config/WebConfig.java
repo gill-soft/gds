@@ -1,5 +1,6 @@
 package com.gillsoft.control.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -78,6 +79,7 @@ public class WebConfig implements WebMvcConfigurer {
 		ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
 		viewResolver.setTemplateEngine(templateEngine());
 		viewResolver.setOrder(1);
+		viewResolver.setCharacterEncoding(StandardCharsets.UTF_8.name());
 		return viewResolver;
 	}
 
