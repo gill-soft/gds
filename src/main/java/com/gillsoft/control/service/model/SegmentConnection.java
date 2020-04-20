@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -9,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 public class SegmentConnection implements Serializable {
 
 	private static final long serialVersionUID = -7899877440609475460L;
-
+	
 	private long from;
 	
 	private long to;
@@ -17,6 +18,14 @@ public class SegmentConnection implements Serializable {
 	private int minConnectionTime;
 	
 	private int maxConnectionTime;
+	
+	private Set<String> fromResources;
+	
+	private Set<String> toResources;
+	
+	private Set<String> fromCarriers;
+	
+	private Set<String> toCarriers;
 	
 	public long getFrom() {
 		return from;
@@ -48,6 +57,38 @@ public class SegmentConnection implements Serializable {
 
 	public void setMaxConnectionTime(int maxConnectionTime) {
 		this.maxConnectionTime = maxConnectionTime;
+	}
+
+	public Set<String> getFromResources() {
+		return fromResources;
+	}
+
+	public void setFromResources(Set<String> fromResources) {
+		this.fromResources = fromResources;
+	}
+
+	public Set<String> getToResources() {
+		return toResources;
+	}
+
+	public void setToResources(Set<String> toResources) {
+		this.toResources = toResources;
+	}
+
+	public Set<String> getFromCarriers() {
+		return fromCarriers;
+	}
+
+	public void setFromCarriers(Set<String> fromCarriers) {
+		this.fromCarriers = fromCarriers;
+	}
+
+	public Set<String> getToCarriers() {
+		return toCarriers;
+	}
+
+	public void setToCarriers(Set<String> toCarriers) {
+		this.toCarriers = toCarriers;
 	}
 
 }

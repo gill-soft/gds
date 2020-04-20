@@ -48,6 +48,11 @@ public class ConnectionsController {
 	@Qualifier("FilterController")
 	private FilterController filter;
 	
+	public ConnectionsResponse createConnections(TripSearchRequest request, List<Resource> resources) {
+		return createConnections(createParams(request,
+				resources.stream().map(Resource::getId).collect(Collectors.toSet())));
+	}
+	
 	private ConnectionsResponse createConnections(ConnectionParams params) {
 		if (params == null) {
 			return null;
@@ -68,11 +73,6 @@ public class ConnectionsController {
 		} catch (NumberFormatException e) {
 			return null;
 		}
-	}
-	
-	public ConnectionsResponse createConnections(TripSearchRequest request, List<Resource> resources) {
-		return createConnections(createParams(request,
-				resources.stream().map(Resource::getId).collect(Collectors.toSet())));
 	}
 	
 	public void connectSegments(TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer) {
@@ -211,7 +211,9 @@ public class ConnectionsController {
 				
 				// проверяем возможность пересадки
 				if (isEqualsPoints(String.valueOf(connection.getFrom()), departureId, tripSearchResponse.getLocalities())
-						&& isEqualsPoints(String.valueOf(connection.getTo()), arrivalId, tripSearchResponse.getLocalities())) {
+						&& isEqualsPoints(String.valueOf(connection.getTo()), arrivalId, tripSearchResponse.getLocalities())
+						&& isCarriersEnabled(fromSegment, toSegment, connection)
+						&& isResourcesEnabled(fromSegment, toSegment, connection)) {
 					
 					// проверяем время пересадки
 					if (betweenSegments >= connection.getMinConnectionTime()
@@ -289,6 +291,36 @@ public class ConnectionsController {
 			}
 		}
 		return false;
+	}
+	
+	private boolean isCarriersEnabled(Segment fromSegment, Segment toSegment, SegmentConnection connection) {
+		if (fromSegment.getCarrier() == null
+				|| toSegment.getCarrier() == null) {
+			return false;
+		}
+		String fromCarrier = fromSegment.getCarrier().getId();
+		String toCarrier = toSegment.getCarrier().getId();
+		return (connection.getFromCarriers() == null
+				|| connection.getFromCarriers().isEmpty()
+				|| connection.getFromCarriers().contains(fromCarrier))
+				&& (connection.getToCarriers() == null
+						|| connection.getToCarriers().isEmpty()
+						|| connection.getToCarriers().contains(toCarrier));
+	}
+	
+	private boolean isResourcesEnabled(Segment fromSegment, Segment toSegment, SegmentConnection connection) {
+		if (fromSegment.getResource() == null
+				|| toSegment.getResource() == null) {
+			return false;
+		}
+		String fromResource = fromSegment.getResource().getId();
+		String toResource = toSegment.getResource().getId();
+		return (connection.getFromResources() == null
+				|| connection.getFromResources().isEmpty()
+				|| connection.getFromResources().contains(fromResource))
+				&& (connection.getToResources() == null
+						|| connection.getToResources().isEmpty()
+						|| connection.getToResources().contains(toResource));
 	}
 	
 }
