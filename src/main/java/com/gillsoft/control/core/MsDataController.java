@@ -342,14 +342,36 @@ public class MsDataController {
 		}
 		Price calculated = calculator.calculateResource(price, getUser(), currency);
 		calculated.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		addReturnConditions(segment, calculated);
 		return calculated;
 	}
 	
+	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {
+		List<BaseEntity> entities = getParentEntities(segment);
+		if (entities != null) {
+			return getCommissions(entities);
+		}
+		return null;
+	}
+	
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
+		
+		// сборы без ид - сборы от ресурса
+		// сборы с ид - начисленные системой GDS
 		if (resourcePrice != null
 				&& resourcePrice.getCommissions() != null) {
 			resourcePrice.getCommissions().forEach(c -> c.setId(null));
 		}
+		addReturnConditions(segment, resourcePrice);
+		price.setReturned(calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
+				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
+		
+		// устанавливаем исходную сумму возврата от ресурса
+		price.getReturned().setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice)));
+		return price;
+	}
+	
+	private void addReturnConditions(Segment segment, Price price) {
 		// условия возврата для стоимости установленные на организацию
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
 		if (conditions != null) {
@@ -379,20 +401,6 @@ public class MsDataController {
 				}
 			}
 		}
-		price.setReturned(calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
-				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
-		
-		// устанавливаем исходную сумму возврата от ресурса
-		price.getReturned().setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice)));
-		return price;
-	}
-	
-	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {
-		List<BaseEntity> entities = getParentEntities(segment);
-		if (entities != null) {
-			return getCommissions(entities);
-		}
-		return null;
 	}
 	
 	public List<com.gillsoft.model.ReturnCondition> getReturnConditions(Segment segment) {
@@ -472,12 +480,31 @@ public class MsDataController {
 				if (resource.isPresent()) {
 					entities.add(resource.get());
 				}
+				addMappedOrganisations(entities, segment);
 				// TODO add segment object's ids which mapping in system
 			}
 			// TODO add ids of price tariff and commissions
 			return entities;
 		}
 		return null;
+	}
+	
+	private void addMappedOrganisations(List<BaseEntity> entities, Segment segment) {
+		addMappedOrganisation(entities, segment.getCarrier());
+		addMappedOrganisation(entities, segment.getInsurance());
+	}
+	
+	private void addMappedOrganisation(List<BaseEntity> entities, com.gillsoft.model.Organisation organisation) {
+		if (organisation != null) {
+			try {
+				long orgId = Long.parseLong(organisation.getId());
+				Organisation org = getOrganisation(orgId);
+				if (org != null) {
+					entities.add(org);
+				}
+			} catch (NumberFormatException e) {
+			}
+		}
 	}
 	
 	public List<com.gillsoft.model.Commission> getCommissions(List<BaseEntity> entities) {
