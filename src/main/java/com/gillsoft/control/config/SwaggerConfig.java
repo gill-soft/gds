@@ -7,7 +7,6 @@ import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
 import springfox.documentation.service.Tag;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
@@ -33,7 +32,6 @@ public class SwaggerConfig implements WebMvcConfigurer {
                 .title("GDS REST API")
                 .description("\"GDS service API for sale tickets\"")
                 .version("1.0.0")
-                .contact(new Contact("Artem Kashpur", "http://gillsoft.tech", "artem.kashpur@gillsoft.tech"))
                 .build();
     }
 
