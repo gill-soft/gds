@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gillsoft.control.core.OrderController;
+import com.gillsoft.control.core.ThirdPartyOrderController;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.PaymentMethod;
@@ -30,6 +31,9 @@ public class OrderApiController {
 
 	@Autowired
 	private OrderController controller;
+	
+	@Autowired
+	private ThirdPartyOrderController thirdPartyController;
 	
 	@ApiOperation(value = "Return new order created from selected services",
 			response = OrderResponse.class)
@@ -162,6 +166,12 @@ public class OrderApiController {
 	@PostMapping("/report")
 	public void reportStatuses(@RequestBody Set<Long> ids) {
 		controller.reportStatuses(ids);
+	}
+	
+	@ApiOperation(value = "Return new order created from selected services", hidden = true)
+	@PostMapping("/save_update")
+	public void saveOrUpdate(@Validated @RequestBody List<OrderResponse> responses) {
+		thirdPartyController.saveOrUpdate(responses);
 	}
 	
 }

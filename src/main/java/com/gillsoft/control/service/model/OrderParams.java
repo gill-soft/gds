@@ -14,6 +14,8 @@ public class OrderParams {
 	
 	private int count;
 	
+	private String resourceNativeOrderId;
+	
 	public long getOrderId() {
 		return orderId;
 	}
@@ -52,6 +54,14 @@ public class OrderParams {
 
 	public void setCount(int count) {
 		this.count = count;
+	}
+
+	public String getResourceNativeOrderId() {
+		return resourceNativeOrderId;
+	}
+
+	public void setResourceNativeOrderId(String resourceNativeOrderId) {
+		this.resourceNativeOrderId = resourceNativeOrderId;
 	}
 
 }

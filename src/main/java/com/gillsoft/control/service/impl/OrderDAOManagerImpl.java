@@ -18,13 +18,26 @@ import com.gillsoft.control.service.model.OrderParams;
 @Repository
 public class OrderDAOManagerImpl implements OrderDAOManager {
 	
-	private final static String GET_ORDER = "from Order as o "
+	private final static String GET_FULL_ORDER = "from Order as o "
 			+ "join fetch o.orders as ro "
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
-			+ "where (:orderId is not null or :serviceId is not null) "
-			+ "and ((o.id = :orderId or :orderId is null) or (rs.id = :serviceId or :serviceId is null))";
+			+ "where (o.id = :orderId or :orderId = 0) "
+			+ "and exists (from ResourceOrder as ro2 "
+				+ "join ro2.services as rs2 "
+				+ "where ro2.parent = o "
+				+ "and (rs2.id = :serviceId or :serviceId = 0) "
+				+ "and (ro2.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null))";
+	
+	private final static String GET_ORDER_PART = "from Order as o "
+			+ "join fetch o.orders as ro "
+			+ "join fetch ro.services as rs "
+			+ "join fetch rs.statuses as ss "
+			+ "left join fetch ss.price as p "
+			+ "where (o.id = :orderId or :orderId = 0) "
+			+ "and (rs.id = :serviceId or :serviceId = 0) "
+			+ "and (ro.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null)";
 	
 	private final static String GET_DOCUMENTS = "from Order as o "
 			+ "join fetch o.orders as ro "
@@ -72,14 +85,25 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		return update(order);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public Order get(OrderParams params) throws ManageException {
+	public Order getFullOrder(OrderParams params) throws ManageException {
+		return getOrder(GET_FULL_ORDER, params);
+	}
+	
+	@Transactional(readOnly = true)
+	@Override
+	public Order getOrderPart(OrderParams params) throws ManageException {
+		return getOrder(GET_ORDER_PART, params);
+	}
+	
+	@SuppressWarnings("deprecation")
+	private Order getOrder(String query, OrderParams params) throws ManageException {
 		try {
-			return sessionFactory.getCurrentSession().createQuery(GET_ORDER, Order.class)
+			return sessionFactory.getCurrentSession().createQuery(query, Order.class)
 					.setParameter("orderId", params.getOrderId())
 					.setParameter("serviceId", params.getServiceId())
+					.setParameter("nativeOrderId", params.getResourceNativeOrderId())
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getSingleResult();
 		} catch (Exception e) {
 			throw new ManageException("Error when get order", e);

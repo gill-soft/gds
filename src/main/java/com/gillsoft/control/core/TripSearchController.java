@@ -651,9 +651,6 @@ public class TripSearchController {
 		TripSearchResponse search = search(request,
 				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
 		OrderResponse response = new OrderResponse();
-		response.setId(request.getId());
-		response.setCustomers(request.getCustomers());
-		response.setServices(new ArrayList<>());
 		updateOrderResponse(response, search);
 		return response;
 	}

@@ -15,7 +15,9 @@ public interface OrderDAOManager {
 	
 	public Order confirm(Order order) throws ManageException;
 	
-	public Order get(OrderParams params) throws ManageException;
+	public Order getFullOrder(OrderParams params) throws ManageException;
+	
+	public Order getOrderPart(OrderParams params) throws ManageException;
 	
 	public Order cancel(Order order) throws ManageException;
 	

@@ -25,10 +25,10 @@ public class OperationLocker {
 	private CacheHandler cache;
 	
 	public String lock(long orderId) {
-		Map<String, Object> params = getParams(orderId);
-		checkLock(orderId, null, params);
+		checkLock(orderId, null);
 		
 		String lockId = StringUtil.generateUUID();
+		Map<String, Object> params = getParams(orderId);
 		try {
 			cache.write(lockId, params);
 		} catch (IOCacheException e) {
@@ -51,10 +51,6 @@ public class OperationLocker {
 	}
 	
 	public void checkLock(long orderId, String lockId) {
-		checkLock(orderId, lockId, getParams(orderId));
-	}
-	
-	public void checkLock(long orderId, String lockId, Map<String, Object> params) {
 		try {
 			Object res = cache.read(getParams(orderId));
 			if (res != null

@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -31,12 +30,14 @@ import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
+import com.gillsoft.model.Resource;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.request.OrderRequest;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.User;
@@ -58,8 +59,50 @@ public class OrderResponseConverter {
 	@Autowired
 	private DiscountController discountController;
 	
+	public Order convertToNewOrder(OrderResponse response) {
+		OrderRequest originalRequest = simulateOriginalRequest(response);
+		OrderRequest createRequest = simulateCreateRequest(response);
+		return convertToNewOrder(originalRequest, createRequest, new OrderResponse(), response);
+	}
+	
+	private OrderRequest simulateOriginalRequest(OrderResponse response) {
+		response.setId(StringUtil.generateUUID());
+		OrderRequest originalRequest = new OrderRequest();
+		originalRequest.setId(response.getId());
+		originalRequest.setCustomers(response.getCustomers());
+		originalRequest.setServices(new ArrayList<>(0));
+		originalRequest.setOrderId(response.getOrderId());
+		return originalRequest;
+	}
+	
+	private OrderRequest simulateCreateRequest(OrderResponse response) {
+		OrderRequest createRequest = new OrderRequest();
+		createRequest.setResources(new ArrayList<>(response.getResources().size()));
+		for (OrderResponse orderResponse : response.getResources()) {
+			orderResponse.setId(StringUtil.generateUUID());
+			if (orderResponse.getSegments() != null
+					&& !orderResponse.getSegments().isEmpty()) {
+				OrderRequest resourceRequest = new OrderRequest();
+				resourceRequest.setId(orderResponse.getId());
+				resourceRequest.setCustomers(response.getCustomers());
+				resourceRequest.setServices(new ArrayList<>(0));
+				resourceRequest.setCurrency(orderResponse.getServices().get(0).getPrice().getCurrency());
+				Resource resource = orderResponse.getSegments().values().iterator().next().getResource();
+				ResourceParams resourceParams = new ResourceParams();
+				resourceParams.setResource(resource);
+				resourceRequest.setParams(resourceParams);
+				createRequest.getResources().add(resourceRequest);
+			}
+		}
+		return createRequest;
+	} 
+	
 	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
 			OrderResponse response) {
+		
+		result.setId(originalRequest.getId());
+		result.setCustomers(originalRequest.getCustomers());
+		result.setServices(new ArrayList<>());
 		
 		// заказ для сохранения
 		Date created = new Date();
@@ -77,11 +120,11 @@ public class OrderResponseConverter {
 		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : response.getResources()) {
-			Stream<OrderRequest> stream = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId()));
-			if (stream != null) {
+			Optional<OrderRequest> optional = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
+			if (optional.isPresent()) {
 				
 				// запрос, по которому получен результат
-				OrderRequest currRequest = stream.findFirst().get();
+				OrderRequest currRequest = optional.get();
 				
 				// заказы ресурсов для сохранения
 				ResourceOrder resourceOrder = new ResourceOrder();
@@ -442,11 +485,11 @@ public class OrderResponseConverter {
 		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : responses) {
-			Stream<OrderRequest> stream = requests.stream().filter(r -> r.getId().equals(orderResponse.getId()));
-			if (stream != null) {
+			Optional<OrderRequest> optional = requests.stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
+			if (optional != null) {
 				
 				// запрос, по которому получен результат
-				OrderRequest currRequest = stream.findFirst().get();
+				OrderRequest currRequest = optional.get();
 				
 				// обрабатываем ошибку заказ
 				if (orderResponse.getError() != null) {
@@ -502,6 +545,16 @@ public class OrderResponseConverter {
 		return services;
 	}
 	
+	public Order convertToConfirm(Order order, List<OrderResponse> responses,
+			ServiceStatus confirmStatus, ServiceStatus errorStatus) {
+		List<OrderRequest> requests = createConfirmRequests(responses);
+		return convertToConfirm(order, requests, responses, confirmStatus, errorStatus);
+	}
+	
+	private List<OrderRequest> createConfirmRequests(List<OrderResponse> responses) {
+		return responses.stream().map(r -> simulateOriginalRequest(r)).collect(Collectors.toList());
+	}
+	
 	public Order convertToConfirm(Order order, List<OrderRequest> requests, List<OrderResponse> responses,
 			ServiceStatus confirmStatus, ServiceStatus errorStatus) {
 		
@@ -531,6 +584,11 @@ public class OrderResponseConverter {
 		return response;
 	}
 	
+	public Order convertToReturn(Order order, List<OrderResponse> returnResponses) {
+		List<OrderRequest> requests = createConfirmRequests(returnResponses);
+		return convertToReturn(order, requests, returnResponses, null);
+	}
+	
 	public Order convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
 
 		// проверяем стоимости возвратов
@@ -539,12 +597,13 @@ public class OrderResponseConverter {
 				for (ServiceItem service : orderResponse.getServices()) {
 					if (service.getError() == null) {
 						Price price = service.getPrice();
-						if (price == null) {
+						if (price == null
+								&& calcResponses != null) {
 							for (OrderResponse calcResponse : calcResponses) {
 								if (calcResponse.getServices() != null) {
-									Stream<ServiceItem> finded = calcResponse.getServices().stream().filter(s -> Objects.equals(s.getId(), service.getId()));
-									if (finded != null) {
-										service.setPrice(finded.findFirst().get().getPrice());
+									Optional<ServiceItem> finded = calcResponse.getServices().stream().filter(s -> Objects.equals(s.getId(), service.getId())).findFirst();
+									if (finded.isPresent()) {
+										service.setPrice(finded.get().getPrice());
 										break;
 									}
 								}
