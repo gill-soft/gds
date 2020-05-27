@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import com.gillsoft.model.MethodType;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
@@ -123,32 +125,26 @@ public class OrderRequestController {
 				}
 				OrderRequest resourceRequest = new OrderRequest();
 				resourceRequest.setId(StringUtil.generateUUID());
-				resourceRequest.setParams(serviceResource.createParams());
+				resourceRequest.setParams(createParams(serviceResource));
 				resourceRequest.setOrderId(new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId());
 				requests.add(resourceRequest);
 			}
 		}
 		return requests;
 	}
-	
-	private boolean isStatus(Set<ServiceStatus> statuses, ResourceOrder resourceOrder) {
-		
-		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
-		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(orderConverter.getLastStatus(s.getStatuses())));
-	}
-	
-	private boolean isStatus(Set<ServiceStatus> statuses, List<OrderResponse> orderResponses) {
-		
-		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
-		return orderResponses.stream().anyMatch(r -> r.getServices().stream().anyMatch(s -> statuses.contains(ServiceStatus.valueOf(s.getStatus()))));
-	}
-	
+
 	private List<Resource> getResources() {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
 			return resources;
 		}
 		throw new ResourceUnavailableException("User does not has available resources");
+	}
+	
+	private boolean isStatus(Set<ServiceStatus> statuses, ResourceOrder resourceOrder) {
+		
+		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
+		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(orderConverter.getLastStatus(s.getStatuses())));
 	}
 	
 	private Resource getResource(long resourceId, List<Resource> resources) {
@@ -158,6 +154,17 @@ public class OrderRequestController {
 			}
 		}
 		return null;
+	}
+	
+	private ResourceParams createParams(Resource resource) {
+		ResourceParams params = resource.createParams();
+		com.gillsoft.ms.entity.ResourceParams resourceParams = dataController.getResourceParam(resource.getId());
+		if (params.getAdditional() == null) {
+			params.setAdditional(new ConcurrentHashMap<>());
+		}
+		params.getAdditional().putAll(resourceParams.getAttributeValues().stream().collect(
+				Collectors.toMap(av -> av.getAttribute().getName(), av -> av.getValue())));
+		return params;
 	}
 	
 	public List<OrderRequest> createBookingRequests(Order order) {
@@ -192,6 +199,12 @@ public class OrderRequestController {
 		}
 		throw new MethodUnavalaibleException("Order status is not one of "
 				+ String.join(", ", statuses.stream().map(s -> s.name()).collect(Collectors.toSet())));
+	}
+	
+	private boolean isStatus(Set<ServiceStatus> statuses, List<OrderResponse> orderResponses) {
+		
+		// если последний статус хоть одной продажи находится в списке перечисленных статусов 
+		return orderResponses.stream().anyMatch(r -> r.getServices().stream().anyMatch(s -> statuses.contains(ServiceStatus.valueOf(s.getStatus()))));
 	}
 	
 	public List<OrderRequest> createConfirmRequests(Order order) {

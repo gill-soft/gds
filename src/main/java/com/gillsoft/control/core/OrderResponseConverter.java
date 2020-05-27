@@ -88,14 +88,42 @@ public class OrderResponseConverter {
 				resourceRequest.setServices(new ArrayList<>(0));
 				resourceRequest.setCurrency(orderResponse.getServices().get(0).getPrice().getCurrency());
 				Resource resource = orderResponse.getSegments().values().iterator().next().getResource();
-				ResourceParams resourceParams = new ResourceParams();
-				resourceParams.setResource(resource);
-				resourceRequest.setParams(resourceParams);
+				resourceRequest.setParams(createResourceParams(resource));
 				createRequest.getResources().add(resourceRequest);
 			}
 		}
 		return createRequest;
-	} 
+	}
+	
+	private ResourceParams createResourceParams(Resource resource) {
+		ResourceParams resourceParams = new ResourceParams();
+		Resource copy = new Resource();
+		resourceParams.setResource(copy);
+		com.gillsoft.ms.entity.ResourceParams orderParams = getResourceParam(resource.getId());
+		if (orderParams != null) {
+			resourceParams.setId(String.valueOf(orderParams.getId()));
+			copy.setId(String.valueOf(getParamsResourceId(orderParams)));
+		} else {
+			copy.setId(resource.getId());
+		}
+		return resourceParams;
+	}
+	
+	private com.gillsoft.ms.entity.ResourceParams getResourceParam(String id) {
+		try {
+			return dataController.getResourceParam(Long.parseLong(id));
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
+	private long getParamsResourceId(com.gillsoft.ms.entity.ResourceParams params) {
+		com.gillsoft.ms.entity.Resource resourceOrders = dataController.getResource(params);
+		if (resourceOrders != null) {
+			return resourceOrders.getId();
+		}
+		return -1;
+	}
 	
 	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
 			OrderResponse response) {
@@ -127,10 +155,7 @@ public class OrderResponseConverter {
 				OrderRequest currRequest = optional.get();
 				
 				// заказы ресурсов для сохранения
-				ResourceOrder resourceOrder = new ResourceOrder();
-				resourceOrder.setResourceId(Long.parseLong(currRequest.getParams().getResource().getId()));
-				resourceOrder.setResourceNativeOrderId(
-						new IdModel(Long.parseLong(currRequest.getParams().getResource().getId()), orderResponse.getOrderId()).asString());
+				ResourceOrder resourceOrder = createResourceOrder(currRequest, orderResponse);
 				order.addResourceOrder(resourceOrder);
 				if (orderResponse.getError() != null) {
 					
@@ -214,6 +239,18 @@ public class OrderResponseConverter {
 		result.getSegments().values().forEach(s -> s.setPrice(null));
 		
 		return order;
+	}
+	
+	private ResourceOrder createResourceOrder(OrderRequest request, OrderResponse response) {
+		ResourceOrder resourceOrder = new ResourceOrder();
+		resourceOrder.setResourceId(Long.parseLong(request.getParams().getResource().getId()));
+		try {
+			resourceOrder.setResourceParamId(Long.parseLong(request.getParams().getId()));
+		} catch (Exception e) {
+		}
+		resourceOrder.setResourceNativeOrderId(
+				new IdModel(Long.parseLong(request.getParams().getResource().getId()), response.getOrderId()).asString());
+		return resourceOrder;
 	}
 	
 	private void applyConnectionDiscount(OrderResponse result, Order order) {

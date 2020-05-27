@@ -8,25 +8,23 @@ import com.gillsoft.util.ContextProvider;
 
 public class MethodsUpdateTask extends MsDataObjectUpdateTask implements Serializable {
 	
-	private static final long serialVersionUID = 3342891694092388685L;
+	private static final long serialVersionUID = -5904967749931931823L;
 	
 	private Resource resource;
-	private String userName;
 
-	public MethodsUpdateTask(Resource resource, String userName) {
+	public MethodsUpdateTask(Resource resource) {
 		this.resource = resource;
-		this.userName = userName;
 	}
 
 	@Override
 	protected String getCacheKey() {
-		return ResourceInfoController.getActiveResourcesCacheKey(resource.getId(), userName);
+		return ResourceInfoController.getActiveMethodsCacheKey(resource.getId());
 	}
 
 	@Override
 	protected Object getDataObject(MsDataService service) {
 		ResourceInfoController controller = ContextProvider.getBean(ResourceInfoController.class);
-		return controller.createMethods(resource, userName);
+		return controller.createMethods(resource);
 	}
 
 }

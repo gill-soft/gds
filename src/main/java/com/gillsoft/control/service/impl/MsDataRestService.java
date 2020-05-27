@@ -41,6 +41,7 @@ import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ResourceFilter;
+import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
@@ -78,6 +79,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String GET_ORGANISATION = "organisation/{0}";
 	
 	private static final String ALL_ORGANISATIONS = "organisation";
+	
+	private static final String ALL_RESOURCE_PARAMS_WITH_PARENTS = "resource_params/all_with_parents";
 	
 	private RestTemplate template;
 	
@@ -225,6 +228,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		List<ConnectionDiscount> discounts =
 				getResult(ALL_RESOURCE_CONNECTION_DISCOUNTS, null, new ParameterizedTypeReference<List<ConnectionDiscount>>() { });
 		return new EntityMultiplier<ConnectionDiscount>().multiplyChilds(discounts);
+	}
+	
+	@Override
+	public List<ResourceParams> getAllResourceParamsWithParent() {
+		return getResult(ALL_RESOURCE_PARAMS_WITH_PARENTS, null, new ParameterizedTypeReference<List<ResourceParams>>() { });
 	}
 	
 	private class EntityMultiplier<T extends BaseEntity> {

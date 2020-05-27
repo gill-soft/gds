@@ -43,6 +43,9 @@ public class ResourceOrder implements Serializable {
 	@Column(name = "resource_id", nullable = false)
 	private long resourceId;
 	
+	@Column(name = "resource_param_id", nullable = true)
+	private long resourceParamId;
+	
 	@OneToMany(fetch = FetchType.LAZY, mappedBy="parent", orphanRemoval = true)
 	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
 	@Fetch(FetchMode.SELECT)
@@ -75,6 +78,14 @@ public class ResourceOrder implements Serializable {
 
 	public void setResourceId(long resourceId) {
 		this.resourceId = resourceId;
+	}
+
+	public long getResourceParamId() {
+		return resourceParamId;
+	}
+
+	public void setResourceParamId(long resourceParamId) {
+		this.resourceParamId = resourceParamId;
 	}
 
 	public Set<ResourceService> getServices() {

@@ -51,6 +51,7 @@ import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.ConnectionDiscount;
+import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -86,6 +87,8 @@ public class MsDataController {
 	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS_KEY = "all.resource.connection.discounts";
 	
 	private static final String ALL_ORGANISATIONS_KEY = "all.organisations";
+	
+	private static final String ALL_RESOURCE_ORDERS_PARAMS_KEY = "all.resource.orders.params";
 	
 	private static final String USER_KEY = "user.";
 	
@@ -215,11 +218,29 @@ public class MsDataController {
 				new AllOrganisationsUpdateTask(), () -> createOrganisationsMap(msService.getAllOrganisations()), 120000l);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Map<String, Organisation> createOrganisationsMap(List<Organisation> entities) {
 		if (entities != null) {
-			Map<String, Organisation> result = entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o));
+			Map<String, Organisation> result = (Map<String, Organisation>) createEntitiesMap(entities);
 			result.putAll(entities.stream().filter(o -> o.getMappingId() != 0).collect(Collectors.toMap(o -> getMappingId(o.getMappingId()), o -> o, (o1, o2) -> o1)));
 			return result;
+		} else {
+			return new HashMap<>(0);
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	@PostConstruct
+	public Map<String, com.gillsoft.ms.entity.ResourceParams> getAllResourceParams() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<String, com.gillsoft.ms.entity.ResourceParams>) getFromCache(getAllResourceParamsCacheKey(),
+				new AllResourceParamsUpdateTask(), () -> createEntitiesMap(msService.getAllResourceParamsWithParent()), 120000l);
+	}
+	
+	public Map<String, ? extends BaseEntity> createEntitiesMap(List<? extends BaseEntity> entities) {
+		if (entities != null) {
+			return entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o));
 		} else {
 			return new HashMap<>(0);
 		}
@@ -284,6 +305,19 @@ public class MsDataController {
 	
 	public Organisation getMappedOrganisation(long mappingId) {
 		return getAllOrganisations().get(getMappingId(mappingId));
+	}
+	
+	public com.gillsoft.ms.entity.ResourceParams getResourceParam(long id) {
+		return getAllResourceParams().get(getEntityId(id));
+	}
+	
+	public Resource getResource(com.gillsoft.ms.entity.ResourceParams params) {
+		for (BaseEntity entity : params.getParents()) {
+			if (entity.getType() == EntityType.RESOURCE) {
+				return (Resource) entity;
+			}
+		}
+		return null;
 	}
 	
 	protected Object getFromCache(String cacheKey, Runnable updateTask, CacheObjectGetter objectGetter, long updateDelay) {
@@ -815,6 +849,10 @@ public class MsDataController {
 	
 	public static String getAllOrganisationsCacheKey() {
 		return ALL_ORGANISATIONS_KEY;
+	}
+	
+	public static String getAllResourceParamsCacheKey() {
+		return ALL_RESOURCE_ORDERS_PARAMS_KEY;
 	}
 	
 	public static String getUserCacheKey(String userName) {

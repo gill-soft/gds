@@ -25,7 +25,7 @@ public class ResourceInfoController {
 	
 	private static Logger LOGGER = LogManager.getLogger(ResourceInfoController.class);
 	
-	private static final String ACTIVE_RESOURCES_CACHE_KEY = "methods.resource.";
+	private static final String AVAILABLE_METHODS_CACHE_KEY = "methods.resource.";
 	
 	@Autowired
 	private MsDataController dataController;
@@ -43,15 +43,14 @@ public class ResourceInfoController {
 	
 	@SuppressWarnings("unchecked")
 	public List<Method> getAvailableMethods(Resource resource) {
-		String userName = dataController.getUserName();
 		
 		// берем результат с кэша, если кэша нет, то берем напрямую с сервиса
-		return (List<Method>) dataController.getFromCache(getActiveResourcesCacheKey(resource.getId(), userName), new MethodsUpdateTask(resource, userName),
-				() -> createMethods(resource, userName), 120000l);
+		return (List<Method>) dataController.getFromCache(getActiveMethodsCacheKey(resource.getId()), new MethodsUpdateTask(resource),
+				() -> createMethods(resource), 120000l);
 	}
 	
-	protected List<Method> createMethods(Resource resource, String userName) {
-		ResourceRequest request = createRequest(resource, userName);
+	protected List<Method> createMethods(Resource resource) {
+		ResourceRequest request = createRequest(resource);
 		List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
 		if (response == null
 				|| response.isEmpty()
@@ -64,15 +63,15 @@ public class ResourceInfoController {
 	}
 	
 	// создание запроса получения информации о ресурсе 
-	protected ResourceRequest createRequest(Resource resource, String userName) {
+	protected ResourceRequest createRequest(Resource resource) {
 		ResourceRequest request = new ResourceRequest();
 		request.setId(StringUtil.generateUUID());
-		request.setParams(dataController.createResourceParams(resource.getId(), userName));
+		request.setParams(resource.createParams());
 		return request;
 	}
 
-	public static String getActiveResourcesCacheKey(long resourceId, String userName) {
-		return ACTIVE_RESOURCES_CACHE_KEY + String.join(".", String.valueOf(resourceId), userName);
+	public static String getActiveMethodsCacheKey(long resourceId) {
+		return AVAILABLE_METHODS_CACHE_KEY + String.join(".", String.valueOf(resourceId));
 	}
 
 }

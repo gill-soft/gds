@@ -9,6 +9,7 @@ import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ResourceFilter;
+import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
@@ -133,5 +134,13 @@ public interface MsDataService {
 	 * @return Список скидок на стыковки ресурсов.
 	 */
 	public List<ConnectionDiscount> getAllResourceConnectionDiscounts();
+	
+	/**
+	 * Возвращает список всех параметров доступа к ресурсам заказов с
+	 * родетельскими объектами, к которым принадлежит параметр.
+	 * 
+	 * @return Список параметров доступа к ресурсам заказов.
+	 */
+	public List<ResourceParams> getAllResourceParamsWithParent();
 	
 }
