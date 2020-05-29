@@ -116,9 +116,23 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public List<Resource> getUserResources(String userName) {
+	private List<Resource> getUserResources(String userName) {
 		return (List<Resource>) getFromCache(getActiveResourcesCacheKey(userName),
 				new UserResourcesUpdateTask(userName), () -> new CopyOnWriteArrayList<>(msService.getUserResources(userName)), 120000l);
+	}
+	
+	public Resource getResource(long resourceId) {
+		return getResource(String.valueOf(resourceId));
+	}
+	
+	public Resource getResource(String resourceId) {
+		List<Resource> resources = getUserResources();
+		Optional<Resource> resource = resources.stream().filter(r -> String.valueOf(r.getId()).equals(resourceId)).findFirst();
+		if (resource.isPresent()) {
+			return resource.get();
+		} else {
+			return null;
+		}
 	}
 	
 	public ResourceParams createResourceParams(long resourceId) {
@@ -307,8 +321,8 @@ public class MsDataController {
 		return getAllOrganisations().get(getMappingId(mappingId));
 	}
 	
-	public com.gillsoft.ms.entity.ResourceParams getResourceParam(long id) {
-		return getAllResourceParams().get(getEntityId(id));
+	public com.gillsoft.ms.entity.ResourceParams getResourceParam(long resourceParamsId) {
+		return getAllResourceParams().get(getEntityId(resourceParamsId));
 	}
 	
 	public Resource getResource(com.gillsoft.ms.entity.ResourceParams params) {
@@ -509,10 +523,9 @@ public class MsDataController {
 			if (segment != null) {
 				
 				// добавляем сущность ресурса
-				List<Resource> resources = getUserResources();
-				Optional<Resource> resource = resources.stream().filter(r -> String.valueOf(r.getId()).equals(segment.getResource().getId())).findFirst();
-				if (resource.isPresent()) {
-					entities.add(resource.get());
+				Resource resource = getResource(segment.getResource().getId());
+				if (resource != null) {
+					entities.add(resource);
 				}
 				addMappedOrganisations(entities, segment);
 				// TODO add segment object's ids which mapping in system

@@ -17,14 +17,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.gillsoft.mapper.model.MapType;
-import com.gillsoft.mapper.model.Mapping;
-import com.gillsoft.mapper.model.Unmapping;
 import com.gillsoft.mapper.service.MappingService;
-import com.gillsoft.mapper.service.UnmappingConverter;
-import com.gillsoft.model.Address;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
-import com.gillsoft.model.Name;
 import com.gillsoft.model.Organisation;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.ReturnCondition;
@@ -87,14 +82,10 @@ public class TripSearchMapping {
 		
 		// мапим словари
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
-		mappingObjects(request, searchResponse.getOrganisations(), result.getOrganisations(), MapType.ORGANIZATION,
-				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
-				(original) -> UnmappingConverter.createUnmappingOrganisation(original),
-				(resourceId, id, o) -> o.setId(getKey(resourceId, id)));
-		mappingObjects(request, searchResponse.getVehicles(), result.getVehicles(), MapType.VEHICLE,
-				(mapping, lang, original) -> DataConverter.createVehicle(mapping, lang, original),
-				(original) -> UnmappingConverter.createUnmappingVehicle(original), 
-				(resourceId, id, v) -> v.setId(getKey(resourceId, id)));
+		MappingCreator.organisationMappingCreator(
+				request, searchResponse.getOrganisations(), result.getOrganisations()).mappingObjects(mappingService);
+		MappingCreator.vehicleMappingCreator(
+				request, searchResponse.getVehicles(), result.getVehicles()).mappingObjects(mappingService);
 	}
 	
 	/**
@@ -104,7 +95,7 @@ public class TripSearchMapping {
 		
 		// родителей тоже нужно попытаться смапить
 		if (objects != null) {
-			long resourceId = Long.parseLong(request.getParams().getResource().getId());
+			long resourceId = MappingCreator.getResourceId(request);
 			List<Locality> localities = new ArrayList<>(objects.values());
 			for (Locality locality : localities) {
 				Locality parent = null;
@@ -115,33 +106,17 @@ public class TripSearchMapping {
 				}
 			}
 		}
-		mappingObjects(request, objects, result, MapType.GEO,
-				(mapping, lang, original) -> createLocality(mapping, lang, original),
-				(original) -> UnmappingConverter.createUnmappingLocality(original),
-				(resId, id, l) -> l.setId(getKey(resId, id)));
+		MappingCreator<Locality> creator = MappingCreator.localityMappingCreator(request, objects, result);
+		creator.mappingObjects(mappingService);
 		List<Locality> localities = new ArrayList<>(result.values());
 		for (Locality locality : localities) {
 			fillMapByParents(locality, result);
 			Locality parent = null;
 			while ((parent = locality.getParent()) != null) {
-				removeUnselectedLang(request, parent);
+				creator.removeUnselectedLang(parent);
 				locality = parent;
 			}
 		}
-	}
-	
-	/*
-	 * из-за того, что не все возвращаемые пункты ресурса смаплены, необходимо
-	 * проверять маппинг родителей, если они есть
-	 */
-	private Locality createLocality(Mapping mapping, Lang lang, Locality original) {
-		Locality locality = DataConverter.createLocality(mapping, lang, original);
-		Locality result = locality;
-		while ((mapping = mapping.getParent()) != null) {
-			locality.setParent(DataConverter.createLocality(mapping, lang, original));
-			locality = locality.getParent();
-		}
-		return result;
 	}
 	
 	private void fillMapByParents(Locality locality, Map<String, Locality> result) {
@@ -156,82 +131,23 @@ public class TripSearchMapping {
 	}
 	
 	/**
-	 * Получает мапинг словарей ответа и создает словари из мапинга. Если мапинга нет, то добавляется объект ответа.
-	 */
-	public <T> void mappingObjects(LangRequest request, Map<String, T> objects, Map<String, T> result,
-			MapType mapType, MapObjectCreator<T> creator, UnmappingCreator<T> unmappingCreator, ObjectIdSetter<T> idSetter) {
-		if (objects == null
-				|| objects.isEmpty()) {
-			return;
-		}
-		long resourceId = Long.parseLong(request.getParams().getResource().getId());
-		for (Entry<String, T> object : objects.entrySet()) {
-			
-			// получаем смапленную сущность
-			List<Mapping> mappings = mappingService.getMappings(mapType, resourceId, object.getKey(), request.getLang());
-			
-			// добавляем сущность в мапу под ключем ид ресурса + ид обьекта,
-			// чтобы от разных ресурсов не пересекались ид
-			if (mappings == null) {
-				if (object.getValue() != null) {
-					
-					// сохраняем несмапленные данные
-					Unmapping unmapping = unmappingCreator.create(object.getValue());
-					unmapping.setResourceMapId(object.getKey());
-					unmapping.setResourceId(resourceId);
-					unmapping.setType(mapType);
-					mappingService.saveUnmapping(unmapping);
-					
-					T value = object.getValue();
-					idSetter.set(resourceId, object.getKey(), value);
-					result.put(getKey(resourceId, object.getKey()), value);
-					
-					// удаляем данные на языках, которые не запрашиваются
-					removeUnselectedLang(request, value);
-				}
-			} else {
-				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang(), object.getValue()));
-			}
-		}
-	}
-	
-	private <T> void removeUnselectedLang(LangRequest request, T value) {
-		if (request.getLang() != null) {
-			if (value instanceof Name) {
-				Name name = (Name) value;
-				if (name.getName() != null
-						&& name.getName().get(request.getLang()) != null) {
-					name.getName().keySet().removeIf(l -> l != request.getLang());
-				}
-			}
-			if (value instanceof Address) {
-				Address address = (Address) value;
-				if (address.getAddress() != null
-						&& address.getAddress().get(request.getLang()) != null) {
-					address.getAddress().keySet().removeIf(l -> l != request.getLang());
-				}
-			}
-		}
-	}
-	
-	/**
 	 * Ключ словаря с ид ресурса + ид объекта словаря.
 	 */
 	public String getKey(long resourceId, String id) {
-		return resourceId + ";" + id;
-	}
-	
-	private Organisation createOrganisation(Mapping mapping, Lang lang, Organisation original) {
-		com.gillsoft.ms.entity.Organisation org = dataController.getMappedOrganisation(mapping.getId());
-		if (org == null) {
-			return DataConverter.createOrganisation(mapping, lang, original);
-		} else {
-			return DataConverter.convert(org);
-		}
+		return MappingCreator.getKey(resourceId, id);
 	}
 	
 	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
 		updateSegments(request, searchResponse, result, true);
+	}
+	
+	private Map<String, Segment> mapSegments(TripSearchRequest request, Map<String, Segment> responseSegments) {
+		long resourceId = MappingCreator.getResourceId(request);
+		Map<String, Segment> segments = responseSegments.values().stream().collect(
+				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
+		Map<String, Segment> result = new HashMap<>();
+		MappingCreator.segmentMappingCreator(request, segments, result).mappingObjects(mappingService);
+		return result;
 	}
 	
 	/**
@@ -241,12 +157,20 @@ public class TripSearchMapping {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		long resourceId = Long.parseLong(request.getParams().getResource().getId());
+		Map<String, Segment> fromMapping = mapSegments(request, searchResponse.getSegments());
+		long resourceId = MappingCreator.getResourceId(request);
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			try {
 				Segment segment = entry.getValue();
-				
+				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
+				String segmentKey = getKey(resourceId, tripNumber);
+				if (fromMapping.containsKey(segmentKey)) {
+					Segment s = fromMapping.get(segmentKey);
+					if (s.getTripId() != null) {
+						segment.setTripId(s.getTripId());
+					}
+				}
 				// устанавливаем ресурс
 				segment.setResource(new Resource(String.valueOf(resourceId)));
 				
@@ -256,17 +180,13 @@ public class TripSearchMapping {
 				segment.setArrival(result.getLocalities().get(
 						getKey(resourceId, segment.getArrival().getId())));
 				
-				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
-				
 				// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
 				if (segment.getVehicle() == null
 						&& !result.getVehicles().containsKey(tripNumber)) {
 					Map<String, Vehicle> vehicles = new HashMap<>();
 					vehicles.put(tripNumber, null);
-					mappingObjects(request, vehicles, result.getVehicles(), MapType.VEHICLE,
-							(mapping, lang, original) -> DataConverter.createVehicle(mapping, lang, original),
-							(original) -> UnmappingConverter.createUnmappingVehicle(original),
-							null);
+					MappingCreator.vehicleMappingCreator(
+							request, vehicles, result.getVehicles()).mappingObjects(mappingService);
 				}
 				// устанавливаем транспорт с маппинга
 				String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
@@ -334,6 +254,16 @@ public class TripSearchMapping {
 		}
 	}
 	
+	/*
+	 * Проверяет и создает маппинг организации по номеру рейса.
+	 */
+	private void addOrganisationByTripNumber(String key, TripSearchResponse result, TripSearchRequest request, MapType mapType) {
+		Map<String, Organisation> organisations = new HashMap<>();
+		organisations.put(key, null);
+		MappingCreator.organisationMappingCreator(
+				request, organisations, result.getOrganisations()).mappingObjects(mappingService);
+	}
+	
 	private void addInsuranceCompensation(Segment segment) {
 		if (segment.getInsurance() != null) {
 			if (segment.getInsurance().getProperties() == null) {
@@ -394,33 +324,6 @@ public class TripSearchMapping {
 		}
 	}
 	
-	/*
-	 * Объединяет все запросы с одинаковым мапингом.
-	 */
-	private void joinContainers(TripSearchResponse result) {
-		if (result.getTripContainers() != null) {
-			List<TripContainer> containers = new ArrayList<>();
-			for (TripContainer container : result.getTripContainers()) {
-						
-				TripContainer resultContainer = getTripContainer(container.getRequest(), containers);
-				if (resultContainer != null) {
-					if (container.getTrips() != null) {
-						if (resultContainer.getTrips() == null) {
-							resultContainer.setTrips(container.getTrips());
-						} else {
-							resultContainer.getTrips().addAll(container.getTrips());
-						}
-					}
-				} else {
-					container.getRequest().setId(null);
-					container.getRequest().setParams(null);
-					containers.add(container);
-				}
-			}
-			result.setTripContainers(containers);
-		}
-	}
-	
 	// Добавляем в ид рейса запрос, по которому он был найден.
 	private void updateTripIds(long resourceId, TripSearchResponse result, TripContainer container) {
 		if (container.getTrips() == null) {
@@ -454,34 +357,19 @@ public class TripSearchMapping {
 		return newId;
 	}
 	
-	/*
-	 * Проверяет и создает маппинг организации по номеру рейса.
-	 */
-	private void addOrganisationByTripNumber(String key, TripSearchResponse result, TripSearchRequest request, MapType mapType) {
-		Map<String, Organisation> organisations = new HashMap<>();
-		organisations.put(key, null);
-		mappingObjects(request, organisations, result.getOrganisations(), MapType.ORGANIZATION,
-				(mapping, lang, original) -> createOrganisation(mapping, lang, original),
-				(original) -> UnmappingConverter.createUnmappingOrganisation(original),
-				null);
-	}
-	
-	/*
-	 * Возвращает контейнер с таким же запросом либо null
-	 */
-	private TripContainer getTripContainer(TripSearchRequest request, List<TripContainer> containers) {
-		for (TripContainer container : containers) {
-			String[] requestPair = request.getLocalityPairs().get(0);
-			String[] pair = container.getRequest().getLocalityPairs().get(0);
-			if (Objects.equals(pair[0], requestPair[0])
-					&& Objects.equals(pair[1], requestPair[1])
-					&& Objects.equals(request.getDates().get(0), container.getRequest().getDates().get(0))
-					&& ((request.getBackDates() == null && container.getRequest().getBackDates() == null)
-							|| (Objects.equals(request.getBackDates().get(0), container.getRequest().getBackDates().get(0))))) {
-				return container;
-			}
+	private void updateDictionaries(TripSearchResponse result) {
+		if (result.getLocalities() != null
+				&& !result.getLocalities().isEmpty()) {
+			result.setLocalities(result.getLocalities().values().stream().collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
 		}
-		return null;
+		if (result.getOrganisations() != null
+				&& !result.getOrganisations().isEmpty()) {
+			result.setOrganisations(result.getOrganisations().values().stream().collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
+		}
+		if (result.getVehicles() != null
+				&& !result.getVehicles().isEmpty()) {
+			result.setVehicles(result.getVehicles().values().stream().collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
+		}
 	}
 	
 	/*
@@ -504,6 +392,7 @@ public class TripSearchMapping {
 			result.setSegments(null);
 		} else {
 			for (Segment segment : result.getSegments().values()) {
+				segment.setId(null);
 				segment.setDeparture(new Locality(segment.getDeparture().getId()));
 				segment.setArrival(new Locality(segment.getArrival().getId()));
 				segment.setVehicle(segment.getVehicle() != null ? new Vehicle(segment.getVehicle().getId()) : null);
@@ -546,37 +435,49 @@ public class TripSearchMapping {
 		joinContainers(result);
 	}
 	
-	private void updateDictionaries(TripSearchResponse result) {
-		if (result.getLocalities() != null
-				&& !result.getLocalities().isEmpty()) {
-			result.setLocalities(result.getLocalities().values().stream().collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
-		}
-		if (result.getOrganisations() != null
-				&& !result.getOrganisations().isEmpty()) {
-			result.setOrganisations(result.getOrganisations().values().stream().collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
-		}
-		if (result.getVehicles() != null
-				&& !result.getVehicles().isEmpty()) {
-			result.setVehicles(result.getVehicles().values().stream().collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
+	/*
+	 * Объединяет все запросы с одинаковым мапингом.
+	 */
+	private void joinContainers(TripSearchResponse result) {
+		if (result.getTripContainers() != null) {
+			List<TripContainer> containers = new ArrayList<>();
+			for (TripContainer container : result.getTripContainers()) {
+						
+				TripContainer resultContainer = getTripContainer(container.getRequest(), containers);
+				if (resultContainer != null) {
+					if (container.getTrips() != null) {
+						if (resultContainer.getTrips() == null) {
+							resultContainer.setTrips(container.getTrips());
+						} else {
+							resultContainer.getTrips().addAll(container.getTrips());
+						}
+					}
+				} else {
+					container.getRequest().setId(null);
+					container.getRequest().setParams(null);
+					containers.add(container);
+				}
+			}
+			result.setTripContainers(containers);
 		}
 	}
-	
-	private interface MapObjectCreator<T> {
-		
-		public T create(Mapping mapping, Lang lang, T original);
-		
-	}
-	
-	private interface ObjectIdSetter<T> {
-		
-		public void set(long resourceId, String id, T object);
-		
-	}
-	
-	private interface UnmappingCreator<T> {
-		
-		public Unmapping create(T original);
-		
+
+	/*
+	 * Возвращает контейнер с таким же запросом либо null
+	 */
+	private TripContainer getTripContainer(TripSearchRequest request, List<TripContainer> containers) {
+		for (TripContainer container : containers) {
+			String[] requestPair = request.getLocalityPairs().get(0);
+			String[] pair = container.getRequest().getLocalityPairs().get(0);
+			if (Objects.equals(pair[0], requestPair[0])
+					&& Objects.equals(pair[1], requestPair[1])
+					&& Objects.equals(request.getDates().get(0), container.getRequest().getDates().get(0))
+					&& ((request.getBackDates() == null && container.getRequest().getBackDates() == null)
+							|| (Objects.equals(request.getBackDates().get(0), container.getRequest().getBackDates().get(0))))) {
+				return container;
+			}
+		}
+		return null;
 	}
 
 }

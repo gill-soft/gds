@@ -56,14 +56,13 @@ public class OrderRequestController {
 	private MsDataController dataController;
 	
 	public OrderRequest createRequest(OrderRequest request) {
-		List<Resource> resources = getResources();
 		Map<Long, OrderRequest> requests = new HashMap<>();
 		for (ServiceItem item : request.getServices()) {
 			ServiceItem resourceItem = (ServiceItem) SerializationUtils.deserialize(SerializationUtils.serialize(item));
 			TripIdModel idModel = new TripIdModel().create(resourceItem.getSegment().getId());
 			
 			// проверяем ресурс
-			Resource serviceResource = getResource(idModel.getResourceId(), resources);
+			Resource serviceResource = dataController.getResource(idModel.getResourceId());
 			if (serviceResource == null) {
 				throw new ResourceUnavailableException("Resource is unavailable for service where segmentId="
 						+ resourceItem.getSegment().getId());
@@ -104,14 +103,13 @@ public class OrderRequestController {
 	}
 	
 	public List<OrderRequest> operationRequests(Order order, String method, Set<ServiceStatus> statuses) {
-		List<Resource> resources = getResources();
 		List<OrderRequest> requests = new ArrayList<>();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			if (statuses == null
 					|| isStatus(statuses, resourceOrder)) {
 			
 				// проверяем ресурс
-				Resource serviceResource = getResource(resourceOrder.getResourceId(), resources);
+				Resource serviceResource = dataController.getResource(resourceOrder.getResourceId());
 				if (serviceResource == null) {
 					throw new ResourceUnavailableException("Resource is unavailable for service ids "
 							+ Arrays.toString(resourceOrder.getServices().stream().map(ResourceService::getId)
@@ -125,20 +123,12 @@ public class OrderRequestController {
 				}
 				OrderRequest resourceRequest = new OrderRequest();
 				resourceRequest.setId(StringUtil.generateUUID());
-				resourceRequest.setParams(createParams(serviceResource));
+				resourceRequest.setParams(createParams(serviceResource, resourceOrder.getResourceParamId()));
 				resourceRequest.setOrderId(new IdModel().create(resourceOrder.getResourceNativeOrderId()).getId());
 				requests.add(resourceRequest);
 			}
 		}
 		return requests;
-	}
-
-	private List<Resource> getResources() {
-		List<Resource> resources = dataController.getUserResources();
-		if (resources != null) {
-			return resources;
-		}
-		throw new ResourceUnavailableException("User does not has available resources");
 	}
 	
 	private boolean isStatus(Set<ServiceStatus> statuses, ResourceOrder resourceOrder) {
@@ -147,23 +137,16 @@ public class OrderRequestController {
 		return resourceOrder.getServices().stream().anyMatch(s -> statuses.contains(orderConverter.getLastStatus(s.getStatuses())));
 	}
 	
-	private Resource getResource(long resourceId, List<Resource> resources) {
-		for (Resource resource : resources) {
-			if (resourceId == resource.getId()) {
-				return resource;
-			}
-		}
-		return null;
-	}
-	
-	private ResourceParams createParams(Resource resource) {
+	private ResourceParams createParams(Resource resource, long resourceParamsId) {
 		ResourceParams params = resource.createParams();
-		com.gillsoft.ms.entity.ResourceParams resourceParams = dataController.getResourceParam(resource.getId());
-		if (params.getAdditional() == null) {
-			params.setAdditional(new ConcurrentHashMap<>());
+		com.gillsoft.ms.entity.ResourceParams resourceParams = dataController.getResourceParam(resourceParamsId);
+		if (resourceParams != null) {
+			if (params.getAdditional() == null) {
+				params.setAdditional(new ConcurrentHashMap<>());
+			}
+			params.getAdditional().putAll(resourceParams.getAttributeValues().stream().collect(
+					Collectors.toMap(av -> av.getAttribute().getName(), av -> av.getValue())));
 		}
-		params.getAdditional().putAll(resourceParams.getAttributeValues().stream().collect(
-				Collectors.toMap(av -> av.getAttribute().getName(), av -> av.getValue())));
 		return params;
 	}
 	

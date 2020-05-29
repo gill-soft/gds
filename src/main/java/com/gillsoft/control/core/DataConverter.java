@@ -18,6 +18,7 @@ import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.ms.entity.AttributeValue;
@@ -181,7 +182,6 @@ public class DataConverter {
 	 * Создает организацию по данным мапинга.
 	 */
 	public static com.gillsoft.model.Organisation createOrganisation(Mapping mapping, Lang lang, com.gillsoft.model.Organisation original) {
-		//TODO get organisation from ms-gds
 		if (mapping.getAttributes() != null
 				|| mapping.getLangAttributes() != null) {
 			com.gillsoft.model.Organisation organisation = new com.gillsoft.model.Organisation();
@@ -280,6 +280,20 @@ public class DataConverter {
 			return original;
 		}
 		return locality;
+	}
+	
+	public static Segment createSegment(Mapping mapping, Lang lang, Segment original) {
+		Segment segment = new Segment();
+		segment.setId(String.valueOf(mapping.getId()));
+		if (mapping.getAttributes() != null) {
+			segment.setTripId(mapping.getAttributes().get("id"));
+			return segment;
+		}
+		if (original != null) {
+			original.setId(String.valueOf(mapping.getId()));
+			return original;
+		}
+		return segment;
 	}
 	
 	private static BigDecimal createDecimal(long mappingId, String value) {
