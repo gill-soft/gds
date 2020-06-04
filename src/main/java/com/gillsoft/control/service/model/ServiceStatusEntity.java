@@ -34,7 +34,7 @@ import com.gillsoft.model.Price;
 import com.gillsoft.model.ServiceStatus;
 
 @Entity
-@Table(name = "service_statuses", indexes = { @Index(columnList = "reported") })
+@Table(name = "service_statuses", indexes = { @Index(columnList = "reported"), @Index(columnList = "created"), @Index(columnList = "user_id") })
 @JsonInclude(Include.NON_NULL)
 public class ServiceStatusEntity implements Serializable {
 

@@ -156,7 +156,7 @@ public class OrderApiController {
 	}
 	
 	@ApiOperation(value = "Returns the list of orders",
-			responseContainer = "List", response = OrderResponse.class, hidden = true)
+			responseContainer = "List", response = Order.class, hidden = true)
 	@GetMapping("/first/{count}")
 	public List<Order> getOrders(@Validated @PathVariable int count) {
 		return controller.getOrders(count);
@@ -166,6 +166,13 @@ public class OrderApiController {
 	@PostMapping("/report")
 	public void reportStatuses(@RequestBody Set<Long> ids) {
 		controller.reportStatuses(ids);
+	}
+	
+	@ApiOperation(value = "Returns the list of active user orders (active order - the order with departure date greater than now)",
+			responseContainer = "List", response = OrderResponse.class, hidden = true)
+	@GetMapping("/active")
+	public List<OrderResponse> getActiveOrders() {
+		return controller.getActiveOrders();
 	}
 	
 	@ApiOperation(value = "Return new order created from selected services", hidden = true)

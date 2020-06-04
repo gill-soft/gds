@@ -1,6 +1,5 @@
 package com.gillsoft.control.core;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,7 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,7 +39,6 @@ import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
-import com.gillsoft.model.Organisation;
 import com.gillsoft.model.RequiredField;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.ReturnCondition;
@@ -53,7 +50,6 @@ import com.gillsoft.model.Segment;
 import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
-import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.ResourceParams;
@@ -522,7 +518,7 @@ public class TripSearchController {
 			}
 		}
 		// удаляем лишнее со словарей
-		updateResponseDictionaries(resultSegmentIds, segments, response.getVehicles(), response.getOrganisations(), response.getLocalities(), response.getResources());
+		updateResponseDictionaries(resultSegmentIds, response);
 	}
 	
 	private boolean isReturned(SearchRequestContainer requestContainer, String tripId) {
@@ -539,111 +535,18 @@ public class TripSearchController {
 		return StringUtil.md5(String.join(";", trip.getSegments()));
 	}
 	
-	public void updateResponseDictionaries(Set<String> resultSegmentIds, Map<String, Segment> segments,
-			Map<String, Vehicle> vehicles, Map<String, Organisation> organisations, Map<String, Locality> localities,
-			Map<String, com.gillsoft.model.Resource> resources) {
+	private void updateResponseDictionaries(Set<String> resultSegmentIds, TripSearchResponse response) {
 		
 		// перезаливаем рейсы
-		removeUnusedSegments(resultSegmentIds, segments);
+		removeUnusedSegments(resultSegmentIds, response.getSegments());
 		
 		// перезаливаем словари
-		removeUnusedVehicles(vehicles, segments);
-		removeUnusedOrganisations(organisations, segments);
-		removeUnusedResources(resources, segments);
-		removeUnusedLocalities(localities, segments);
+		response.fillMaps();
 	}
 	
 	private void removeUnusedSegments(Set<String> resultSegmentIds, Map<String, Segment> segments) {
 		if (segments != null) {
 			segments.keySet().removeIf(key -> !resultSegmentIds.contains(key));
-		}
-	}
-	
-	private void removeUnusedVehicles(Map<String, Vehicle> vehicles, Map<String, Segment> segments) {
-		if (vehicles != null) {
-			removeUnusedObjects(vehicles, segments, (key, segment) -> {
-				if (segment.getVehicle() != null
-						&& Objects.equals(key, segment.getVehicle().getId())) {
-					return false;
-				}
-				return true;
-			});
-		}
-	}
-	
-	private void removeUnusedResources(Map<String, com.gillsoft.model.Resource> resources, Map<String, Segment> segments) {
-		if (resources != null) {
-			removeUnusedObjects(resources, segments, (key, segment) -> {
-				if (segment.getResource() != null
-						&& Objects.equals(key, segment.getResource().getId())) {
-					return false;
-				}
-				return true;
-			});
-		}
-	}
-	
-	private void removeUnusedOrganisations(Map<String, Organisation> organisations, Map<String, Segment> segments) {
-		if (organisations != null) {
-			removeUnusedObjects(organisations, segments, (key, segment) -> {
-				if ((segment.getCarrier() != null
-						&& Objects.equals(key, segment.getCarrier().getId()))
-						|| (segment.getInsurance() != null
-								&& Objects.equals(key, segment.getInsurance().getId()))) {
-					return false;
-				}
-				return true;
-			});
-		}
-	}
-	
-	private void removeUnusedLocalities(Map<String, Locality> localities, Map<String, Segment> segments) {
-		if (localities != null) {
-			Map<String, Locality> copy = new HashMap<>(localities);
-			removeUnusedObjects(localities, segments, (key, segment) -> {
-				if (Objects.equals(key, segment.getDeparture().getId())
-						|| Objects.equals(key, segment.getArrival().getId())) {
-					return false;
-				}
-				// проверяем маршрут
-				if (segment.getRoute() != null
-						&& segment.getRoute().getPath() != null) {
-					for (RoutePoint point : segment.getRoute().getPath()) {
-						if (point.getLocality() != null
-								&& Objects.equals(key, point.getLocality().getId())) {
-							return false;
-						}
-					}
-				}
-				return true;});
-			copyExistingParentLocalities(copy, localities);
-		}
-	}
-	
-	private void removeUnusedObjects(Map<String, ? extends Object> dictionary, Map<String, Segment> segments,
-			BiPredicate<String, Segment> removeCondition) {
-		dictionary.keySet().removeIf(key -> {
-			for (Segment segment : segments.values()) {
-				if (!removeCondition.test(key, segment)) {
-					return false;
-				}
-			};
-			return true;
-		});
-	}
-	
-	private void copyExistingParentLocalities(Map<String, Locality> all, Map<String, Locality> localities) {
-		List<Locality> localitiesList = new ArrayList<>(localities.values());
-		for (Locality locality : localitiesList) {
-			Locality parent = locality.getParent();
-			while (parent != null
-					&& !localities.containsKey(parent.getId())
-					&& all.containsKey(parent.getId())) {
-				String parentId = parent.getId();
-				parent = all.get(parentId);
-				localities.put(parentId, parent);
-				parent = parent.getParent();
-			}
 		}
 	}
 	

@@ -1,10 +1,13 @@
 package com.gillsoft.control.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,7 @@ import com.gillsoft.control.service.model.GroupeIdEntity;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.model.ServiceStatus;
 
 @Repository
 public class OrderDAOManagerImpl implements OrderDAOManager {
@@ -23,11 +27,11 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
-			+ "where (o.id = :orderId or :orderId = 0) "
+			+ "where (o.id = :orderId or :orderId is null) "
 			+ "and exists (from ResourceOrder as ro2 "
 				+ "join ro2.services as rs2 "
 				+ "where ro2.parent = o "
-				+ "and (rs2.id = :serviceId or :serviceId = 0) "
+				+ "and (rs2.id = :serviceId or :serviceId is null) "
 				+ "and (ro2.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null))";
 	
 	private final static String GET_ORDER_PART = "from Order as o "
@@ -35,8 +39,8 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
-			+ "where (o.id = :orderId or :orderId = 0) "
-			+ "and (rs.id = :serviceId or :serviceId = 0) "
+			+ "where (o.id = :orderId or :orderId is null) "
+			+ "and (rs.id = :serviceId or :serviceId is null) "
 			+ "and (ro.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null)";
 	
 	private final static String GET_DOCUMENTS = "from Order as o "
@@ -45,7 +49,9 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
 			+ "left join fetch o.documents as d "
-			+ "where o.id = :orderId";
+			+ "where (o.id = :orderId or :orderId is null) "
+			+ "and (rs.id = :serviceId or :serviceId is null) "
+			+ "and (ro.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null)";
 	
 	private final static String GET_ORDERS = "select o from Order as o "
 			+ "join fetch o.orders as ro "
@@ -53,7 +59,18 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join rs.statuses as wss "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
-			+ "where wss.reported is false";
+			+ "where (wss.reported is :reported or :reported is null) "
+			+ "and (wss.userId = :userId or :userId is null) "
+			+ "and (wss.created >= :from or :from is null) "
+			+ "and (wss.created <= :to or :to is null) "
+			+ "and (rs.departure >= :departureFrom or :departureFrom is null) "
+			+ "and (rs.departure <= :departureTo or :departureTo is null) "
+			+ "and (:statusesStr is null or "
+				+ "exists (from ServiceStatusEntity as sse "
+				+ "where sse.parent = rs "
+				+ "and sse.created = (select max(ssem.created) from ServiceStatusEntity as ssem "
+					+ "where ssem.parent = rs) "
+				+ "and sse.status in (:statuses)))";
 	
 	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "
 			+ "set ss.reported = true "
@@ -145,17 +162,10 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 		return update(order);
 	}
 
-	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
 	public Order getDocuments(OrderParams params) throws ManageException {
-		try {
-			return sessionFactory.getCurrentSession().createQuery(GET_DOCUMENTS, Order.class)
-					.setParameter("orderId", params.getOrderId())
-					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getSingleResult();
-		} catch (Exception e) {
-			throw new ManageException("Error when get order documents", e);
-		}
+		return getOrder(GET_DOCUMENTS, params);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -163,9 +173,21 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	@Override
 	public List<Order> getOrders(OrderParams params) throws ManageException {
 		try {
-			return sessionFactory.getCurrentSession().createQuery(GET_ORDERS, Order.class)
-					.setMaxResults(params.getCount())
-					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
+			Query<Order> query = sessionFactory.getCurrentSession().createQuery(GET_ORDERS, Order.class)
+					.setParameter("reported", params.getReported())
+					.setParameter("userId", params.getUserId())
+					.setParameter("from", params.getFrom())
+					.setParameter("to", params.getTo())
+					.setParameter("departureFrom", params.getDepartureFrom())
+					.setParameter("departureTo", params.getDepartureTo())
+					.setParameter("statusesStr", params.getStatuses() == null || params.getStatuses().isEmpty() ? null :
+						params.getStatuses().stream().map(ServiceStatus::name).collect(Collectors.joining(",")))
+					.setParameterList("statuses", params.getStatuses() == null || params.getStatuses().isEmpty() ? 
+						Collections.singleton(ServiceStatus.UNAVAILABLE) : params.getStatuses());
+			if (params.getCount() != null) {
+				query.setMaxResults(params.getCount());
+			}
+			return query.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get orders", e);
 		}

@@ -226,9 +226,6 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		// очищаем неиспользуемые данные из словарей
-		searchController.updateResponseDictionaries(resultSegmentIds, result.getSegments(), result.getVehicles(), result.getOrganisations(), result.getLocalities(), null);
-		
 		// ид сегментов должны быть с next
 		updateResultSegmentIds(result, segmentIds);
 		
@@ -237,7 +234,7 @@ public class OrderResponseConverter {
 		
 		// сбрасываем стоимости с рейсов - они в сервисах
 		result.getSegments().values().forEach(s -> s.setPrice(null));
-		
+		result.fillMaps();
 		return order;
 	}
 	
@@ -398,7 +395,9 @@ public class OrderResponseConverter {
 		}
 		service.setId(new IdModel(resourceId, service.getId()).asString());
 		resourceService.setResourceNativeServiceId(service.getId());
-		
+		if (service.getSegment() != null) {
+			resourceService.setDeparture(service.getSegment().getDepartureDate());
+		}
 		// пересчитанную стоимость сохраняем к статусу
 		resourceService.addStatus(createStatus(created, user, statusType, error, service.getPrice()));
 		
@@ -424,7 +423,9 @@ public class OrderResponseConverter {
 		for (String id : segments.keySet()) {
 			TripIdModel model = new TripIdModel().create(id);
 			if (Objects.equals(item.getSegment().getId(), model.getId())) {
-				item.setSegment(new Segment(id));
+				Segment segment = segments.get(id);
+				segment.setId(id);
+				item.setSegment(segment);
 				break;
 			}
 		}
@@ -848,41 +849,8 @@ public class OrderResponseConverter {
 				iterator.remove();
 			}
 		}
-		updateDictionaries(response);
+		response.fillMaps();
 		return response;
-	}
-	
-	private void updateDictionaries(OrderResponse response) {
-		
-		// оставляем в запросе только указанный рейс
-		if (response.getSegments() != null) {
-			response.getSegments().keySet().removeIf(key -> response.getServices() == null
-					|| !response.getServices().stream().anyMatch(
-							s -> s.getSegment() != null && Objects.equals(key, s.getSegment().getId())));
-		}
-		// перезаливаем словари
-		if (response.getCustomers() != null) {
-			response.getCustomers().keySet().removeIf(key -> response.getServices() == null 
-					|| !response.getServices().stream().anyMatch(
-							s -> s.getCustomer() != null && Objects.equals(key, s.getCustomer().getId())));
-		}
-		if (response.getVehicles() != null) {
-			response.getVehicles().keySet().removeIf(key -> response.getSegments() == null
-					|| !response.getSegments().values().stream().anyMatch(
-							s -> s.getVehicle() != null && Objects.equals(key, s.getVehicle().getId())));
-		}
-		if (response.getOrganisations() != null) {
-			response.getOrganisations().keySet().removeIf(key -> response.getSegments() == null
-					|| !response.getSegments().values().stream().anyMatch(
-							s -> (s.getCarrier() != null && Objects.equals(key, s.getCarrier().getId()))
-							|| (s.getInsurance() != null && Objects.equals(key, s.getInsurance().getId()))));
-		}
-		if (response.getLocalities() != null) {
-			response.getLocalities().keySet().removeIf(key -> response.getSegments() == null
-					|| !response.getSegments().values().stream().anyMatch(
-							s -> Objects.equals(key, s.getDeparture().getId())
-							|| Objects.equals(key, s.getArrival().getId())));
-		}
 	}
 	
 	public Order joinOrders(Order presentOrder, Order newOrder) {
@@ -892,42 +860,11 @@ public class OrderResponseConverter {
 			presentOrder.addResourceOrder(resourceOrder);
 		}
 		// обновляем словари
-		OrderResponse presentResponse = presentOrder.getResponse();
-		OrderResponse newResponse = newOrder.getResponse();
-		presentResponse.setSegments(getMap(presentResponse.getSegments(), newResponse.getSegments()));
-		presentResponse.setVehicles(getMap(presentResponse.getVehicles(), newResponse.getVehicles()));
-		presentResponse.setOrganisations(getMap(presentResponse.getOrganisations(), newResponse.getOrganisations()));
-		presentResponse.setLocalities(getMap(presentResponse.getLocalities(), newResponse.getLocalities()));
-		presentResponse.setCustomers(getMap(presentResponse.getCustomers(), newResponse.getCustomers()));
-		presentResponse.setAdditionals(getMap(presentResponse.getAdditionals(), newResponse.getAdditionals()));
-		
-		// обновляем сервисы и другое
-		presentResponse.setServices(getList(presentResponse.getServices(), newResponse.getServices()));
-		presentResponse.setDocuments(getList(presentResponse.getDocuments(), newResponse.getDocuments()));
+		presentOrder.getResponse().join(newOrder.getResponse());
 		return presentOrder;
 	}
 	
-	private <T> List<T> getList(List<T> presentList, List<T> newList) {
-		if (newList != null) {
-			if (presentList != null) {
-				presentList.addAll(newList);
-			} else {
-				return newList;
-			}
-		}
-		return presentList;
-	}
 	
-	private <T> Map<String, T> getMap(Map<String, T> presentMap, Map<String, T> newMap) {
-		if (newMap != null) {
-			if (presentMap != null) {
-				presentMap.putAll(newMap);
-			} else {
-				return newMap;
-			}
-		}
-		return presentMap;
-	}
 	
 	public Order removeServices(Order order, List<ServiceItem> removed) {
 		Date created = new Date();
@@ -957,7 +894,7 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		updateDictionaries(order.getResponse());
+		order.getResponse().fillMaps();
 		return order;
 	}
 	

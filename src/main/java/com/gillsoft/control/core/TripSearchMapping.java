@@ -388,47 +388,7 @@ public class TripSearchMapping {
 	 * Словарям поиска проставляет ид маппинга и убирает ид с самих объектов.
 	 */
 	public void updateResultDictionaries(TripSearchResponse result) {
-		if (result.getSegments().isEmpty()) {
-			result.setSegments(null);
-		} else {
-			for (Segment segment : result.getSegments().values()) {
-				segment.setId(null);
-				segment.setDeparture(new Locality(segment.getDeparture().getId()));
-				segment.setArrival(new Locality(segment.getArrival().getId()));
-				segment.setVehicle(segment.getVehicle() != null ? new Vehicle(segment.getVehicle().getId()) : null);
-				segment.setCarrier(segment.getCarrier() != null ? new Organisation(segment.getCarrier().getId()) : null);
-				segment.setInsurance(segment.getInsurance() != null ? new Organisation(segment.getInsurance().getId()) : null);
-				// ресурс не проставляем так как там уже как надо
-			}
-		}
-		if (result.getLocalities() != null) {
-			if (result.getLocalities().isEmpty()) {
-				result.setLocalities(null);
-			} else {
-				result.getLocalities().values().forEach(l -> l.setId(null));
-			}
-		}
-		if (result.getOrganisations() != null) {
-			if (result.getOrganisations().isEmpty()) {
-				result.setOrganisations(null);
-			} else {
-				result.getOrganisations().values().forEach(o -> o.setId(null));
-			}
-		}
-		if (result.getResources() != null) {
-			if (result.getResources().isEmpty()) {
-				result.setResources(null);
-			} else {
-				result.getResources().values().forEach(r -> r.setId(null));
-			}
-		}
-		if (result.getVehicles() != null) {
-			if (result.getVehicles().isEmpty()) {
-				result.setVehicles(null);
-			} else {
-				result.getVehicles().values().forEach(v -> v.setId(null));
-			}
-		}
+		result.fillMaps();
 		if (result.getTripContainers().isEmpty()) {
 			result.setTripContainers(null);
 		}

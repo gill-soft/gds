@@ -1,7 +1,10 @@
 package com.gillsoft.control.core;
 
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -412,6 +415,7 @@ public class OrderController {
 		}
 		OrderParams params = new OrderParams();
 		params.setCount(count);
+		params.setReported(false);
 		try {
 			List<Order> orders = orderConverter.addPrice(manager.getOrders(params));
 			
@@ -421,6 +425,26 @@ public class OrderController {
 							ro -> ro.getServices().forEach(
 									rs -> rs.getStatuses().removeIf(ServiceStatusEntity::isReported))));
 			return orders;
+		} catch (ManageException e) {
+			LOGGER.error("Get orders error in db", e);
+			throw new ApiException(e);
+		}
+	}
+	
+	public List<OrderResponse> getActiveOrders() {
+		OrderParams params = new OrderParams();
+		params.setDepartureFrom(new Date());
+		params.setUserId(dataController.getUser().getId());
+		params.setStatuses(Arrays.asList(ServiceStatus.NEW,
+				ServiceStatus.CONFIRM,
+				ServiceStatus.CONFIRM_ERROR,
+				ServiceStatus.BOOKING,
+				ServiceStatus.RETURN,
+				ServiceStatus.RETURN_ERROR,
+				ServiceStatus.CANCEL_ERROR));
+		try {
+			List<Order> orders = manager.getOrders(params);
+			return orders.stream().map(o -> orderConverter.getResponse(o)).collect(Collectors.toList());
 		} catch (ManageException e) {
 			LOGGER.error("Get orders error in db", e);
 			throw new ApiException(e);

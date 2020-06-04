@@ -1,34 +1,47 @@
 package com.gillsoft.control.service.model;
 
 import java.util.Date;
+import java.util.List;
+
+import com.gillsoft.model.ServiceStatus;
 
 public class OrderParams {
 	
-	private long orderId;
+	private Long orderId;
 	
-	private long serviceId;
+	private Long serviceId;
 	
 	private Date from;
 	
 	private Date to;
 	
-	private int count;
+	private Integer count;
 	
 	private String resourceNativeOrderId;
 	
-	public long getOrderId() {
+	private Boolean reported;
+	
+	private Date departureFrom;
+	
+	private Date departureTo;
+	
+	private Long userId;
+	
+	private List<ServiceStatus> statuses;
+
+	public Long getOrderId() {
 		return orderId;
 	}
 
-	public void setOrderId(long orderId) {
+	public void setOrderId(Long orderId) {
 		this.orderId = orderId;
 	}
-	
-	public long getServiceId() {
+
+	public Long getServiceId() {
 		return serviceId;
 	}
 
-	public void setServiceId(long serviceId) {
+	public void setServiceId(Long serviceId) {
 		this.serviceId = serviceId;
 	}
 
@@ -48,11 +61,11 @@ public class OrderParams {
 		this.to = to;
 	}
 
-	public int getCount() {
+	public Integer getCount() {
 		return count;
 	}
 
-	public void setCount(int count) {
+	public void setCount(Integer count) {
 		this.count = count;
 	}
 
@@ -64,4 +77,44 @@ public class OrderParams {
 		this.resourceNativeOrderId = resourceNativeOrderId;
 	}
 
+	public Boolean getReported() {
+		return reported;
+	}
+
+	public void setReported(Boolean reported) {
+		this.reported = reported;
+	}
+
+	public Date getDepartureFrom() {
+		return departureFrom;
+	}
+
+	public void setDepartureFrom(Date departureFrom) {
+		this.departureFrom = departureFrom;
+	}
+
+	public Date getDepartureTo() {
+		return departureTo;
+	}
+
+	public void setDepartureTo(Date departureTo) {
+		this.departureTo = departureTo;
+	}
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
+
+	public List<ServiceStatus> getStatuses() {
+		return statuses;
+	}
+
+	public void setStatuses(List<ServiceStatus> statuses) {
+		this.statuses = statuses;
+	}
+	
 }
