@@ -65,7 +65,7 @@ public class OrderResponseConverter {
 		return convertToNewOrder(originalRequest, createRequest, new OrderResponse(), response);
 	}
 	
-	private OrderRequest simulateOriginalRequest(OrderResponse response) {
+	public OrderRequest simulateOriginalRequest(OrderResponse response) {
 		response.setId(StringUtil.generateUUID());
 		OrderRequest originalRequest = new OrderRequest();
 		originalRequest.setId(response.getId());
@@ -75,7 +75,7 @@ public class OrderResponseConverter {
 		return originalRequest;
 	}
 	
-	private OrderRequest simulateCreateRequest(OrderResponse response) {
+	public OrderRequest simulateCreateRequest(OrderResponse response) {
 		OrderRequest createRequest = new OrderRequest();
 		createRequest.setResources(new ArrayList<>(response.getResources().size()));
 		for (OrderResponse orderResponse : response.getResources()) {
@@ -95,7 +95,7 @@ public class OrderResponseConverter {
 		return createRequest;
 	}
 	
-	private ResourceParams createResourceParams(Resource resource) {
+	public ResourceParams createResourceParams(Resource resource) {
 		ResourceParams resourceParams = new ResourceParams();
 		Resource copy = new Resource();
 		resourceParams.setResource(copy);
@@ -109,7 +109,7 @@ public class OrderResponseConverter {
 		return resourceParams;
 	}
 	
-	private com.gillsoft.ms.entity.ResourceParams getResourceParam(String id) {
+	public com.gillsoft.ms.entity.ResourceParams getResourceParam(String id) {
 		try {
 			return dataController.getResourceParam(Long.parseLong(id));
 		} catch (Exception e) {
@@ -117,7 +117,7 @@ public class OrderResponseConverter {
 		}
 	}
 	
-	private long getParamsResourceId(com.gillsoft.ms.entity.ResourceParams params) {
+	public long getParamsResourceId(com.gillsoft.ms.entity.ResourceParams params) {
 		com.gillsoft.ms.entity.Resource resourceOrders = dataController.getResource(params);
 		if (resourceOrders != null) {
 			return resourceOrders.getId();

@@ -29,7 +29,7 @@ public class ScheduleRestService extends AbstractRestService implements Schedule
 	@Override
 	public TripSearchResponse getSegmentResponse(long resourceId, String segmentId) {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(Config.getScheduleUrl()
-				+ MessageFormat.format(GET_SEGMENT_RESPONSE, resourceId, segmentId));
+				+ MessageFormat.format(GET_SEGMENT_RESPONSE, String.valueOf(resourceId), segmentId));
 		URI uri = builder.build().toUri();
 		RequestEntity<Object> entity = new RequestEntity<Object>(HttpMethod.GET, uri);
 		try {

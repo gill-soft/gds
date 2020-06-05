@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.NoDataFoundException;
@@ -18,6 +19,8 @@ import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.model.Resource;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.response.OrderResponse;
 
@@ -38,15 +41,23 @@ public class ThirdPartyOrderController {
 	
 	public void saveOrUpdate(List<OrderResponse> responses) {
 		for (OrderResponse orderResponse : responses) {
-			Order order = findOrCreateOrder(orderResponse);
-			if (order == null) {
-				throw new NoDataFoundException("Order not found and not created");
+			try {
+				Order order = findOrCreateOrder(getCopy(orderResponse));
+				if (order == null) {
+					throw new NoDataFoundException("Order not found and not created");
+				}
+				confirmOrder(getCopy(orderResponse), order);
+				returOrder(getCopy(orderResponse), order);
+				cancelOrder(getCopy(orderResponse), order);
+			} catch (Exception e) {
+				LOGGER.error(e);
 			}
-			confirmOrder(orderResponse, order);
-			returOrder(orderResponse, order);
-			cancelOrder(orderResponse, order);
 		}
 		
+	}
+	
+	private OrderResponse getCopy(OrderResponse orderResponse) {
+		return (OrderResponse) SerializationUtils.deserialize(SerializationUtils.serialize(orderResponse));
 	}
 	
 	private Order findOrCreateOrder(OrderResponse orderResponse) {
@@ -66,10 +77,22 @@ public class ThirdPartyOrderController {
 	
 	private OrderParams createFindOrderParams(OrderResponse orderResponse) {
 		OrderParams params = new OrderParams();
-		params.setResourceNativeOrderId(new IdModel(
-				Long.parseLong(orderResponse.getSegments().values().iterator().next().getResource().getId()),
+		params.setResourceNativeOrderId(new IdModel(getResourceId(orderResponse),
 				orderResponse.getOrderId()).asString());
 		return params;
+	}
+	
+	private long getResourceId(OrderResponse orderResponse) {
+		if (orderResponse.getSegments() != null
+				&& !orderResponse.getSegments().isEmpty()) {
+			for (Segment segment : orderResponse.getSegments().values()) {
+				Resource resource = segment.getResource();
+				if (resource != null) {
+					return orderConverter.getParamsResourceId(orderConverter.getResourceParam(resource.getId()));
+				}
+			}
+		}
+		return -1;
 	}
 	
 	private void confirmOrder(OrderResponse orderResponse, Order order) {

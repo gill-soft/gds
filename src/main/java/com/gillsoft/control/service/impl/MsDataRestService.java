@@ -124,7 +124,7 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	@Override
 	public Organisation getOrganisation(long id) {
-		return getResult(MessageFormat.format(GET_ORGANISATION, id), null, new ParameterizedTypeReference<Organisation>() { });
+		return getResult(MessageFormat.format(GET_ORGANISATION, String.valueOf(id)), null, new ParameterizedTypeReference<Organisation>() { });
 	}
 	
 	@Override
