@@ -2,6 +2,7 @@ package com.gillsoft.control.service;
 
 import java.util.List;
 
+import com.gillsoft.ms.entity.Attribute;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.ConnectionDiscount;
 import com.gillsoft.ms.entity.OrderAccess;
@@ -142,5 +143,12 @@ public interface MsDataService {
 	 * @return Список параметров доступа к ресурсам заказов.
 	 */
 	public List<ResourceParams> getAllResourceParamsWithParent();
+	
+	/**
+	 * Возвращает список всех возможных аттрибутов.
+	 * 
+	 * @return Список возможных аттрибутов.
+	 */
+	public List<Attribute> getAllAttributes();
 	
 }

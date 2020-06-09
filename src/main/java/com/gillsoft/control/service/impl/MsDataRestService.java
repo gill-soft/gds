@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.model.ResponseError;
+import com.gillsoft.ms.entity.Attribute;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.BaseEntityDeserializer;
 import com.gillsoft.ms.entity.Commission;
@@ -81,6 +82,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_ORGANISATIONS = "organisation";
 	
 	private static final String ALL_RESOURCE_PARAMS_WITH_PARENTS = "resource_params/all_with_parents";
+	
+	private static final String ALL_ATTRIBUTES = "attribute";
 	
 	private RestTemplate template;
 	
@@ -233,6 +236,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<ResourceParams> getAllResourceParamsWithParent() {
 		return getResult(ALL_RESOURCE_PARAMS_WITH_PARENTS, null, new ParameterizedTypeReference<List<ResourceParams>>() { });
+	}
+	
+	@Override
+	public List<Attribute> getAllAttributes() {
+		return getResult(ALL_ATTRIBUTES, null, new ParameterizedTypeReference<List<Attribute>>() { });
 	}
 	
 	private class EntityMultiplier<T extends BaseEntity> {

@@ -13,12 +13,17 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
+import com.gillsoft.concurrent.PoolType;
+import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.NoDataFoundException;
+import com.gillsoft.control.service.ClientAccountService;
 import com.gillsoft.control.service.OrderDAOManager;
+import com.gillsoft.control.service.model.ClientView;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.model.Customer;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
@@ -38,6 +43,9 @@ public class ThirdPartyOrderController {
 	
 	@Autowired
 	private OrderRequestController requestController;
+	
+	@Autowired
+	private ClientAccountService clientService;
 	
 	public void saveOrUpdate(List<OrderResponse> responses) {
 		for (OrderResponse orderResponse : responses) {
@@ -66,6 +74,7 @@ public class ThirdPartyOrderController {
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
 			order = orderConverter.convertToNewOrder(orderResponse);
+			registerClients(orderResponse);
 		}
 		try {
 			manager.create(order);
@@ -93,6 +102,20 @@ public class ThirdPartyOrderController {
 			}
 		}
 		return -1;
+	}
+	
+	private void registerClients(OrderResponse orderResponse) {
+		for (Customer customer : orderResponse.getCustomers().values()) {
+			registerClient(customer);
+		}
+	}
+	
+	private void registerClient(Customer customer) {
+		ThreadPoolStore.execute(PoolType.LOCALITY, () -> {
+			ClientView client = new ClientView();
+			client.setFields(customer);
+			clientService.register(client);
+		});
 	}
 	
 	private void confirmOrder(OrderResponse orderResponse, Order order) {

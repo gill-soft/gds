@@ -36,6 +36,10 @@ private static Properties properties;
 		return properties.getProperty("schedule.url");
 	}
 	
+	public static String getClientAccountUrl() {
+		return properties.getProperty("client.account.url");
+	}
+	
 	public static String getMsUrl() {
 		return properties.getProperty("ms.url");
 	}
