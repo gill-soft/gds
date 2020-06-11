@@ -102,7 +102,7 @@ public class SearchRequestController {
 						resourceSearchRequest.getLocalityPairs().add(new String[] { fromId, toId });
 					}
 				}
-				requestContainer.add(String.join(";", pair), resourceSearchRequest);
+				requestContainer.add(resourceSearchRequest);
 			}
 		}
 	}

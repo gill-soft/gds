@@ -217,7 +217,6 @@ public class TripSearchController {
 							
 							// логируем ошибки, если есть
 							logError(searchResponse);
-							requestContainer.setSearchPair(request);
 							prepareResult(request, searchResponse, allResult);
 						}
 					}
@@ -429,7 +428,7 @@ public class TripSearchController {
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
 				model.getRequest().setCurrency(request.getCurrency());
 				model.getRequest().setToResult(true);
-				requestContainer.add(String.join(";", model.getRequest().getLocalityPairs().get(0)), model.getRequest());
+				requestContainer.add(model.getRequest());
 			}
 			TripSearchResponse response = initSearch(requestContainer);
 			

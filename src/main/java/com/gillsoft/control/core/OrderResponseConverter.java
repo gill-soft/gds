@@ -150,6 +150,7 @@ public class OrderResponseConverter {
 		for (OrderResponse orderResponse : response.getResources()) {
 			Optional<OrderRequest> optional = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
 			if (optional.isPresent()) {
+				orderResponse.fillMaps();
 				
 				// запрос, по которому получен результат
 				OrderRequest currRequest = optional.get();

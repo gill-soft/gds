@@ -1,18 +1,15 @@
 package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
+import com.gillsoft.util.StringUtil;
 
 public class SearchRequestContainer implements Serializable {
 
@@ -20,7 +17,9 @@ public class SearchRequestContainer implements Serializable {
 
 	private TripSearchRequest originRequest;
 	
-	private Map<String, List<TripSearchRequest>> pairRequests;
+	private List<TripSearchRequest> requests;
+	
+	private Set<String> presentRequests;
 	
 	private ConnectionsResponse connections;
 	
@@ -37,42 +36,68 @@ public class SearchRequestContainer implements Serializable {
 	}
 	
 	public boolean isEmpty() {
-		return pairRequests == null || pairRequests.isEmpty();
+		return requests == null || requests.isEmpty();
 	}
 	
-	public void setSearchPair(TripSearchRequest request) {
-		for (Entry<String, List<TripSearchRequest>> requests : pairRequests.entrySet()) {
-			for (TripSearchRequest searchRequest : requests.getValue()) {
-				if (searchRequest.getId().equals(request.getId())) {
-					request.setLocalityPairs(Collections.singletonList(requests.getKey().split(";")));
-					return;
+	public void add(TripSearchRequest request) {
+		if (addSearchRequestKeys(request)) {
+			if (requests == null) {
+				requests = new LinkedList<>();
+			}
+			requests.add(request);
+		}
+	}
+	
+	private boolean addSearchRequestKeys(TripSearchRequest request) {
+		boolean added = false;
+		for (Date date : request.getDates()) {
+			if (request.getBackDates() != null) {
+				for (Date back : request.getBackDates()) {
+					if (addSearchRequestKeys(date, back, request)) {
+						added = true;
+					}
+				}
+			} else {
+				if (addSearchRequestKeys(date, null, request)) {
+					added = true;
 				}
 			}
 		}
+		return added;
+	}
+	
+	private boolean addSearchRequestKeys(Date date, Date back, TripSearchRequest request) {
+		boolean added = false;
+		for (String[] pair : request.getLocalityPairs()) {
+			StringBuilder key = new StringBuilder();
+			key.append(StringUtil.dateFormat.format(date)).append(";");
+			if (back != null) {
+				key.append(StringUtil.dateFormat.format(back)).append(";");
+			}
+			key.append(String.join(";", pair)).append(";");
+			key.append(request.getCurrency()).append(";");
+			key.append(request.getLang()).append(";");
+			if (request.getParams() != null) {
+				if (request.getParams().getResource() != null) {
+					key.append(request.getParams().getResource().getId()).append(";");
+					key.append(request.getParams().getResource().getCode()).append(";");
+				}
+				key.append(request.getParams().getHost()).append(";");
+			}
+			if (presentRequests == null) {
+				presentRequests = new HashSet<>();
+			}
+			if (presentRequests.add(key.toString())) {
+				added = true;
+			}
+		}
+		return added;
 	}
 	
 	public List<TripSearchRequest> getRequests() {
-		return pairRequests.values().stream().flatMap(List::stream).collect(Collectors.toList());
+		return requests;
 	}
 	
-	public void add(String pairKey, TripSearchRequest request) {
-		if (pairRequests == null) {
-			pairRequests = new HashMap<>();
-		}
-		if (!pairRequests.containsKey(pairKey)) {
-			pairRequests.put(pairKey, new ArrayList<>());
-		}
-		pairRequests.get(pairKey).add(request);
-	}
-
-	public Map<String, List<TripSearchRequest>> getPairRequests() {
-		return pairRequests;
-	}
-
-	public void setPairRequests(Map<String, List<TripSearchRequest>> pairRequests) {
-		this.pairRequests = pairRequests;
-	}
-
 	public ConnectionsResponse getConnections() {
 		return connections;
 	}
