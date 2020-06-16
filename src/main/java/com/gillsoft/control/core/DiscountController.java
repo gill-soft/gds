@@ -64,24 +64,27 @@ public class DiscountController {
 	
 	public void applyConnectionDiscount(Trip trip, Map<String, Segment> segments) {
 		List<ConnectionDiscount> discounts = dataController.getResourceConnectionDiscounts();
-		addDiscount(trip, segments, null, null, discounts, true);
-		
-		// удаляем скидки, которые приводят стоимость к минусу
-		if (trip.getDiscounts() != null) {
-			Set<String> presentIds = trip.getDiscounts().stream().map(Discount::getId).collect(Collectors.toSet());
-			segments.values().forEach(s -> {
-				if (s.getPrice().getDiscounts() != null) {
-					for (Iterator<Discount> iterator = s.getPrice().getDiscounts().iterator(); iterator.hasNext();) {
-						Discount discount = iterator.next();
-						if (!presentIds.contains(discount.getId())) {
-							iterator.remove();
+		if (discounts != null
+				&& !discounts.isEmpty()) {
+			addDiscount(trip, segments, null, null, discounts, true);
+			
+			// удаляем скидки, которые приводят стоимость к минусу
+			if (trip.getDiscounts() != null) {
+				Set<String> presentIds = trip.getDiscounts().stream().map(Discount::getId).collect(Collectors.toSet());
+				segments.values().forEach(s -> {
+					if (s.getPrice().getDiscounts() != null) {
+						for (Iterator<Discount> iterator = s.getPrice().getDiscounts().iterator(); iterator.hasNext();) {
+							Discount discount = iterator.next();
+							if (!presentIds.contains(discount.getId())) {
+								iterator.remove();
+							}
+						}
+						for (Discount discount : s.getPrice().getDiscounts()) {
+							s.getPrice().setAmount(s.getPrice().getAmount().add(discount.getValue()));
 						}
 					}
-					for (Discount discount : s.getPrice().getDiscounts()) {
-						s.getPrice().setAmount(s.getPrice().getAmount().add(discount.getValue()));
-					}
-				}
-			});
+				});
+			}
 		}
 	}
 	
