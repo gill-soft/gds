@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @Entity
-@Table(name = "resource_services", indexes = { @Index(columnList = "departure") })
+@Table(name = "resource_services", indexes = { @Index(columnList = "departure"), @Index(columnList = "departure,mapped_trip") })
 @JsonInclude(Include.NON_NULL)
 public class ResourceService implements Serializable {
 
@@ -54,6 +54,9 @@ public class ResourceService implements Serializable {
 	
 	@Column(nullable = true)
 	private Date departure;
+	
+	@Column(name = "mapped_trip", nullable = false)
+	private boolean mappedTrip = true;
 
 	public long getId() {
 		return id;
@@ -101,6 +104,14 @@ public class ResourceService implements Serializable {
 
 	public void setDeparture(Date departure) {
 		this.departure = departure;
+	}
+
+	public boolean isMappedTrip() {
+		return mappedTrip;
+	}
+
+	public void setMappedTrip(boolean mappedTrip) {
+		this.mappedTrip = mappedTrip;
 	}
 
 }

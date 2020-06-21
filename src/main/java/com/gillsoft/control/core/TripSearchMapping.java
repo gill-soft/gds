@@ -30,6 +30,7 @@ import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.LangRequest;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
 
@@ -141,6 +142,25 @@ public class TripSearchMapping {
 		updateSegments(request, searchResponse, result, true);
 	}
 	
+	public void mapSegmentsTripId(Map<String, Segment> responseSegments) {
+		TripSearchRequest request = new TripSearchRequest();
+		ResourceParams params = new ResourceParams();
+		params.setResource(responseSegments.values().iterator().next().getResource());
+		request.setParams(params);
+		Map<String, Segment> fromMapping = mapSegments(request, responseSegments);
+		long resourceId = MappingCreator.getResourceId(request);
+		for (Segment segment : responseSegments.values()) {
+			String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
+			String segmentKey = getKey(resourceId, tripNumber);
+			if (fromMapping.containsKey(segmentKey)) {
+				Segment s = fromMapping.get(segmentKey);
+				if (s.getTripId() != null) {
+					segment.setTripId(s.getTripId());
+				}
+			}
+		}
+	}
+	
 	private Map<String, Segment> mapSegments(TripSearchRequest request, Map<String, Segment> responseSegments) {
 		long resourceId = MappingCreator.getResourceId(request);
 		Map<String, Segment> segments = responseSegments.values().stream().collect(
@@ -164,6 +184,7 @@ public class TripSearchMapping {
 			try {
 				Segment segment = entry.getValue();
 				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
+				segment.setTripRresourceId(tripNumber);
 				String segmentKey = getKey(resourceId, tripNumber);
 				if (fromMapping.containsKey(segmentKey)) {
 					Segment s = fromMapping.get(segmentKey);

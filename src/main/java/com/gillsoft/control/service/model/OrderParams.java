@@ -28,6 +28,10 @@ public class OrderParams {
 	private Long userId;
 	
 	private List<ServiceStatus> statuses;
+	
+	private Boolean mappedTrip;
+	
+	private Date mappedDeparture;
 
 	public Long getOrderId() {
 		return orderId;
@@ -115,6 +119,22 @@ public class OrderParams {
 
 	public void setStatuses(List<ServiceStatus> statuses) {
 		this.statuses = statuses;
+	}
+
+	public Boolean getMappedTrip() {
+		return mappedTrip;
+	}
+
+	public void setMappedTrip(Boolean mappedTrip) {
+		this.mappedTrip = mappedTrip;
+	}
+
+	public Date getMappedDeparture() {
+		return mappedDeparture;
+	}
+
+	public void setMappedDeparture(Date mappedDeparture) {
+		this.mappedDeparture = mappedDeparture;
 	}
 	
 }

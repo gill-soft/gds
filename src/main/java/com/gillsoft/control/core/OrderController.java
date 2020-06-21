@@ -416,6 +416,7 @@ public class OrderController {
 		OrderParams params = new OrderParams();
 		params.setCount(count);
 		params.setReported(false);
+		params.setMappedTrip(true);
 		try {
 			List<Order> orders = orderConverter.addPrice(manager.getOrders(params));
 			
@@ -433,7 +434,7 @@ public class OrderController {
 	
 	public List<OrderResponse> getActiveOrders() {
 		OrderParams params = new OrderParams();
-		params.setDepartureFrom(new Date());
+		params.setDepartureFrom(new Date()); //TODO convert to departure city timezone
 		params.setUserId(dataController.getUser().getId());
 		params.setStatuses(Arrays.asList(ServiceStatus.NEW,
 				ServiceStatus.CONFIRM,

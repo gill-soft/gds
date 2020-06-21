@@ -6,6 +6,7 @@ import java.util.Set;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.control.service.model.ResourceService;
 
 public interface OrderDAOManager {
 	
@@ -36,5 +37,9 @@ public interface OrderDAOManager {
 	public void reportStatuses(Set<Long> ids) throws ManageException;
 	
 	public long getUniqueId(long groupeId) throws ManageException;
+	
+	public void updateOrderResponse(Order order) throws ManageException;
+	
+	public void markResourceServiceMappedTrip(ResourceService service) throws ManageException;
 
 }

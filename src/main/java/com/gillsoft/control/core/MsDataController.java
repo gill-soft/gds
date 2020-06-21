@@ -326,6 +326,9 @@ public class MsDataController {
 	}
 	
 	public Resource getResource(com.gillsoft.ms.entity.ResourceParams params) {
+		if (params == null) {
+			return null;
+		}
 		for (BaseEntity entity : params.getParents()) {
 			if (entity.getType() == EntityType.RESOURCE) {
 				return (Resource) entity;

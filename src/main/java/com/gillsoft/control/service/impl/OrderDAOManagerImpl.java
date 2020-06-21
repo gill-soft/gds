@@ -17,6 +17,7 @@ import com.gillsoft.control.service.model.GroupeIdEntity;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
+import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.model.ServiceStatus;
 
 @Repository
@@ -65,6 +66,8 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "and (wss.created <= :to or :to is null) "
 			+ "and (rs.departure >= :departureFrom or :departureFrom is null) "
 			+ "and (rs.departure <= :departureTo or :departureTo is null) "
+			+ "and ((rs.departure >= :mappedDeparture or :mappedDeparture is null) "
+				+ "and (rs.mappedTrip is :mappedTrip or :mappedTrip is null)) "
 			+ "and (:statusesStr is null or "
 				+ "exists (from ServiceStatusEntity as sse "
 				+ "where sse.parent = rs "
@@ -75,6 +78,14 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "
 			+ "set ss.reported = true "
 			+ "where ss.id in (:ids)";
+	
+	private final static String UPDATE_RESPONSE = "update Order as o "
+			+ "set o.response = :response "
+			+ "where o.id = :id";
+	
+	private final static String MARK_SERVICE_MAPPED_TRIP = "update ResourceService as rs "
+			+ "set rs.mappedTrip = true "
+			+ "where rs.id = :id";
 	
 	@Autowired
 	protected SessionFactory sessionFactory;
@@ -180,6 +191,8 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					.setParameter("to", params.getTo())
 					.setParameter("departureFrom", params.getDepartureFrom())
 					.setParameter("departureTo", params.getDepartureTo())
+					.setParameter("mappedDeparture", params.getMappedDeparture())
+					.setParameter("mappedTrip", params.getMappedTrip())
 					.setParameter("statusesStr", params.getStatuses() == null || params.getStatuses().isEmpty() ? null :
 						params.getStatuses().stream().map(ServiceStatus::name).collect(Collectors.joining(",")))
 					.setParameterList("statuses", params.getStatuses() == null || params.getStatuses().isEmpty() ? 
@@ -198,7 +211,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	public void reportStatuses(Set<Long> ids) throws ManageException {
 		try {
 			sessionFactory.getCurrentSession().createQuery(REPORT_STATUSES)
-					.setParameter("ids", ids).executeUpdate();
+					.setParameterList("ids", ids).executeUpdate();
 		} catch (Exception e) {
 			throw new ManageException("Error when report statuses", e);
 		}
@@ -214,6 +227,29 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			return groupeIdEntity.getId();
 		} catch (Exception e) {
 			throw new ManageException("Error when create unique", e);
+		}
+	}
+
+	@Transactional
+	@Override
+	public void updateOrderResponse(Order order) throws ManageException {
+		try {
+			sessionFactory.getCurrentSession().createQuery(UPDATE_RESPONSE)
+					.setParameter("id", order.getId())
+					.setParameter("response", order.getResponse()).executeUpdate();
+		} catch (Exception e) {
+			throw new ManageException("Error when update response", e);
+		}
+	}
+
+	@Transactional
+	@Override
+	public void markResourceServiceMappedTrip(ResourceService service) throws ManageException {
+		try {
+			sessionFactory.getCurrentSession().createQuery(MARK_SERVICE_MAPPED_TRIP)
+					.setParameter("id", service.getId()).executeUpdate();
+		} catch (Exception e) {
+			throw new ManageException("Error when update service", e);
 		}
 	}
 

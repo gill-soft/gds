@@ -22,11 +22,10 @@ import org.thymeleaf.templateresolver.StringTemplateResolver;
 
 import com.gillsoft.model.Lang;
 import com.gillsoft.security.WhiteList;
-import com.gillsoft.security.config.SecurityConfig;
 
 @Configuration
 @EnableWebMvc
-@Import({ SwaggerConfig.class, SecurityConfig.class })
+@Import({ SwaggerConfig.class, SpringSecurityConfig.class })
 public class WebConfig implements WebMvcConfigurer {
 	
 	@Override
