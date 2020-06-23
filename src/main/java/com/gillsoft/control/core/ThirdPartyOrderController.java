@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,11 +39,14 @@ import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.model.Customer;
+import com.gillsoft.model.Lang;
+import com.gillsoft.model.Locality;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.response.OrderResponse;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -79,7 +83,7 @@ public class ThirdPartyOrderController {
 				returOrder(getCopy(orderResponse), order);
 				cancelOrder(getCopy(orderResponse), order);
 			} catch (Exception e) {
-				LOGGER.error(e);
+				LOGGER.error("saveOrUpdate error", e);
 			}
 		}
 		
@@ -101,7 +105,7 @@ public class ThirdPartyOrderController {
 			markUnmapped(order);
 			manager.create(order);
 		} catch (ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("findOrCreateOrder error", e);
 		}
 		return order;
 	}
@@ -127,15 +131,68 @@ public class ThirdPartyOrderController {
 	}
 	
 	private void registerClients(OrderResponse orderResponse) {
-		for (Customer customer : orderResponse.getCustomers().values()) {
-			registerClient(customer);
+		Map<String, List<String>> notifications = createOrderNotifications(orderResponse);
+		for (Entry<String, Customer> customer : orderResponse.getCustomers().entrySet()) {
+			registerClient(customer.getValue(), notifications.get(customer.getKey()));
 		}
 	}
 	
-	private void registerClient(Customer customer) {
+	private Map<String, List<String>> createOrderNotifications(OrderResponse orderResponse) {
+		Map<String, String> clientNotifications = new HashMap<>();
+		for (OrderResponse response : orderResponse.getResources()) {
+			for (ServiceItem service : response.getServices()) {
+				if (service.getError() == null
+						&& service.getSegment() != null
+						&& service.getCustomer() != null) {
+					Customer customer = response.getCustomers().get(service.getCustomer().getId());
+					Segment segment = response.getSegments().get(service.getSegment().getId());
+					if (customer != null
+							&& segment != null
+							&& !clientNotifications.containsKey(service.getCustomer().getId() + "_" + service.getSegment().getId())) {
+						StringBuilder notification = new StringBuilder();
+						notification.append("Ви купили билет ")
+								.append(getLocalityName(response, segment.getDeparture(), true))
+								.append("-")
+								.append(getLocalityName(response, segment.getArrival(), true))
+								.append("-")
+								.append(StringUtil.dateFormat.format(segment.getDepartureDate()))
+								.append(". ")
+								.append("Для регистрации на рейс и покупки обратного билета по сниженным ценам перейдите по ссылке ")
+								.append("viber://pa?chatURI=busis&context=gds_orders");
+						LOGGER.info(notification);
+						clientNotifications.put(service.getCustomer().getId() + "_" + service.getSegment().getId(), notification.toString());
+					}
+				}
+			}
+		}
+		return clientNotifications.entrySet().stream().collect(Collectors.groupingBy(entry -> entry.getKey().split("_")[0],
+				Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+	}
+	
+	private String getLocalityName(OrderResponse response, Locality locality, boolean checkParent) {
+		if (locality == null
+				|| response.getLocalities() == null) {
+			return "";
+		}
+		Locality station = response.getLocalities().get(locality.getId());
+		if (station != null) {
+			if (checkParent
+					&& station.getParent() != null) {
+				String cityName = getLocalityName(response, station.getParent(), false);
+				if (!cityName.isEmpty()) {
+					return cityName;
+				}
+			}
+			return station.getName(Lang.RU);
+		}
+		return "";
+	}
+	
+	private void registerClient(Customer customer, List<String> clientNotifications) {
 		ThreadPoolStore.execute(PoolType.LOCALITY, () -> {
 			ClientView client = new ClientView();
 			client.setFields(customer);
+			client.setNotifications(clientNotifications);
 			clientService.register(client);
 		});
 	}
@@ -155,7 +212,7 @@ public class ThirdPartyOrderController {
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("confirmOrder error", e);
 		}
 	}
 	
@@ -168,7 +225,7 @@ public class ThirdPartyOrderController {
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("returnOrder error", e);
 		}
 	}
 	
@@ -182,7 +239,7 @@ public class ThirdPartyOrderController {
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("cancelOrder error", e);
 		}
 	}
 	
@@ -309,7 +366,7 @@ public class ThirdPartyOrderController {
 				try {
 					manager.markResourceServiceMappedTrip(service);
 				} catch (ManageException e) {
-					LOGGER.error(e);
+					LOGGER.error("saveUpdated error", e);
 				}
 			}
 		} catch (ManageException e) {
