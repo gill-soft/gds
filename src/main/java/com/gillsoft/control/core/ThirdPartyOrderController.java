@@ -96,9 +96,9 @@ public class ThirdPartyOrderController {
 	private Order findOrCreateOrder(OrderResponse orderResponse) {
 		Order order = null;
 		try {
-			registerClients(orderResponse);
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
+			registerClients(orderResponse);
 			order = orderConverter.convertToNewOrder(orderResponse);
 		}
 		try {
