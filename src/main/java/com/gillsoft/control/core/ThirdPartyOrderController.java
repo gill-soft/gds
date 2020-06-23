@@ -96,10 +96,10 @@ public class ThirdPartyOrderController {
 	private Order findOrCreateOrder(OrderResponse orderResponse) {
 		Order order = null;
 		try {
+			registerClients(orderResponse);
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
 			order = orderConverter.convertToNewOrder(orderResponse);
-			registerClients(orderResponse);
 		}
 		try {
 			markUnmapped(order);
@@ -144,7 +144,7 @@ public class ThirdPartyOrderController {
 				if (service.getError() == null
 						&& service.getSegment() != null
 						&& service.getCustomer() != null) {
-					Customer customer = response.getCustomers().get(service.getCustomer().getId());
+					Customer customer = orderResponse.getCustomers().get(service.getCustomer().getId());
 					Segment segment = response.getSegments().get(service.getSegment().getId());
 					if (customer != null
 							&& segment != null
