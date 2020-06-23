@@ -158,7 +158,7 @@ public class ThirdPartyOrderController {
 								.append(StringUtil.dateFormat.format(segment.getDepartureDate()))
 								.append(". ")
 								.append("Для регистрации на рейс и покупки обратного билета по сниженным ценам перейдите по ссылке ")
-								.append("viber://pa?chatURI=busis&context=gds_orders");
+								.append("http://tinyurl.com/ybhsnvvj");
 						LOGGER.info(notification);
 						clientNotifications.put(service.getCustomer().getId() + "_" + service.getSegment().getId(), notification.toString());
 					}
