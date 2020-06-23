@@ -96,10 +96,10 @@ public class ThirdPartyOrderController {
 	private Order findOrCreateOrder(OrderResponse orderResponse) {
 		Order order = null;
 		try {
-			registerClients(orderResponse);
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
 			order = orderConverter.convertToNewOrder(orderResponse);
+			registerClients(orderResponse);
 		}
 		try {
 			markUnmapped(order);
