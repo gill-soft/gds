@@ -27,6 +27,10 @@ public class OrderParams {
 	
 	private Long userId;
 	
+	private Long clientId;
+	
+	private String clientPhone;
+	
 	private List<ServiceStatus> statuses;
 	
 	private Boolean mappedTrip;
@@ -111,6 +115,22 @@ public class OrderParams {
 
 	public void setUserId(Long userId) {
 		this.userId = userId;
+	}
+
+	public Long getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(Long clientId) {
+		this.clientId = clientId;
+	}
+
+	public String getClientPhone() {
+		return clientPhone;
+	}
+
+	public void setClientPhone(String clientPhone) {
+		this.clientPhone = OrderClient.preparePhone(clientPhone);
 	}
 
 	public List<ServiceStatus> getStatuses() {

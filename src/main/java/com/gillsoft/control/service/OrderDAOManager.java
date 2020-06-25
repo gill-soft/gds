@@ -7,6 +7,7 @@ import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceService;
+import com.gillsoft.ms.entity.Client;
 
 public interface OrderDAOManager {
 	
@@ -41,5 +42,7 @@ public interface OrderDAOManager {
 	public void updateOrderResponse(Order order) throws ManageException;
 	
 	public void markResourceServiceMappedTrip(ResourceService service) throws ManageException;
+	
+	public void addOrderClient(Order order, Client client) throws ManageException;
 
 }

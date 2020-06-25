@@ -215,7 +215,8 @@ public class MappingCreator<T> {
 		MsDataController dataController = ContextProvider.getBean(MsDataController.class);
 		if (dataController != null) {
 			Resource resource = dataController.getResource(resourceId);
-			if (resource.getMain() != null) {
+			if (resource != null
+					&& resource.getMain() != null) {
 				return resource.getMain().getId();
 			}
 		}

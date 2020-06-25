@@ -63,6 +63,12 @@ public class Order implements Serializable {
 	@Fetch(FetchMode.SELECT)
 	@JsonIgnore
 	private Set<OrderDocument> documents;
+	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
+	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
+	@Fetch(FetchMode.SELECT)
+	@JsonIgnore
+	private Set<OrderClient> clients;
 
 	public long getId() {
 		return id;
@@ -134,6 +140,22 @@ public class Order implements Serializable {
 		}
 		orderDocument.setParent(this);
 		documents.add(orderDocument);
+	}
+
+	public Set<OrderClient> getClients() {
+		return clients;
+	}
+
+	public void setClients(Set<OrderClient> clients) {
+		this.clients = clients;
+	}
+	
+	public void addOrderClient(OrderClient client) {
+		if (clients == null) {
+			clients = new HashSet<>();
+		}
+		client.setParent(this);
+		clients.add(client);
 	}
 
 }

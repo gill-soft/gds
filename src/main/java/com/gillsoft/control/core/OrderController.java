@@ -21,6 +21,7 @@ import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Lang;
@@ -30,6 +31,7 @@ import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.ms.entity.User;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -432,10 +434,12 @@ public class OrderController {
 		}
 	}
 	
-	public List<OrderResponse> getActiveOrders() {
+	public List<OrderResponse> getClientActiveOrders() {
 		OrderParams params = new OrderParams();
 		params.setDepartureFrom(new Date()); //TODO convert to departure city timezone
-		params.setUserId(dataController.getUser().getId());
+		User client = dataController.getUser();
+		params.setClientId(client.getId());
+		params.setClientPhone(OrderClient.getPhone(client));
 		params.setStatuses(Arrays.asList(ServiceStatus.NEW,
 				ServiceStatus.CONFIRM,
 				ServiceStatus.CONFIRM_ERROR,

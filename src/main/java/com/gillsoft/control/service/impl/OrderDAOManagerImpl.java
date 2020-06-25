@@ -16,9 +16,11 @@ import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.GroupeIdEntity;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.model.ServiceStatus;
+import com.gillsoft.ms.entity.Client;
 
 @Repository
 public class OrderDAOManagerImpl implements OrderDAOManager {
@@ -60,8 +62,11 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join rs.statuses as wss "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
+			+ "left join o.clients as c "
 			+ "where (wss.reported is :reported or :reported is null) "
 			+ "and (wss.userId = :userId or :userId is null) "
+			+ "and ((:clientId is null or c.clientId = :clientId) "
+					+ "or (:clientPhone is null or c.phone = :clientPhone)) "
 			+ "and (wss.created >= :from or :from is null) "
 			+ "and (wss.created <= :to or :to is null) "
 			+ "and (rs.departure >= :departureFrom or :departureFrom is null) "
@@ -187,6 +192,8 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			Query<Order> query = sessionFactory.getCurrentSession().createQuery(GET_ORDERS, Order.class)
 					.setParameter("reported", params.getReported())
 					.setParameter("userId", params.getUserId())
+					.setParameter("clientId", params.getClientId())
+					.setParameter("clientPhone", params.getClientPhone())
 					.setParameter("from", params.getFrom())
 					.setParameter("to", params.getTo())
 					.setParameter("departureFrom", params.getDepartureFrom())
@@ -250,6 +257,19 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					.setParameter("id", service.getId()).executeUpdate();
 		} catch (Exception e) {
 			throw new ManageException("Error when update service", e);
+		}
+	}
+
+	@Transactional
+	@Override
+	public void addOrderClient(Order order, Client client) throws ManageException {
+		try {
+			OrderClient orderClient = new OrderClient();
+			orderClient.setFields(client);
+			orderClient.setParent(order);
+			sessionFactory.getCurrentSession().save(orderClient);
+		} catch (Exception e) {
+			throw new ManageException("Error when add order client", e);
 		}
 	}
 

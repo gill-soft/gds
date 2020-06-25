@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,23 +29,19 @@ import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.config.Config;
-import com.gillsoft.control.service.ClientAccountService;
 import com.gillsoft.control.service.OrderDAOManager;
-import com.gillsoft.control.service.model.ClientView;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.model.Customer;
-import com.gillsoft.model.Lang;
-import com.gillsoft.model.Locality;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.response.OrderResponse;
-import com.gillsoft.util.StringUtil;
+import com.gillsoft.ms.entity.Client;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -64,7 +59,10 @@ public class ThirdPartyOrderController {
 	private OrderRequestController requestController;
 	
 	@Autowired
-	private ClientAccountService clientService;
+	private ClientController clientController;
+	
+	@Autowired
+	private NotificationController notificationController;
 	
 	@Autowired
 	private TripSearchMapping searchMapping;
@@ -98,14 +96,14 @@ public class ThirdPartyOrderController {
 		try {
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
-			registerClients(orderResponse);
 			order = orderConverter.convertToNewOrder(orderResponse);
+			registerClients(order);
 		}
 		try {
 			markUnmapped(order);
 			manager.create(order);
 		} catch (ManageException e) {
-			LOGGER.error("findOrCreateOrder error", e);
+			LOGGER.error("findOrCreateOrder error");
 		}
 		return order;
 	}
@@ -130,117 +128,84 @@ public class ThirdPartyOrderController {
 		return -1;
 	}
 	
-	private void registerClients(OrderResponse orderResponse) {
-		Map<String, List<String>> notifications = createOrderNotifications(orderResponse);
-		for (Entry<String, Customer> customer : orderResponse.getCustomers().entrySet()) {
-			registerClient(customer.getValue(), notifications.get(customer.getKey()));
-		}
-	}
-	
-	private Map<String, List<String>> createOrderNotifications(OrderResponse orderResponse) {
-		Map<String, String> clientNotifications = new HashMap<>();
-		for (OrderResponse response : orderResponse.getResources()) {
-			for (ServiceItem service : response.getServices()) {
-				if (service.getError() == null
-						&& service.getSegment() != null
-						&& service.getCustomer() != null) {
-					Customer customer = orderResponse.getCustomers().get(service.getCustomer().getId());
-					Segment segment = response.getSegments().get(service.getSegment().getId());
-					if (customer != null
-							&& segment != null
-							&& !clientNotifications.containsKey(service.getCustomer().getId() + "_" + service.getSegment().getId())) {
-						StringBuilder notification = new StringBuilder();
-						notification.append("Ви купили билет ")
-								.append(getLocalityName(response, segment.getDeparture(), true))
-								.append("-")
-								.append(getLocalityName(response, segment.getArrival(), true))
-								.append("-")
-								.append(StringUtil.dateFormat.format(segment.getDepartureDate()))
-								.append(". ")
-								.append("Для регистрации на рейс и покупки обратного билета по сниженным ценам перейдите по ссылке ")
-								.append("http://tinyurl.com/ybhsnvvj");
-						LOGGER.info(notification);
-						clientNotifications.put(service.getCustomer().getId() + "_" + service.getSegment().getId(), notification.toString());
+	private void registerClients(Order order) {
+		Map<String, List<String>> notifications = notificationController.createOrderNotifications(order);
+		for (Entry<String, Customer> customer : order.getResponse().getCustomers().entrySet()) {
+			ThreadPoolStore.execute(PoolType.LOCALITY, () -> {
+				Client client = clientController.register(customer.getValue(), notifications.get(customer.getKey()));
+				if (client != null) {
+					try {
+						manager.addOrderClient(order, client);
+					} catch (ManageException e) {
+						e.printStackTrace();
 					}
 				}
-			}
+			});
 		}
-		return clientNotifications.entrySet().stream().collect(Collectors.groupingBy(entry -> entry.getKey().split("_")[0],
-				Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
-	}
-	
-	private String getLocalityName(OrderResponse response, Locality locality, boolean checkParent) {
-		if (locality == null
-				|| response.getLocalities() == null) {
-			return "";
-		}
-		Locality station = response.getLocalities().get(locality.getId());
-		if (station != null) {
-			if (checkParent
-					&& station.getParent() != null) {
-				String cityName = getLocalityName(response, station.getParent(), false);
-				if (!cityName.isEmpty()) {
-					return cityName;
-				}
-			}
-			return station.getName(Lang.RU);
-		}
-		return "";
-	}
-	
-	private void registerClient(Customer customer, List<String> clientNotifications) {
-		ThreadPoolStore.execute(PoolType.LOCALITY, () -> {
-			ClientView client = new ClientView();
-			client.setFields(customer);
-			client.setNotifications(clientNotifications);
-			clientService.register(client);
-		});
 	}
 	
 	private void confirmOrder(OrderResponse orderResponse, Order order) {
 		try {
 			requestController.checkStatus(order, requestController.getStatusesForConfirm());
 			
-			Set<ServiceStatus> statuses = new HashSet<>();
-			statuses.add(ServiceStatus.CONFIRM);
-			statuses.add(ServiceStatus.RETURN);
-			statuses.add(ServiceStatus.CANCEL);
-			requestController.checkStatus(orderResponse.getResources(), statuses);
+			Set<ServiceStatus> statusesForSave = new HashSet<>();
+			statusesForSave.add(ServiceStatus.CONFIRM);
+			statusesForSave.add(ServiceStatus.RETURN);
+			statusesForSave.add(ServiceStatus.CANCEL);
+			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
 			
-			order = orderConverter.convertToConfirm(order, orderResponse.getResources(),
+			order = orderConverter.convertToConfirm(order, prepareResponses(orderResponse, statusesForSave),
 					ServiceStatus.CONFIRM, ServiceStatus.CONFIRM_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error("confirmOrder error", e);
+			LOGGER.error("confirmOrder error");
 		}
 	}
 	
 	private void returOrder(OrderResponse orderResponse, Order order) {
 		try {
 			requestController.checkStatus(order, requestController.getStatusesForReturn());
-			requestController.checkStatus(orderResponse.getResources(), Collections.singleton(ServiceStatus.RETURN));
 			
-			order = orderConverter.convertToReturn(order, orderResponse.getResources());
+			Set<ServiceStatus> statusesForSave = Collections.singleton(ServiceStatus.RETURN);
+			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
+			
+			order = orderConverter.convertToReturn(order, prepareResponses(orderResponse, statusesForSave));
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error("returnOrder error", e);
+			LOGGER.error("returnOrder error");
 		}
 	}
 	
 	private void cancelOrder(OrderResponse orderResponse, Order order) {
 		try {
 			requestController.checkStatus(order, requestController.getStatusesForCancel());
-			requestController.checkStatus(orderResponse.getResources(), Collections.singleton(ServiceStatus.CANCEL));
 			
-			order = orderConverter.convertToConfirm(order, orderResponse.getResources(),
+			Set<ServiceStatus> statusesForSave = Collections.singleton(ServiceStatus.CANCEL);
+			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
+			
+			
+			order = orderConverter.convertToConfirm(order, prepareResponses(orderResponse, statusesForSave),
 					ServiceStatus.CANCEL, ServiceStatus.CANCEL_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
-			LOGGER.error("cancelOrder error", e);
+			LOGGER.error("cancelOrder error");
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private List<OrderResponse> prepareResponses(OrderResponse orderResponse, Set<ServiceStatus> statusesForSave) {
+		List<OrderResponse> responses = (List<OrderResponse>) SerializationUtils.deserialize(
+				SerializationUtils.serialize(orderResponse.getResources()));
+		for (OrderResponse response : responses) {
+			if (response.getServices() != null) {
+				response.getServices().removeIf(s -> !statusesForSave.contains(ServiceStatus.valueOf(s.getStatus())));
+			}
+		}
+		responses.removeIf(r -> r.getServices() == null || r.getServices().isEmpty());
+		return responses;
 	}
 	
 	private void markUnmapped(Order order) {
@@ -284,7 +249,7 @@ public class ThirdPartyOrderController {
 			// обновляем смапленные заказы
 			updateByMappedTrips(orders, grouped);
 		} catch (ManageException e) {
-			LOGGER.error("Get orders error in db", e);
+			LOGGER.error("Get orders error in db");
 		}
 	}
 	
@@ -366,11 +331,11 @@ public class ThirdPartyOrderController {
 				try {
 					manager.markResourceServiceMappedTrip(service);
 				} catch (ManageException e) {
-					LOGGER.error("saveUpdated error", e);
+					LOGGER.error("saveUpdated service error");
 				}
 			}
 		} catch (ManageException e) {
-			LOGGER.error(e);
+			LOGGER.error("saveUpdated order error");
 		}
 	}
 

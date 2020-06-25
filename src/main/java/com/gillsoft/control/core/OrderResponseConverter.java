@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderDocument;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
@@ -58,6 +59,9 @@ public class OrderResponseConverter {
 	
 	@Autowired
 	private DiscountController discountController;
+	
+	@Autowired
+	private ClientController clientController;
 	
 	public Order convertToNewOrder(OrderResponse response) {
 		OrderRequest originalRequest = simulateOriginalRequest(response);
@@ -136,6 +140,8 @@ public class OrderResponseConverter {
 		Date created = new Date();
 		Order order = new Order();
 		order.setCreated(created);
+		
+		clientController.addClientsToOrder(order, originalRequest.getCustomers());
 		
 		// по умолчанию время на выкуп 20 минут
 		Date expire = new Date(System.currentTimeMillis() + 1200000l);
@@ -860,12 +866,13 @@ public class OrderResponseConverter {
 		for (ResourceOrder resourceOrder : newOrder.getOrders()) {
 			presentOrder.addResourceOrder(resourceOrder);
 		}
+		for (OrderClient client : newOrder.getClients()) {
+			presentOrder.addOrderClient(client);
+		}
 		// обновляем словари
 		presentOrder.getResponse().join(newOrder.getResponse());
 		return presentOrder;
 	}
-	
-	
 	
 	public Order removeServices(Order order, List<ServiceItem> removed) {
 		Date created = new Date();
@@ -895,6 +902,7 @@ public class OrderResponseConverter {
 				}
 			}
 		}
+		//TODO remove customer from order clients
 		order.getResponse().fillMaps();
 		return order;
 	}

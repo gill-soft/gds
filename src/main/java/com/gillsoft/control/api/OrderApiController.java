@@ -172,7 +172,7 @@ public class OrderApiController {
 			responseContainer = "List", response = OrderResponse.class, hidden = true)
 	@GetMapping("/active")
 	public List<OrderResponse> getActiveOrders() {
-		return controller.getActiveOrders();
+		return controller.getClientActiveOrders();
 	}
 	
 	@ApiOperation(value = "Return new order created from selected services", hidden = true)

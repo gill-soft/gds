@@ -27,6 +27,8 @@ public class ClientAccountRestService extends AbstractRestService implements Cli
 	
 	private static final String REGISTER = "account/register";
 	
+	private static final String BY_USER = "account/by_user";
+	
 	private RestTemplate template;
 	
 	@Autowired
@@ -37,6 +39,18 @@ public class ClientAccountRestService extends AbstractRestService implements Cli
 	public ClientView register(Client client) {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getClientAccountUrl() + REGISTER).build().toUri();
 		RequestEntity<Client> entity = new RequestEntity<Client>(client, msAuth, HttpMethod.POST, uri);
+		try {
+			return getResult(entity, new ParameterizedTypeReference<ClientView>() { });
+		} catch (ResponseError e) {
+			return null;
+		}
+	}
+	
+	@Override
+	public Client getByUser(String clientName) {
+		URI uri = UriComponentsBuilder.fromUriString(Config.getClientAccountUrl() + BY_USER)
+				.queryParam("clientName", clientName).build().toUri();
+		RequestEntity<Client> entity = new RequestEntity<Client>(msAuth, HttpMethod.GET, uri);
 		try {
 			return getResult(entity, new ParameterizedTypeReference<ClientView>() { });
 		} catch (ResponseError e) {
