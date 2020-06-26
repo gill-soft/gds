@@ -96,13 +96,13 @@ public class TripSearchMapping {
 		
 		// родителей тоже нужно попытаться смапить
 		if (objects != null) {
-			long resourceId = MappingCreator.getResourceId(request);
 			List<Locality> localities = new ArrayList<>(objects.values());
 			for (Locality locality : localities) {
 				Locality parent = null;
 				while ((parent = locality.getParent()) != null) {
-					objects.put(parent.getId(), parent);
-					locality.setParent(new Locality(getKey(resourceId, parent.getId())));
+					if (!objects.containsKey(parent.getId())) {
+						objects.put(parent.getId(), parent);
+					}
 					locality = parent;
 				}
 			}

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.springframework.util.SerializationUtils;
+
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.model.Unmapping;
@@ -96,7 +98,7 @@ public class MappingCreator<T> {
 		creator.result = result;
 		creator.mapType = MapType.GEO;
 		creator.creator = (mapping, lang, original) -> createLocality(mapping, lang, original);
-		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingLocality(original);
+		creator.unmappingCreator = (original) -> createUnmappingLocality(request, original);
 		creator.idSetter = (resId, id, l) -> l.setId(getKey(resId, id));
 		return creator;
 	}
@@ -113,6 +115,16 @@ public class MappingCreator<T> {
 			locality = locality.getParent();
 		}
 		return result;
+	}
+	
+	private static Unmapping createUnmappingLocality(LangRequest request, Locality locality) {
+		long resourceId = MappingCreator.getResourceId(request);
+		Locality parent = null;
+		while ((parent = locality.getParent()) != null) {
+			locality.setParent(new Locality(getKey(resourceId, parent.getId())));
+			locality = parent;
+		}
+		return UnmappingConverter.createUnmappingLocality(locality);
 	}
 	
 	public static MappingCreator<Organisation> organisationMappingCreator(LangRequest request,
@@ -175,6 +187,7 @@ public class MappingCreator<T> {
 	/**
 	 * Получает мапинг словарей ответа и создает словари из мапинга. Если мапинга нет, то добавляется объект ответа.
 	 */
+	@SuppressWarnings("unchecked")
 	public void mappingObjects(MappingService mappingService) {
 		if (objects == null
 				|| objects.isEmpty()) {
@@ -189,25 +202,25 @@ public class MappingCreator<T> {
 			
 			// добавляем сущность в мапу под ключем ид ресурса + ид обьекта,
 			// чтобы от разных ресурсов не пересекались ид
-			if (mappings == null) {
-				if (object.getValue() != null) {
+			if (object.getValue() != null) {
+				T value = (T) SerializationUtils.deserialize(SerializationUtils.serialize(object.getValue()));
+				if (mappings == null) {
 					
 					// сохраняем несмапленные данные
-					Unmapping unmapping = unmappingCreator.create(object.getValue());
+					Unmapping unmapping = unmappingCreator.create(value);
 					unmapping.setResourceMapId(object.getKey());
 					unmapping.setResourceId(parentResourceId);
 					unmapping.setType(mapType);
 					mappingService.saveUnmapping(unmapping);
 					
-					T value = object.getValue();
 					idSetter.set(resourceId, object.getKey(), value);
 					result.put(getKey(resourceId, object.getKey()), value);
 					
 					// удаляем данные на языках, которые не запрашиваются
 					removeUnselectedLang(value);
+				} else {
+					result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang(), value));
 				}
-			} else {
-				result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang(), object.getValue()));
 			}
 		}
 	}
