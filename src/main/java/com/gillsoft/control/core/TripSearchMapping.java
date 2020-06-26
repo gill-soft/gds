@@ -147,7 +147,7 @@ public class TripSearchMapping {
 		ResourceParams params = new ResourceParams();
 		params.setResource(responseSegments.values().iterator().next().getResource());
 		request.setParams(params);
-		Map<String, Segment> fromMapping = mapSegments(request, responseSegments);
+		Map<String, Segment> fromMapping = mapSegments(new TripSearchResponse(), request, responseSegments);
 		long resourceId = MappingCreator.getResourceId(request);
 		for (Segment segment : responseSegments.values()) {
 			String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
@@ -161,7 +161,8 @@ public class TripSearchMapping {
 		}
 	}
 	
-	private Map<String, Segment> mapSegments(TripSearchRequest request, Map<String, Segment> responseSegments) {
+	private Map<String, Segment> mapSegments(TripSearchResponse searchResponse, TripSearchRequest request,
+			Map<String, Segment> responseSegments) {
 		long resourceId = MappingCreator.getResourceId(request);
 		Map<String, Segment> segments = responseSegments.values().stream().collect(
 				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
@@ -177,7 +178,7 @@ public class TripSearchMapping {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		Map<String, Segment> fromMapping = mapSegments(request, searchResponse.getSegments());
+		Map<String, Segment> fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
 		long resourceId = MappingCreator.getResourceId(request);
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
