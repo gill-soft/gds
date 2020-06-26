@@ -167,7 +167,7 @@ public class TripSearchMapping {
 		Map<String, Segment> segments = responseSegments.values().stream().collect(
 				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
 		Map<String, Segment> result = new HashMap<>();
-		MappingCreator.segmentMappingCreator(request, segments, result).mappingObjects(mappingService);
+		MappingCreator.segmentMappingCreator(searchResponse, request, segments, result).mappingObjects(mappingService);
 		return result;
 	}
 	

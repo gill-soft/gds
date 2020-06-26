@@ -18,6 +18,7 @@ import com.gillsoft.model.Segment;
 import com.gillsoft.model.Vehicle;
 import com.gillsoft.model.request.LangRequest;
 import com.gillsoft.model.request.ResourceRequest;
+import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.ContextProvider;
 
@@ -158,7 +159,7 @@ public class MappingCreator<T> {
 		return creator;
 	}
 	
-	public static MappingCreator<Segment> segmentMappingCreator(LangRequest request,
+	public static MappingCreator<Segment> segmentMappingCreator(TripSearchResponse searchResponse, LangRequest request,
 			Map<String, Segment> objects, Map<String, Segment> result) {
 		MappingCreator<Segment> creator = new MappingCreator<>();
 		creator.request = request;
@@ -166,7 +167,7 @@ public class MappingCreator<T> {
 		creator.result = result;
 		creator.mapType = MapType.TRIP;
 		creator.creator = (mapping, lang, original) -> DataConverter.createSegment(mapping, lang, original);
-		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingSegment(original);
+		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingSegment(searchResponse, original);
 		creator.idSetter = (resourceId, id, s) -> s.setId(getKey(resourceId, id));
 		return creator;
 	}
