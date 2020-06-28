@@ -248,7 +248,7 @@ public class ThirdPartyOrderController {
 					searchMapping.mapSegmentsTripId(groupe);
 				}
 				// обновляем смапленные заказы
-				updateByMappedTrips(orders, grouped);
+				updateByMappedTrips(order, grouped);
 			}
 		} catch (ManageException e) {
 			LOGGER.error("Get orders error in db");
@@ -282,27 +282,25 @@ public class ThirdPartyOrderController {
 		return grouped;
 	}
 	
-	private void updateByMappedTrips(List<Order> orders, Map<String, Map<String, Segment>> groupedSegments) {
-		for (Order order : orders) {
-			if (order.getResponse() != null
-					&& order.getResponse().getSegments() != null) {
-				List<ResourceService> services = new LinkedList<>();
-				for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
-					Segment segment = entry.getValue();
-					String segmentId = entry.getKey();
-					String resourceId = segment.getResource().getId();
-					Map<String, Segment> segments = groupedSegments.get(resourceId);
-					if (segments != null) {
-						Segment mapped = segments.get(segmentId);
-						if (mapped != null
-								&& mapped.getTripId() != null) {
-							services.addAll(getServicesOfSegment(segmentId, order));
-						}
+	private void updateByMappedTrips(Order order, Map<String, Map<String, Segment>> groupedSegments) {
+		if (order.getResponse() != null
+				&& order.getResponse().getSegments() != null) {
+			List<ResourceService> services = new LinkedList<>();
+			for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
+				Segment segment = entry.getValue();
+				String segmentId = entry.getKey();
+				String resourceId = segment.getResource().getId();
+				Map<String, Segment> segments = groupedSegments.get(resourceId);
+				if (segments != null) {
+					Segment mapped = segments.get(segmentId);
+					if (mapped != null
+							&& mapped.getTripId() != null) {
+						services.addAll(getServicesOfSegment(segmentId, order));
 					}
 				}
-				if (!services.isEmpty()) {
-					saveUpdated(order, services);
-				}
+			}
+			if (!services.isEmpty()) {
+				saveUpdated(order, services);
 			}
 		}
 	}
