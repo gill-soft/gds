@@ -142,14 +142,14 @@ public class TripSearchMapping {
 		updateSegments(request, searchResponse, result, true);
 	}
 	
-	public void mapSegmentsTripId(Map<String, Segment> responseSegments) {
+	public void mapSegmentsTripId(Map<String, Segment> segmentsOfResource) {
 		TripSearchRequest request = new TripSearchRequest();
 		ResourceParams params = new ResourceParams();
-		params.setResource(responseSegments.values().iterator().next().getResource());
+		params.setResource(segmentsOfResource.values().iterator().next().getResource());
 		request.setParams(params);
-		Map<String, Segment> fromMapping = mapSegments(new TripSearchResponse(), request, responseSegments);
+		Map<String, Segment> fromMapping = mapSegments(new TripSearchResponse(), request, segmentsOfResource);
 		long resourceId = MappingCreator.getResourceId(request);
-		for (Segment segment : responseSegments.values()) {
+		for (Segment segment : segmentsOfResource.values()) {
 			String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 			String segmentKey = getKey(resourceId, tripNumber);
 			if (fromMapping.containsKey(segmentKey)) {

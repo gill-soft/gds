@@ -238,16 +238,18 @@ public class ThirdPartyOrderController {
 		params.setMappedDeparture(new Date()); //TODO convert to departure city timezone
 		try {
 			List<Order> orders = manager.getOrders(params);
-			
-			// группируем сегменты всех заказов по ид ресурса
-			Map<String, Map<String, Segment>> grouped = groupTripsByResource(orders);
-			
-			// маппим рейсы
-			for (Map<String, Segment> groupe : grouped.values()) {
-				searchMapping.mapSegmentsTripId(groupe);
+			for (Order order : orders) {
+				
+				// группируем сегменты по ид ресурса
+				Map<String, Map<String, Segment>> grouped = groupTripsByResource(order);
+				
+				// маппим рейсы
+				for (Map<String, Segment> groupe : grouped.values()) {
+					searchMapping.mapSegmentsTripId(groupe);
+				}
+				// обновляем смапленные заказы
+				updateByMappedTrips(orders, grouped);
 			}
-			// обновляем смапленные заказы
-			updateByMappedTrips(orders, grouped);
 		} catch (ManageException e) {
 			LOGGER.error("Get orders error in db");
 		}
@@ -259,23 +261,21 @@ public class ThirdPartyOrderController {
 		SecurityContextHolder.getContext().setAuthentication(auth);
 	}
 	
-	private Map<String, Map<String, Segment>> groupTripsByResource(List<Order> orders) {
+	private Map<String, Map<String, Segment>> groupTripsByResource(Order order) {
 		Map<String, Map<String, Segment>> grouped = new HashMap<>();
-		for (Order order : orders) {
-			if (order.getResponse() != null
-					&& order.getResponse().getSegments() != null) {
-				for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
-					Segment segment = entry.getValue();
-					if (segment.getTripId() == null) {
-						String segmentId = entry.getKey();
-						String resourceId = segment.getResource().getId();
-						Map<String, Segment> group = grouped.get(resourceId);
-						if (group == null) {
-							group = new HashMap<>();
-							grouped.put(resourceId, group);
-						}
-						group.put(segmentId, segment);
+		if (order.getResponse() != null
+				&& order.getResponse().getSegments() != null) {
+			for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
+				Segment segment = entry.getValue();
+				if (segment.getTripId() == null) {
+					String segmentId = entry.getKey();
+					String resourceId = segment.getResource().getId();
+					Map<String, Segment> group = grouped.get(resourceId);
+					if (group == null) {
+						group = new HashMap<>();
+						grouped.put(resourceId, group);
 					}
+					group.put(segmentId, segment);
 				}
 			}
 		}
