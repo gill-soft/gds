@@ -1,5 +1,6 @@
 package com.gillsoft.control.service.model;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.persistence.Column;
@@ -86,6 +87,35 @@ public class OrderClient {
 			phone = phone.replaceAll("\\D", "");
 		}
 		return phone;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj != null
+				&& obj instanceof OrderClient) {
+			OrderClient client = (OrderClient) obj;
+			return client.getClientId() == clientId
+					&& Objects.equals(client.getPhone(), phone)
+					&& isParentsEquals(client);
+		}
+		return false;
+	}
+	
+	private boolean isParentsEquals(OrderClient client) {
+		if (client.getParent() == null
+				&& parent == null) {
+			return true;
+		}
+		if (client.getParent() != null
+				&& parent != null) {
+			return client.getParent().getId() == parent.getId();
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(clientId, phone, parent != null ? parent.getId() : null);
 	}
 	
 }

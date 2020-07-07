@@ -97,15 +97,15 @@ public class ThirdPartyOrderController {
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (ManageException e) {
 			order = orderConverter.convertToNewOrder(orderResponse);
+			try {
+				markUnmapped(order);
+				manager.create(order);
+			} catch (ManageException e1) {
+				LOGGER.error("findOrCreateOrder error");
+			}
 			registerClients(order);
+			return order;
 		}
-		try {
-			markUnmapped(order);
-			manager.create(order);
-		} catch (ManageException e) {
-			LOGGER.error("findOrCreateOrder error");
-		}
-		return order;
 	}
 	
 	private OrderParams createFindOrderParams(OrderResponse orderResponse) {

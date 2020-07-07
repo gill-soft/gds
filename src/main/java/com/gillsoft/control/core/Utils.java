@@ -161,7 +161,7 @@ public class Utils {
 	
 	public static String getLocalityTimeZone(String localityId) {
 		if (localityId != null) {
-			return Utils.getLocalityTimeZoneOrNull(getMappingId(localityId));
+			return getLocalityTimeZoneOrNull(getMappingId(localityId));
 		}
 		return null;
 	}
