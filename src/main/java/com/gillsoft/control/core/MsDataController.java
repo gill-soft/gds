@@ -60,6 +60,7 @@ import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
+import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
 
 @Component
@@ -91,6 +92,8 @@ public class MsDataController {
 	private static final String ALL_RESOURCE_ORDERS_PARAMS_KEY = "all.resource.orders.params";
 	
 	private static final String USER_KEY = "user.";
+	
+	private static final String TRIP_KEY = "trip.";
 	
 	@Autowired
 	private MsDataService msService;
@@ -311,6 +314,11 @@ public class MsDataController {
 	public User getUser(long id) {
 		return (User) getFromCache(getUserCacheKey(id),
 				new UserByIdUpdateTask(id), () -> msService.getUser(id), 120000l);
+	}
+	
+	public Trip getTrip(long id) {
+		return (Trip) getFromCache(getTripCacheKey(id),
+				new TripByIdUpdateTask(id), () -> msService.getTripWithChilds(id), 120000l);
 	}
 	
 	public Organisation getOrganisation(long id) {
@@ -877,6 +885,10 @@ public class MsDataController {
 	
 	public static String getUserCacheKey(long id) {
 		return USER_KEY + id;
+	}
+	
+	public static String getTripCacheKey(long id) {
+		return TRIP_KEY + id;
 	}
 	
 	public interface CacheObjectGetter {

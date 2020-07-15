@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,6 +47,7 @@ import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
+import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
 
 @Service
@@ -78,6 +80,10 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String GET_USER_RESOURCES = "user/{0}/resources";
 	
 	private static final String GET_ORGANISATION = "organisation/{0}";
+	
+	private static final String GET_TRIP = "trip/{0}";
+	
+	private static final String GET_TRIP_CHILDREN = "trip/{0}/sub";
 	
 	private static final String ALL_ORGANISATIONS = "organisation";
 	
@@ -241,6 +247,13 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<Attribute> getAllAttributes() {
 		return getResult(ALL_ATTRIBUTES, null, new ParameterizedTypeReference<List<Attribute>>() { });
+	}
+	
+	@Override
+	public Trip getTripWithChilds(long id) {
+		Trip trip = getResult(MessageFormat.format(GET_TRIP, String.valueOf(id)), null, new ParameterizedTypeReference<Trip>() { });
+		trip.setChilds(getResult(MessageFormat.format(GET_TRIP_CHILDREN, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
+		return trip;
 	}
 	
 	private class EntityMultiplier<T extends BaseEntity> {

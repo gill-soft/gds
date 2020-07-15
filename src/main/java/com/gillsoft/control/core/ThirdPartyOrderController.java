@@ -235,7 +235,7 @@ public class ThirdPartyOrderController {
 		defaultAuth();
 		OrderParams params = new OrderParams();
 		params.setMappedTrip(false);
-		params.setMappedDeparture(new Date()); //TODO convert to departure city timezone
+		params.setMappedDeparture(new Date(System.currentTimeMillis() - 7 * 24 * 3600000l));
 		try {
 			List<Order> orders = manager.getOrders(params);
 			for (Order order : orders) {

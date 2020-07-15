@@ -175,18 +175,11 @@ public class TripSearchMapping {
 		return result;
 	}
 	
-	private String joinTripIds(List<Segment> segments) {
-		return String.join(";", segments.stream().filter(s -> s.getTripId() != null)
-				.map(Segment::getTripId).collect(Collectors.toList()));
-	}
-	
 	private void setTripId(Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
 		if (fromMapping.containsKey(segmentKey)) {
-			List<Segment> s = fromMapping.get(segmentKey);
-			String tripId = joinTripIds(s);
-			if (!tripId.isEmpty()) {
-				segment.setTripId(";" + tripId + ";");
-			}
+			List<Segment> segments = fromMapping.get(segmentKey);
+			DataConverter.setTripIdsWithDates(segment, segments.stream().filter(s -> s.getTripId() != null)
+					.map(s -> dataController.getTrip(Long.parseLong(s.getTripId()))).collect(Collectors.toList()));
 		}
 	}
 	

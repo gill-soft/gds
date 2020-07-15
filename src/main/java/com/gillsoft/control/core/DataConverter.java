@@ -1,11 +1,16 @@
 package com.gillsoft.control.core;
 
 import java.math.BigDecimal;
+import java.text.ParsePosition;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,9 +29,15 @@ import com.gillsoft.model.Vehicle;
 import com.gillsoft.ms.entity.AttributeValue;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.Commission;
+import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.ReturnCondition;
+import com.gillsoft.ms.entity.Route;
+import com.gillsoft.ms.entity.RoutePoint;
+import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
+import com.gillsoft.util.StringUtil;
+import com.google.common.base.Objects;
 
 public class DataConverter {
 	
@@ -306,6 +317,109 @@ public class DataConverter {
 			LOGGER.error("Invalid latitude or longitude for geo point id: " + mappingId, e);
 			return null;
 		}
+	}
+	
+	public static void setTripIdsWithDates(Segment segment, List<Trip> fromMapping) {
+		if (!fromMapping.isEmpty()) {
+			try {
+				if (fromMapping.size() > 1) {
+					fromMapping = sort(fromMapping);
+				}
+				Date departure = segment.getDepartureDate();
+				StringBuilder tripId = new StringBuilder();
+				tripId.append(";").append(fromMapping.get(0).getId()).append("=").append(StringUtil.fullDateFormat.format(departure)).append(";");
+				
+				if (fromMapping.size() > 1) {
+					String time = StringUtil.timeFormat.format(departure);
+					int arrivalDays = addedDays(fromMapping.get(0), time);
+					
+					for (int i = 1; i < fromMapping.size(); i++) {
+						Trip next = fromMapping.get(i);
+						Calendar nextDate = Calendar.getInstance();
+						StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(departure)
+								+ " " + getDepartureTime(next), new ParsePosition(0), nextDate);
+						nextDate.add(Calendar.DATE, arrivalDays);
+						
+						tripId.append(next.getId()).append("=").append(StringUtil.fullDateFormat.format(nextDate)).append(";");
+						
+						arrivalDays += getLastArrivalDay(next);
+					}
+				}
+				segment.setTripId(tripId.toString());
+			} catch (Exception e) {
+			}
+		}
+	}
+	
+	private static List<Trip> sort(List<Trip> trips) {
+		List<Trip> result = new ArrayList<>();
+		result.add(trips.remove(0));
+		while (!trips.isEmpty()) {
+			try {
+				List<RoutePoint> first = getRoute(result.get(0));
+				List<RoutePoint> last = getRoute(result.get(result.size() - 1));
+				for (Trip trip : trips) {
+					List<RoutePoint> route = getRoute(trip);
+					if (isBefore(first, route)) {
+						result.add(0, trip);
+						trips.remove(trip);
+						break;
+					}
+					if (isAfter(last, route)) {
+						result.add(trip);
+						trips.remove(trip);
+						break;
+					}
+				}
+			} catch (NullPointerException e) {
+				throw e;
+			}
+		}
+		return result;
+	}
+	
+	private static List<RoutePoint> getRoute(Trip trip) {
+		Optional<BaseEntity> o = trip.getChilds().stream().filter(c -> c.getType() == EntityType.ROUTE).findFirst();
+		if (o.isPresent()) {
+			Route route = (Route) o.get();
+			if (route.getPoints() != null
+					&& !route.getPoints().isEmpty()) {
+				return route.getPoints();
+			}
+		}
+		throw new NullPointerException("Empty route. tripId = " + trip.getId());
+	}
+	
+	private static boolean isBefore(List<RoutePoint> curr, List<RoutePoint> route) {
+		return Objects.equal(getLocalityId(curr.get(0)), getLocalityId(route.get(route.size() - 1)));
+	}
+	
+	private static boolean isAfter(List<RoutePoint> curr, List<RoutePoint> route) {
+		return Objects.equal(getLocalityId(curr.get(curr.size() - 1)), getLocalityId(route.get(0)));
+	}
+	
+	private static String getLocalityId(RoutePoint point) {
+		return point.getLocality().getParent().getId();
+	}
+	
+	private static int addedDays(Trip trip, String time) {
+		List<RoutePoint> route = getRoute(trip);
+		int currDays = 0;
+		for (RoutePoint point : route) {
+			if (time.equals(point.getDepartureTime())) {
+				currDays = point.getArrivalDay();
+			}
+		}
+		return route.get(route.size() - 1).getArrivalDay() - currDays;
+	}
+	
+	private static String getDepartureTime(Trip trip) {
+		return getRoute(trip).get(0).getDepartureTime();
+	}
+	
+	private static int getLastArrivalDay(Trip trip) {
+		List<RoutePoint> route = getRoute(trip);
+		return route.get(route.size() - 1).getArrivalDay();
 	}
 
 }

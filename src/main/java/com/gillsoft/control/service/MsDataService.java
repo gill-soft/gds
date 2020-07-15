@@ -14,6 +14,7 @@ import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
 import com.gillsoft.ms.entity.TicketLayout;
+import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
 
 public interface MsDataService {
@@ -150,5 +151,12 @@ public interface MsDataService {
 	 * @return Список возможных аттрибутов.
 	 */
 	public List<Attribute> getAllAttributes();
+	
+	/**
+	 * Возвращает по указанному ид с дочерними элементами.
+	 * 
+	 * @return Рейс с дочерними элементами.
+	 */
+	public Trip getTripWithChilds(long id);
 	
 }
