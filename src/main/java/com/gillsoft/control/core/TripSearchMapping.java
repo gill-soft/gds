@@ -83,10 +83,16 @@ public class TripSearchMapping {
 		
 		// мапим словари
 		mappingGeo(request, searchResponse.getLocalities(), result.getLocalities());
+		
+		Map<String, List<Organisation>> intermediateOrgResult = new HashMap<>();
 		MappingCreator.organisationMappingCreator(
-				request, searchResponse.getOrganisations(), result.getOrganisations()).mappingObjects(mappingService);
+				request, searchResponse.getOrganisations(), intermediateOrgResult).mappingObjects(mappingService);
+		addResult(result.getOrganisations(), intermediateOrgResult);
+		
+		Map<String, List<Vehicle>> intermediateVehicleResult = new HashMap<>();
 		MappingCreator.vehicleMappingCreator(
-				request, searchResponse.getVehicles(), result.getVehicles()).mappingObjects(mappingService);
+				request, searchResponse.getVehicles(), intermediateVehicleResult).mappingObjects(mappingService);
+		addResult(result.getVehicles(), intermediateVehicleResult);
 	}
 	
 	/**
@@ -107,7 +113,10 @@ public class TripSearchMapping {
 				}
 			}
 		}
-		MappingCreator<Locality> creator = MappingCreator.localityMappingCreator(request, objects, result);
+		Map<String, List<Locality>> intermediateResult = new HashMap<>();
+		MappingCreator<Locality> creator = MappingCreator.localityMappingCreator(request, objects, intermediateResult);
+		addResult(result, intermediateResult);
+		
 		creator.mappingObjects(mappingService);
 		List<Locality> localities = new ArrayList<>(result.values());
 		for (Locality locality : localities) {
@@ -147,28 +156,38 @@ public class TripSearchMapping {
 		ResourceParams params = new ResourceParams();
 		params.setResource(segmentsOfResource.values().iterator().next().getResource());
 		request.setParams(params);
-		Map<String, Segment> fromMapping = mapSegments(new TripSearchResponse(), request, segmentsOfResource);
+		Map<String, List<Segment>> fromMapping = mapSegments(new TripSearchResponse(), request, segmentsOfResource);
 		long resourceId = MappingCreator.getResourceId(request);
 		for (Segment segment : segmentsOfResource.values()) {
 			String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 			String segmentKey = getKey(resourceId, tripNumber);
-			if (fromMapping.containsKey(segmentKey)) {
-				Segment s = fromMapping.get(segmentKey);
-				if (s.getTripId() != null) {
-					segment.setTripId(s.getTripId());
-				}
-			}
+			setTripId(segment, fromMapping, segmentKey);
 		}
 	}
 	
-	private Map<String, Segment> mapSegments(TripSearchResponse searchResponse, TripSearchRequest request,
+	private Map<String, List<Segment>> mapSegments(TripSearchResponse searchResponse, TripSearchRequest request,
 			Map<String, Segment> responseSegments) {
 		long resourceId = MappingCreator.getResourceId(request);
 		Map<String, Segment> segments = responseSegments.values().stream().collect(
 				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
-		Map<String, Segment> result = new HashMap<>();
+		Map<String, List<Segment>> result = new HashMap<>();
 		MappingCreator.segmentMappingCreator(searchResponse, request, segments, result).mappingObjects(mappingService);
 		return result;
+	}
+	
+	private String joinTripIds(List<Segment> segments) {
+		return String.join(";", segments.stream().filter(s -> s.getTripId() != null)
+				.map(Segment::getTripId).collect(Collectors.toList()));
+	}
+	
+	private void setTripId(Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
+		if (fromMapping.containsKey(segmentKey)) {
+			List<Segment> s = fromMapping.get(segmentKey);
+			String tripId = joinTripIds(s);
+			if (!tripId.isEmpty()) {
+				segment.setTripId(";" + tripId + ";");
+			}
+		}
 	}
 	
 	/**
@@ -178,7 +197,7 @@ public class TripSearchMapping {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		Map<String, Segment> fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
+		Map<String, List<Segment>> fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
 		long resourceId = MappingCreator.getResourceId(request);
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
@@ -187,12 +206,8 @@ public class TripSearchMapping {
 				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 				segment.setTripRresourceId(tripNumber);
 				String segmentKey = getKey(resourceId, tripNumber);
-				if (fromMapping.containsKey(segmentKey)) {
-					Segment s = fromMapping.get(segmentKey);
-					if (s.getTripId() != null) {
-						segment.setTripId(s.getTripId());
-					}
-				}
+				setTripId(segment, fromMapping, segmentKey);
+				
 				// устанавливаем ресурс
 				segment.setResource(new Resource(String.valueOf(resourceId)));
 				
@@ -207,8 +222,10 @@ public class TripSearchMapping {
 						&& !result.getVehicles().containsKey(tripNumber)) {
 					Map<String, Vehicle> vehicles = new HashMap<>();
 					vehicles.put(tripNumber, null);
+					Map<String, List<Vehicle>> intermediateResult = new HashMap<>();
 					MappingCreator.vehicleMappingCreator(
-							request, vehicles, result.getVehicles()).mappingObjects(mappingService);
+							request, vehicles, intermediateResult).mappingObjects(mappingService);
+					addResult(result.getVehicles(), intermediateResult);
 				}
 				// устанавливаем транспорт с маппинга
 				String vehicleKey = segment.getVehicle() != null ? getKey(resourceId, segment.getVehicle().getId()) : tripNumber;
@@ -282,8 +299,19 @@ public class TripSearchMapping {
 	private void addOrganisationByTripNumber(String key, TripSearchResponse result, TripSearchRequest request, MapType mapType) {
 		Map<String, Organisation> organisations = new HashMap<>();
 		organisations.put(key, null);
+		Map<String, List<Organisation>> intermediateResult = new HashMap<>();
 		MappingCreator.organisationMappingCreator(
-				request, organisations, result.getOrganisations()).mappingObjects(mappingService);
+				request, organisations, intermediateResult).mappingObjects(mappingService);
+		addResult(result.getOrganisations(), intermediateResult);
+	}
+	
+	private <T> void addResult(Map<String, T> result, Map<String, List<T>> mappedResult) {
+		for (Entry<String, List<T>> entry : mappedResult.entrySet()) {
+			if (entry.getValue() != null
+					&& entry.getValue().size() > 0) {
+				result.put(entry.getKey(), entry.getValue().get(0));
+			}
+		}
 	}
 	
 	private void addInsuranceCompensation(Segment segment) {

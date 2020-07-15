@@ -1,8 +1,10 @@
 package com.gillsoft.control.core;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.springframework.util.SerializationUtils;
 
@@ -28,7 +30,7 @@ public class MappingCreator<T> {
 	
 	private LangRequest request;
 	private Map<String, T> objects;
-	private Map<String, T> result;
+	private Map<String, List<T>> result;
 	private MapType mapType;
 	private MapObjectCreator<T> creator;
 	private UnmappingCreator<T> unmappingCreator;
@@ -50,11 +52,11 @@ public class MappingCreator<T> {
 		this.objects = objects;
 	}
 
-	public Map<String, T> getResult() {
+	public Map<String, List<T>> getResult() {
 		return result;
 	}
 
-	public void setResult(Map<String, T> result) {
+	public void setResult(Map<String, List<T>> result) {
 		this.result = result;
 	}
 
@@ -91,13 +93,13 @@ public class MappingCreator<T> {
 	}
 
 	public static MappingCreator<Locality> localityMappingCreator(LangRequest request,
-			Map<String, Locality> objects, Map<String, Locality> result) {
+			Map<String, Locality> objects, Map<String, List<Locality>> result) {
 		MappingCreator<Locality> creator = new MappingCreator<>();
 		creator.request = request;
 		creator.objects = objects;
 		creator.result = result;
 		creator.mapType = MapType.GEO;
-		creator.creator = (mapping, lang, original) -> createLocality(mapping, lang, original);
+		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> createLocality(m, lang, original)).collect(Collectors.toList());
 		creator.unmappingCreator = (original) -> createUnmappingLocality(request, original);
 		creator.idSetter = (resId, id, l) -> l.setId(getKey(resId, id));
 		return creator;
@@ -128,13 +130,13 @@ public class MappingCreator<T> {
 	}
 	
 	public static MappingCreator<Organisation> organisationMappingCreator(LangRequest request,
-			Map<String, Organisation> objects, Map<String, Organisation> result) {
+			Map<String, Organisation> objects, Map<String, List<Organisation>> result) {
 		MappingCreator<Organisation> creator = new MappingCreator<>();
 		creator.request = request;
 		creator.objects = objects;
 		creator.result = result;
 		creator.mapType = MapType.ORGANIZATION;
-		creator.creator = (mapping, lang, original) -> createOrganisation(mapping, lang, original);
+		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> createOrganisation(m, lang, original)).collect(Collectors.toList());
 		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingOrganisation(original);
 		creator.idSetter = (resourceId, id, o) -> o.setId(getKey(resourceId, id));
 		return creator;
@@ -159,26 +161,26 @@ public class MappingCreator<T> {
 	}
 	
 	public static MappingCreator<Vehicle> vehicleMappingCreator(LangRequest request,
-			Map<String, Vehicle> objects, Map<String, Vehicle> result) {
+			Map<String, Vehicle> objects, Map<String, List<Vehicle>> result) {
 		MappingCreator<Vehicle> creator = new MappingCreator<>();
 		creator.request = request;
 		creator.objects = objects;
 		creator.result = result;
 		creator.mapType = MapType.VEHICLE;
-		creator.creator = (mapping, lang, original) -> DataConverter.createVehicle(mapping, lang, original);
+		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> DataConverter.createVehicle(m, lang, original)).collect(Collectors.toList());
 		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingVehicle(original);
 		creator.idSetter = (resourceId, id, v) -> v.setId(getKey(resourceId, id));
 		return creator;
 	}
 	
 	public static MappingCreator<Segment> segmentMappingCreator(TripSearchResponse searchResponse, LangRequest request,
-			Map<String, Segment> objects, Map<String, Segment> result) {
+			Map<String, Segment> objects, Map<String, List<Segment>> result) {
 		MappingCreator<Segment> creator = new MappingCreator<>();
 		creator.request = request;
 		creator.objects = objects;
 		creator.result = result;
 		creator.mapType = MapType.TRIP;
-		creator.creator = (mapping, lang, original) -> DataConverter.createSegment(mapping, lang, original);
+		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> DataConverter.createSegment(m, lang, original)).collect(Collectors.toList());
 		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingSegment(searchResponse, original);
 		creator.idSetter = (resourceId, id, s) -> s.setId(getKey(resourceId, id));
 		return creator;
@@ -214,12 +216,12 @@ public class MappingCreator<T> {
 					mappingService.saveUnmapping(unmapping);
 					
 					idSetter.set(resourceId, object.getKey(), value);
-					result.put(getKey(resourceId, object.getKey()), value);
+					result.put(getKey(resourceId, object.getKey()), Arrays.asList(value));
 					
 					// удаляем данные на языках, которые не запрашиваются
 					removeUnselectedLang(value);
 				} else {
-					result.put(getKey(resourceId, object.getKey()), creator.create(mappings.get(0), request.getLang(), value));
+					result.put(getKey(resourceId, object.getKey()), creator.create(mappings, request.getLang(), value));
 				}
 			}
 		}
@@ -269,7 +271,7 @@ public class MappingCreator<T> {
 
 	private interface MapObjectCreator<T> {
 		
-		public T create(Mapping mapping, Lang lang, T original);
+		public List<T> create(List<Mapping> mappings, Lang lang, T original);
 		
 	}
 	
