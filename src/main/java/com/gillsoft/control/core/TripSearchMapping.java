@@ -115,9 +115,9 @@ public class TripSearchMapping {
 		}
 		Map<String, List<Locality>> intermediateResult = new HashMap<>();
 		MappingCreator<Locality> creator = MappingCreator.localityMappingCreator(request, objects, intermediateResult);
+		creator.mappingObjects(mappingService);
 		addResult(result, intermediateResult);
 		
-		creator.mappingObjects(mappingService);
 		List<Locality> localities = new ArrayList<>(result.values());
 		for (Locality locality : localities) {
 			fillMapByParents(locality, result);
