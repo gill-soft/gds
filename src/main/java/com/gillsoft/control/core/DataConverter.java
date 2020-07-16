@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -353,40 +354,49 @@ public class DataConverter {
 	
 	private static List<Trip> sort(List<Trip> trips) {
 		List<Trip> result = new ArrayList<>();
+		trips = getUniq(trips);
+		checkConnected(trips);
 		result.add(trips.remove(0));
-		int iterator = 0;
 		while (!trips.isEmpty()) {
-			try {
-				List<RoutePoint> first = getRoute(result.get(0));
-				List<RoutePoint> last = getRoute(result.get(result.size() - 1));
-				for (Trip trip : trips) {
-					List<RoutePoint> route = getRoute(trip);
-					if (isBefore(first, route)) {
-						result.add(0, trip);
-						trips.remove(trip);
-						break;
-					}
-					if (isAfter(last, route)) {
-						result.add(trip);
-						trips.remove(trip);
-						break;
-					}
+			List<RoutePoint> first = getRoute(result.get(0));
+			List<RoutePoint> last = getRoute(result.get(result.size() - 1));
+			for (Trip trip : trips) {
+				List<RoutePoint> route = getRoute(trip);
+				if (isBefore(first, route)) {
+					result.add(0, trip);
+					trips.remove(trip);
+					break;
 				}
-			} catch (NullPointerException e) {
-				throw e;
-			}
-			iterator++;
-			if (iterator > 100) {
-				for (Trip trip : result) {
-					System.out.println("tripId=" + trip.getId());
+				if (isAfter(last, route)) {
+					result.add(trip);
+					trips.remove(trip);
+					break;
 				}
-				for (Trip trip : trips) {
-					System.out.println("tripId=" + trip.getId());
-				}
-				System.out.println("=============================");
 			}
 		}
 		return result;
+	}
+	
+	private static List<Trip> getUniq(List<Trip> trips) {
+		return new ArrayList<>(trips.stream().collect(Collectors.toMap(Trip::getId, t -> t)).values());
+	}
+	
+	private static void checkConnected(List<Trip> trips) {
+		for (int i = 0; i < trips.size(); i++) {
+			List<RoutePoint> route = getRoute(trips.get(i));
+			boolean connected = false;
+			for (int j = 0; j < trips.size(); j++) {
+				List<RoutePoint> other = getRoute(trips.get(j));
+				if (isBefore(other, route)
+						|| isAfter(other, route)) {
+					connected = true;
+					break;
+				}
+			}
+			if (!connected) {
+				throw new IllegalArgumentException("Trip is not connected. Invalid tripId = " + trips.get(i).getId());
+			}
+		}
 	}
 	
 	private static List<RoutePoint> getRoute(Trip trip) {
