@@ -354,6 +354,7 @@ public class DataConverter {
 	private static List<Trip> sort(List<Trip> trips) {
 		List<Trip> result = new ArrayList<>();
 		result.add(trips.remove(0));
+		int iterator = 0;
 		while (!trips.isEmpty()) {
 			try {
 				List<RoutePoint> first = getRoute(result.get(0));
@@ -373,6 +374,16 @@ public class DataConverter {
 				}
 			} catch (NullPointerException e) {
 				throw e;
+			}
+			iterator++;
+			if (iterator > 100) {
+				for (Trip trip : result) {
+					System.out.println("tripId=" + trip.getId());
+				}
+				for (Trip trip : trips) {
+					System.out.println("tripId=" + trip.getId());
+				}
+				System.out.println("=============================");
 			}
 		}
 		return result;
