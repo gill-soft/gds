@@ -145,7 +145,7 @@ public class OrderRequestController {
 				params.setAdditional(new ConcurrentHashMap<>());
 			}
 			params.getAdditional().putAll(resourceParams.getAttributeValues().stream().collect(
-					Collectors.toMap(av -> av.getAttribute().getName(), av -> av.getValue())));
+					Collectors.toMap(av -> av.getAttribute().getName(), av -> av.getValue(), (av1, av2) -> av1)));
 		}
 		return params;
 	}

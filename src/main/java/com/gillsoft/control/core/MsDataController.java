@@ -257,7 +257,7 @@ public class MsDataController {
 	
 	public Map<String, ? extends BaseEntity> createEntitiesMap(List<? extends BaseEntity> entities) {
 		if (entities != null) {
-			return entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o));
+			return entities.stream().collect(Collectors.toMap(o -> getEntityId(o.getId()), o -> o, (o1, o2) -> o1));
 		} else {
 			return new HashMap<>(0);
 		}

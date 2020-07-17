@@ -348,6 +348,7 @@ public class DataConverter {
 				}
 				segment.setTripId(tripId.toString());
 			} catch (Exception e) {
+				LOGGER.error("Can not set tripId from mapping", e);
 			}
 		}
 	}
@@ -378,7 +379,7 @@ public class DataConverter {
 	}
 	
 	private static List<Trip> getUniq(List<Trip> trips) {
-		return new ArrayList<>(trips.stream().collect(Collectors.toMap(Trip::getId, t -> t)).values());
+		return new ArrayList<>(trips.stream().collect(Collectors.toMap(Trip::getId, t -> t, (t1, t2) -> t1)).values());
 	}
 	
 	private static void checkConnected(List<Trip> trips) {

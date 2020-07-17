@@ -148,7 +148,7 @@ public class SearchRequestController {
 			return connections.getPairs();
 		}
 		Map<Long, ResourceConnection> resourceConnectionsMap = resourceConnections.stream()
-				.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc));
+				.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc, (rc1, rc2) -> rc1));
 		
 		Set<Pair> newPairs = new HashSet<>(); // список разрешенных пар поиска
 		for (List<Long> route : connections.getRoutes()) {
