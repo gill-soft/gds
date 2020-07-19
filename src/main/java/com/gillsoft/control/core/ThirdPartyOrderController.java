@@ -1,9 +1,11 @@
 package com.gillsoft.control.core;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +79,8 @@ public class ThirdPartyOrderController {
 				if (order == null) {
 					throw new NoDataFoundException("Order not found and not created");
 				}
+				addToOrder(getCopy(orderResponse), order);
+				removeFromOrder(getCopy(orderResponse), order);
 				confirmOrder(getCopy(orderResponse), order);
 				returOrder(getCopy(orderResponse), order);
 				cancelOrder(getCopy(orderResponse), order);
@@ -142,6 +146,93 @@ public class ThirdPartyOrderController {
 				}
 			});
 		}
+	}
+	
+	private void addToOrder(OrderResponse orderResponse, Order order) {
+		removePresent(orderResponse, order);
+		if (orderResponse.getResources().isEmpty()) {
+			return;
+		}
+		Order newOrder = orderConverter.convertToNewOrder(orderResponse);
+		order = orderConverter.joinOrders(order, newOrder);
+		try {
+			markUnmapped(order);
+			manager.addServices(order);
+		} catch (ManageException e) {
+			LOGGER.error("Add services to order error in db", e);
+		}
+	}
+	
+	private void removePresent(OrderResponse orderResponse, Order order) {
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				for (OrderResponse resourceResponse : orderResponse.getResources()) {
+					for (Iterator<ServiceItem> iterator = resourceResponse.getServices().iterator(); iterator.hasNext();) {
+						ServiceItem service = iterator.next();
+						if (orderConverter.isServiceOfResourceService(service, resourceService)) {
+							iterator.remove();
+						}
+					}
+				}
+			}
+		}
+		for (Iterator<OrderResponse> iterator = orderResponse.getResources().iterator(); iterator.hasNext();) {
+			OrderResponse response = iterator.next();
+			if (response.getServices().isEmpty()) {
+				iterator.remove();
+			}
+		}
+	}
+	
+	private void removeFromOrder(OrderResponse orderResponse, Order order) {
+		List<ServiceItem> servicesForRemove = getServicesForRemove(orderResponse, order); 
+		if (servicesForRemove.isEmpty()) {
+			return;
+		}
+		order = orderConverter.removeServices(order, servicesForRemove, false);
+		try {
+			manager.removeServices(order);
+		} catch (ManageException e) {
+			LOGGER.error("Remove services from order error in db", e);
+		}
+	}
+	
+	private List<ServiceItem> getServicesForRemove(OrderResponse orderResponse, Order order) {
+		List<ServiceItem> services = new ArrayList<>();
+		for (OrderResponse response : orderResponse.getResources()) {
+			for (ResourceOrder resourceOrder : order.getOrders()) {
+				IdModel idModel = new IdModel().create(resourceOrder.getResourceNativeOrderId());
+				if (Objects.equals(response.getOrderId(), idModel.getId())) {
+					for (ResourceService resourceService : resourceOrder.getServices()) {
+						if (isNotPresentService(resourceService, response.getServices())) {
+							ServiceItem forRemove = getServiceForRemove(resourceService, order.getResponse().getServices());
+							if (forRemove != null) {
+								services.add(forRemove);
+							}
+						}
+					}
+				}
+			}
+		}
+		return services;
+	}
+	
+	private boolean isNotPresentService(ResourceService resourceService, List<ServiceItem> services) {
+		for (ServiceItem service : services) {
+			if (orderConverter.isServiceOfResourceService(service, resourceService)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private ServiceItem getServiceForRemove(ResourceService resourceService, List<ServiceItem> services) {
+		for (ServiceItem service : services) {
+			if (orderConverter.isServiceOfResourceService(service, resourceService)) {
+				return service;
+			}
+		}
+		return null;
 	}
 	
 	private void confirmOrder(OrderResponse orderResponse, Order order) {
@@ -231,7 +322,7 @@ public class ThirdPartyOrderController {
 	}
 	
 	@Scheduled(initialDelay = 10000, fixedDelay = 300000)
-	private void mapUnmappedSegments() {
+	public void mapUnmappedSegments() {
 		defaultAuth();
 		OrderParams params = new OrderParams();
 		params.setMappedTrip(false);

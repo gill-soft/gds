@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -875,23 +876,32 @@ public class OrderResponseConverter {
 	}
 	
 	public Order removeServices(Order order, List<ServiceItem> removed) {
+		return removeServices(order, removed, true);
+	}
+	
+	public Order removeServices(Order order, List<ServiceItem> removed, boolean allMustPresent) {
 		Date created = new Date();
 		User user = dataController.getUser();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			Set<String> resourceServiceIds = removed.stream().map(ServiceItem::getId).collect(Collectors.toSet());
-			if (resourceOrder.getServices().stream().anyMatch(rs -> resourceServiceIds.contains(String.valueOf(rs.getId())))) {
-				if (resourceOrder.getServices().stream().allMatch(rs -> resourceServiceIds.contains(String.valueOf(rs.getId())))) {
+			if (anyMatchServiceId(resourceOrder.getServices(), removed)) {
+				if (!allMustPresent
+						|| resourceOrder.getServices().stream().allMatch(rs -> resourceServiceIds.contains(String.valueOf(rs.getId())))) {
 					for (ResourceService resourceService : resourceOrder.getServices()) {
 						
-						// добавляем статус об удалении позиции
-						resourceService.addStatus(createStatus(created, user, ServiceStatus.REMOVE, null, null));
-
-						// удаляем сервисы из заказа
-						for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {
-							ServiceItem service = iterator.next();
-							if (isServiceOfResourceService(service, resourceService)) {
-								iterator.remove();
-								break;
+						if (allMustPresent
+								|| anyMatchServiceId(Collections.singleton(resourceService), removed)) {
+							
+							// добавляем статус об удалении позиции
+							resourceService.addStatus(createStatus(created, user, ServiceStatus.REMOVE, null, null));
+							
+							// удаляем сервисы из заказа
+							for (Iterator<ServiceItem> iterator = order.getResponse().getServices().iterator(); iterator.hasNext();) {
+								ServiceItem service = iterator.next();
+								if (isServiceOfResourceService(service, resourceService)) {
+									iterator.remove();
+									break;
+								}
 							}
 						}
 					}
@@ -905,6 +915,17 @@ public class OrderResponseConverter {
 		//TODO remove customer from order clients
 		order.getResponse().fillMaps();
 		return order;
+	}
+	
+	private boolean anyMatchServiceId(Set<ResourceService> resourceServices, List<ServiceItem> serviceItems) {
+		return resourceServices.stream().anyMatch(rs -> {
+			for (ServiceItem serviceItem : serviceItems) {
+				if (isServiceOfResourceService(serviceItem, rs)) {
+					return true;
+				}
+			}
+			return false;
+		});
 	}
 	
 	/**
