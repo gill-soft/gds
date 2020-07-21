@@ -57,7 +57,8 @@ public class NotificationController {
 			}
 		}
 		return clientNotifications.entrySet().stream().collect(Collectors.groupingBy(entry -> entry.getKey().split("_")[0],
-				Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+				Collectors.mapping(Map.Entry::getValue, Collectors.collectingAndThen(
+						Collectors.toList(), list -> list.stream().distinct().collect(Collectors.toList())))));
 	}
 	
 	private String getLocalityName(OrderResponse response, Locality locality, boolean checkParent) {
