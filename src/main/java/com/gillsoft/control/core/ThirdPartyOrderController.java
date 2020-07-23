@@ -245,7 +245,7 @@ public class ThirdPartyOrderController {
 			statusesForSave.add(ServiceStatus.CANCEL);
 			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
 			
-			order = orderConverter.convertToConfirm(order, prepareResponses(orderResponse, statusesForSave),
+			order = orderConverter.convertToConfirm(order, prepareResponses(order, orderResponse, statusesForSave),
 					ServiceStatus.CONFIRM, ServiceStatus.CONFIRM_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
@@ -261,7 +261,7 @@ public class ThirdPartyOrderController {
 			Set<ServiceStatus> statusesForSave = Collections.singleton(ServiceStatus.RETURN);
 			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
 			
-			order = orderConverter.convertToReturn(order, prepareResponses(orderResponse, statusesForSave));
+			order = orderConverter.convertToReturn(order, prepareResponses(order, orderResponse, statusesForSave));
 			markUnmapped(order);
 			manager.confirm(order);
 		} catch (MethodUnavalaibleException | ManageException e) {
@@ -276,8 +276,7 @@ public class ThirdPartyOrderController {
 			Set<ServiceStatus> statusesForSave = Collections.singleton(ServiceStatus.CANCEL);
 			requestController.checkStatus(orderResponse.getResources(), statusesForSave);
 			
-			
-			order = orderConverter.convertToConfirm(order, prepareResponses(orderResponse, statusesForSave),
+			order = orderConverter.convertToConfirm(order, prepareResponses(order, orderResponse, statusesForSave),
 					ServiceStatus.CANCEL, ServiceStatus.CANCEL_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
@@ -286,17 +285,27 @@ public class ThirdPartyOrderController {
 		}
 	}
 	
-	@SuppressWarnings("unchecked")
-	private List<OrderResponse> prepareResponses(OrderResponse orderResponse, Set<ServiceStatus> statusesForSave) {
-		List<OrderResponse> responses = (List<OrderResponse>) SerializationUtils.deserialize(
-				SerializationUtils.serialize(orderResponse.getResources()));
-		for (OrderResponse response : responses) {
+	private List<OrderResponse> prepareResponses(Order order, OrderResponse orderResponse, Set<ServiceStatus> statusesForSave) {
+		for (OrderResponse response : orderResponse.getResources()) {
 			if (response.getServices() != null) {
-				response.getServices().removeIf(s -> !statusesForSave.contains(ServiceStatus.valueOf(s.getStatus())));
+				response.getServices().removeIf(s -> !statusesForSave.contains(ServiceStatus.valueOf(s.getStatus()))
+						|| isPresentStatus(order, s));
 			}
 		}
-		responses.removeIf(r -> r.getServices() == null || r.getServices().isEmpty());
-		return responses;
+		orderResponse.getResources().removeIf(r -> r.getServices() == null || r.getServices().isEmpty());
+		return orderResponse.getResources();
+	}
+	
+	private boolean isPresentStatus(Order order, ServiceItem service) {
+		for (ResourceOrder resourceOrder : order.getOrders()) {
+			for (ResourceService resourceService : resourceOrder.getServices()) {
+				if (orderConverter.isServiceOfResourceService(service, resourceService)) {
+					ServiceStatus status = ServiceStatus.valueOf(service.getStatus());
+					return status == orderConverter.getLastNotErrorStatus(resourceService.getStatuses());
+				}
+			}
+		}
+		return false;
 	}
 	
 	private void markUnmapped(Order order) {

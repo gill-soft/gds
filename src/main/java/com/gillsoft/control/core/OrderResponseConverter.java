@@ -187,7 +187,7 @@ public class OrderResponseConverter {
 					
 					// сервисы ресурса для сохранения
 					currRequest.getServices().forEach(s -> {
-						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), s, ServiceStatus.NEW_ERROR,
+						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), s, ServiceStatus.NEW_ERROR,
 								orderResponse.getError().getMessage()));
 					});
 				} else {
@@ -224,9 +224,9 @@ public class OrderResponseConverter {
 							}
 							// добавляем условия возврата
 							addReturnConditions(item, segment);
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW, null));
+							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW, null));
 						} else {
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getId(), item, ServiceStatus.NEW_ERROR,
+							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW_ERROR,
 									item.getError().getMessage()));
 						}
 						result.getServices().add(item);
@@ -1021,7 +1021,7 @@ public class OrderResponseConverter {
 		response.setOrderId(String.valueOf(order.getId()));
 		Map<Long, ServiceItem> services = new HashMap<>();
 		
-		// максимально последнмй статус любой позиции заказа
+		// максимально последний статус любой позиции заказа
 		ServiceStatus maxStatus = getMaxStatus(order);
 		for (OrderDocument document : order.getDocuments()) {
 			
