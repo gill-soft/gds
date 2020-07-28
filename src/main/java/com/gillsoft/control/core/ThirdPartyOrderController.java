@@ -368,6 +368,7 @@ public class ThirdPartyOrderController {
 				&& order.getResponse().getSegments() != null) {
 			for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
 				Segment segment = entry.getValue();
+				segment.setTripId(null);
 				String segmentId = entry.getKey();
 				String resourceId = segment.getResource().getId();
 				Map<String, Segment> group = grouped.get(resourceId);
