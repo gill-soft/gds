@@ -75,6 +75,7 @@ public class ThirdPartyOrderController {
 	public void saveOrUpdate(List<OrderResponse> responses) {
 		for (OrderResponse orderResponse : responses) {
 			try {
+				orderConverter.updateCustomerPhones(orderResponse.getCustomers().values());
 				Order order = findOrCreateOrder(getCopy(orderResponse));
 				if (order == null) {
 					throw new NoDataFoundException("Order not found and not created");

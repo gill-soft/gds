@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -28,6 +29,7 @@ import com.gillsoft.control.service.model.OrderDocument;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
+import com.gillsoft.model.Customer;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.Locality;
@@ -130,8 +132,13 @@ public class OrderResponseConverter {
 		return -1;
 	}
 	
+	public void updateCustomerPhones(Collection<Customer> customers) {
+		customers.forEach(c -> c.setPhone(com.gillsoft.pubsub.util.StringUtil.getCorrectPhone(c.getPhone())));
+	}
+	
 	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
 			OrderResponse response) {
+		updateCustomerPhones(originalRequest.getCustomers().values());
 		
 		result.setId(originalRequest.getId());
 		result.setCustomers(originalRequest.getCustomers());
