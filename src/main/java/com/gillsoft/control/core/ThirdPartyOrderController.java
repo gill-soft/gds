@@ -368,16 +368,14 @@ public class ThirdPartyOrderController {
 				&& order.getResponse().getSegments() != null) {
 			for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
 				Segment segment = entry.getValue();
-				if (segment.getTripId() == null) {
-					String segmentId = entry.getKey();
-					String resourceId = segment.getResource().getId();
-					Map<String, Segment> group = grouped.get(resourceId);
-					if (group == null) {
-						group = new HashMap<>();
-						grouped.put(resourceId, group);
-					}
-					group.put(segmentId, segment);
+				String segmentId = entry.getKey();
+				String resourceId = segment.getResource().getId();
+				Map<String, Segment> group = grouped.get(resourceId);
+				if (group == null) {
+					group = new HashMap<>();
+					grouped.put(resourceId, group);
 				}
+				group.put(segmentId, segment);
 			}
 		}
 		return grouped;
