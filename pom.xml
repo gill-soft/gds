@@ -187,6 +187,12 @@
 			<artifactId>calculate</artifactId>
 			<version>0.0.1</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.gillsoft</groupId>
+			<artifactId>pubsub-commons</artifactId>
+			<version>0.0.2</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.security</groupId>
