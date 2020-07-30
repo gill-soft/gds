@@ -421,7 +421,7 @@ public class MsDataController {
 				&& resourcePrice.getCommissions() != null) {
 			resourcePrice.getCommissions().forEach(c -> c.setId(null));
 		}
-		addReturnConditions(segment, resourcePrice);
+		addReturnConditions(segment, price);
 		price.setReturned(calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(),
 				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
 		
