@@ -11,7 +11,7 @@
 				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n" />
 		</Console>
 		<RollingFile name="RollingFile" fileName="${fileName}"
-			filePattern="${baseDir}/$${date:yyyy-MM}/%d{yyyy-MM-dd-HH_mm_ss}.${fileName}.log.zip">
+			filePattern="${baseDir}/$${date:yyyy-MM}/%d{yyyy-MM-dd-HH_mm_ss}.${baseFileName}.log.zip">
 			<PatternLayout charset="UTF-8"
 				pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5level] %logger{36} - %msg%n" />
 			<Policies>
@@ -27,7 +27,7 @@
 	<Loggers>
 		<Logger name="org.springframework" level="error" />
 		<Root level="INFO">
-			<AppenderRef ref="STDOUT" level="INFO" />
+			<AppenderRef ref="STDOUT" level="ERROR" />
 			<AppenderRef ref="RollingFile" />
 		</Root>
 	</Loggers>
