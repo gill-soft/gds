@@ -151,7 +151,7 @@ public class TripSearchMapping {
 		updateSegments(request, searchResponse, result, true);
 	}
 	
-	public void mapSegmentsTripId(Map<String, Segment> segmentsOfResource) {
+	public void mapSegmentsTripId(Map<String, Locality> localities, Map<String, Segment> segmentsOfResource) {
 		TripSearchRequest request = new TripSearchRequest();
 		ResourceParams params = new ResourceParams();
 		params.setResource(segmentsOfResource.values().iterator().next().getResource());
@@ -161,7 +161,7 @@ public class TripSearchMapping {
 		for (Segment segment : segmentsOfResource.values()) {
 			String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 			String segmentKey = getKey(resourceId, tripNumber);
-			setTripId(segment, fromMapping, segmentKey);
+			setTripId(localities, segment, fromMapping, segmentKey);
 		}
 	}
 	
@@ -175,10 +175,10 @@ public class TripSearchMapping {
 		return result;
 	}
 	
-	private void setTripId(Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
+	private void setTripId(Map<String, Locality> localities, Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
 		if (fromMapping.containsKey(segmentKey)) {
 			List<Segment> segments = fromMapping.get(segmentKey);
-			DataConverter.setTripIdsWithDates(segment, segments.stream().filter(s -> s.getTripId() != null)
+			DataConverter.addMappedTrips(localities, segment, segments.stream().filter(s -> s.getTripId() != null)
 					.map(s -> dataController.getTrip(Long.parseLong(s.getTripId()))).collect(Collectors.toList()));
 		}
 	}
@@ -196,10 +196,10 @@ public class TripSearchMapping {
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
 			try {
 				Segment segment = entry.getValue();
+				
 				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 				segment.setTripRresourceId(tripNumber);
 				String segmentKey = getKey(resourceId, tripNumber);
-				setTripId(segment, fromMapping, segmentKey);
 				
 				// устанавливаем ресурс
 				segment.setResource(new Resource(String.valueOf(resourceId)));
@@ -209,6 +209,8 @@ public class TripSearchMapping {
 						getKey(resourceId, segment.getDeparture().getId())));
 				segment.setArrival(result.getLocalities().get(
 						getKey(resourceId, segment.getArrival().getId())));
+				
+				setTripId(result.getLocalities(), segment, fromMapping, segmentKey);
 				
 				// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
 				if (segment.getVehicle() == null

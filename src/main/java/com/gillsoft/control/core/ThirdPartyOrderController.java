@@ -33,6 +33,7 @@ import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.ManageException;
+import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceOrder;
@@ -346,7 +347,7 @@ public class ThirdPartyOrderController {
 				
 				// маппим рейсы
 				for (Map<String, Segment> groupe : grouped.values()) {
-					searchMapping.mapSegmentsTripId(groupe);
+					searchMapping.mapSegmentsTripId(order.getResponse().getLocalities(), groupe);
 				}
 				// обновляем смапленные заказы
 				updateByMappedTrips(order, grouped);
@@ -368,7 +369,6 @@ public class ThirdPartyOrderController {
 				&& order.getResponse().getSegments() != null) {
 			for (Entry<String, Segment> entry : order.getResponse().getSegments().entrySet()) {
 				Segment segment = entry.getValue();
-				segment.setTripId(null);
 				String segmentId = entry.getKey();
 				String resourceId = segment.getResource().getId();
 				Map<String, Segment> group = grouped.get(resourceId);
@@ -395,7 +395,20 @@ public class ThirdPartyOrderController {
 					Segment mapped = segments.get(segmentId);
 					if (mapped != null
 							&& mapped.getTripId() != null) {
-						services.addAll(getServicesOfSegment(segmentId, order));
+						List<ResourceService> resourceServices = getServicesOfSegment(segmentId, order);
+						resourceServices.forEach(rs -> {
+							rs.setMappedTrip(true);
+							Map<String, Object> additionals = segment.getAdditionals();
+							if (additionals != null
+									&& additionals.containsKey(MappedService.MAPPED_SERVICES_KEY)) {
+								
+								@SuppressWarnings("unchecked")
+								Set<MappedService> mappedServices = (Set<MappedService>) additionals.get(MappedService.MAPPED_SERVICES_KEY);
+								mappedServices.forEach(ms -> rs.addMappedService(
+										(MappedService) SerializationUtils.deserialize(SerializationUtils.serialize(ms))));
+							}
+						});
+						services.addAll(resourceServices);
 					}
 				}
 			}

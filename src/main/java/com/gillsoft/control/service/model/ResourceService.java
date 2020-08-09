@@ -57,6 +57,11 @@ public class ResourceService implements Serializable {
 	
 	@Column(name = "mapped_trip", nullable = false)
 	private boolean mappedTrip = true;
+	
+	@OneToMany(fetch = FetchType.LAZY, mappedBy = "parent", orphanRemoval = true)
+	@Cascade({ CascadeType.PERSIST, CascadeType.MERGE, CascadeType.SAVE_UPDATE })
+	@Fetch(FetchMode.SELECT)
+	private Set<MappedService> mappedServices;
 
 	public long getId() {
 		return id;
@@ -112,6 +117,22 @@ public class ResourceService implements Serializable {
 
 	public void setMappedTrip(boolean mappedTrip) {
 		this.mappedTrip = mappedTrip;
+	}
+
+	public Set<MappedService> getMappedServices() {
+		return mappedServices;
+	}
+
+	public void setMappedServices(Set<MappedService> mappedServices) {
+		this.mappedServices = mappedServices;
+	}
+	
+	public void addMappedService(MappedService mappedService) {
+		if (mappedServices == null) {
+			mappedServices = new HashSet<>();
+		}
+		mappedService.setParent(this);
+		mappedServices.add(mappedService);
 	}
 
 }

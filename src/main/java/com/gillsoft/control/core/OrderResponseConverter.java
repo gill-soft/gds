@@ -20,9 +20,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
+import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderDocument;
@@ -411,7 +413,17 @@ public class OrderResponseConverter {
 		service.setId(new IdModel(resourceId, service.getId()).asString());
 		resourceService.setResourceNativeServiceId(service.getId());
 		if (service.getSegment() != null) {
-			resourceService.setDeparture(service.getSegment().getDepartureDate());
+			Segment segment = service.getSegment();
+			resourceService.setDeparture(segment.getDepartureDate());
+			Map<String, Object> additionals = segment.getAdditionals();
+			if (additionals != null
+					&& additionals.containsKey(MappedService.MAPPED_SERVICES_KEY)) {
+				
+				@SuppressWarnings("unchecked")
+				Set<MappedService> mappedServices = (Set<MappedService>) additionals.get(MappedService.MAPPED_SERVICES_KEY);
+				mappedServices.forEach(ms -> resourceService.addMappedService(
+						(MappedService) SerializationUtils.deserialize(SerializationUtils.serialize(ms))));
+			}
 		}
 		// пересчитанную стоимость сохраняем к статусу
 		resourceService.addStatus(createStatus(created, user, statusType, error, service.getPrice()));

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.GroupeIdEntity;
 import com.gillsoft.control.service.model.ManageException;
+import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderParams;
@@ -64,6 +65,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
 			+ "left join fetch o.clients as c "
+			+ "left join fetch rs.mappedServices as mc "
 			+ "where (wss.reported is :reported or :reported is null) "
 			+ "and (wss.userId = :userId or :userId is null) "
 			+ "and ((:clientId is null or c.clientId = :clientId) "
@@ -254,6 +256,9 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	@Override
 	public void markResourceServiceMappedTrip(ResourceService service) throws ManageException {
 		try {
+			for (MappedService mappedService : service.getMappedServices()) {
+				sessionFactory.getCurrentSession().saveOrUpdate(mappedService);
+			}
 			sessionFactory.getCurrentSession().createQuery(MARK_SERVICE_MAPPED_TRIP)
 					.setParameter("id", service.getId()).executeUpdate();
 		} catch (Exception e) {
@@ -273,5 +278,5 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			throw new ManageException("Error when add order client", e);
 		}
 	}
-
+	
 }

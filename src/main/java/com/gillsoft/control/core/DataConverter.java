@@ -1,14 +1,16 @@
 package com.gillsoft.control.core;
 
 import java.math.BigDecimal;
-import java.text.ParsePosition;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
@@ -320,37 +323,127 @@ public class DataConverter {
 		}
 	}
 	
-	public static void setTripIdsWithDates(Segment segment, List<Trip> fromMapping) {
+	public static void addMappedTrips(Map<String, Locality> localities, Segment segment, List<Trip> fromMapping) {
 		if (!fromMapping.isEmpty()) {
 			try {
 				if (fromMapping.size() > 1) {
 					fromMapping = sort(fromMapping);
 				}
+				Set<MappedService> services = new HashSet<>();
+				Trip first = fromMapping.get(0);
+				MappedService firstService = createFirstMappedService(first, localities, segment);
+				services.add(firstService);
+				
 				Date departure = segment.getDepartureDate();
 				StringBuilder tripId = new StringBuilder();
-				tripId.append(";").append(fromMapping.get(0).getId()).append("=").append(StringUtil.fullDateFormat.format(departure)).append(";");
+				tripId.append(";").append(first.getId()).append("=").append(StringUtil.fullDateFormat.format(departure)).append(";");
 				
 				if (fromMapping.size() > 1) {
 					String time = StringUtil.timeFormat.format(departure);
-					int arrivalDays = addedDays(fromMapping.get(0), time);
-					
+					int arrivalDays = addedDays(first, segment.getDeparture().getId(), localities, time);
+						
 					for (int i = 1; i < fromMapping.size(); i++) {
 						Trip next = fromMapping.get(i);
+						
 						Calendar nextDate = Calendar.getInstance();
-						StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(departure)
-								+ " " + getDepartureTime(next), new ParsePosition(0), nextDate);
+						nextDate.setTime(StringUtil.fullDateFormat.parse(
+								StringUtil.dateFormat.format(departure) + " " + getDepartureTime(next)));
 						nextDate.add(Calendar.DATE, arrivalDays);
+						
+						MappedService mappedService = null;
+						if (i == fromMapping.size() - 1) {
+							mappedService = createLastMappedService(next, localities, segment, nextDate.getTime());
+						} else {
+							mappedService = createMappedService(next, localities, nextDate.getTime());
+						}
+						mappedService.setOrder(i);
+						services.add(mappedService);
 						
 						tripId.append(next.getId()).append("=").append(StringUtil.fullDateFormat.format(nextDate)).append(";");
 						
 						arrivalDays += getLastArrivalDay(next);
 					}
+				} else {
+					MappedService mappedService = createLastMappedService(first, localities, segment, departure);
+					firstService.setToId(mappedService.getToId());
+					firstService.setToDeparture(mappedService.getToDeparture());
 				}
 				segment.setTripId(tripId.toString());
+				addMappedServices(segment, services);
 			} catch (Exception e) {
 				LOGGER.error("Can not set tripId from mapping", e);
 			}
 		}
+	}
+	
+	private static void addMappedServices(Segment segment, Set<MappedService> services) {
+		if (segment.getAdditionals() == null) {
+			segment.setAdditionals(new HashMap<>());
+		}
+		segment.getAdditionals().put(MappedService.MAPPED_SERVICES_KEY, services);
+	}
+	
+	private static MappedService createFirstMappedService(Trip trip, Map<String, Locality> localities,
+			Segment segment) throws ParseException {
+		MappedService mappedService = new MappedService();
+		mappedService.setOrder(0);
+		mappedService.setTripId(trip.getId());
+		mappedService.setFromDeparture(segment.getDepartureDate());
+		
+		List<RoutePoint> route = getRoute(trip);
+		RoutePoint point = getRoutePoint(route, segment.getDeparture().getId(), localities,
+				StringUtil.timeFormat.format(segment.getDepartureDate()));
+		mappedService.setFromId(Long.parseLong(point.getLocality().getParent().getId()));
+		mappedService.setToId(Long.parseLong(route.get(route.size() - 1).getLocality().getParent().getId()));
+		
+		Calendar tripDate = Calendar.getInstance();
+		tripDate.setTime(StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(segment.getDepartureDate())
+				+ " " + getDepartureTime(route)));
+		tripDate.add(Calendar.DATE, -1 * point.getArrivalDay());
+		mappedService.setTripDeparture(tripDate.getTime());
+		
+		mappedService.setToDeparture(getArrivalDate(route, tripDate.getTime()));
+		
+		return mappedService;
+	}
+	
+	private static Date getArrivalDate(List<RoutePoint> route, Date tripDate) throws ParseException {
+		Calendar arrivalDate = Calendar.getInstance();
+		arrivalDate.setTime(StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(tripDate)
+				+ " " + getArrivalTime(route)));
+		arrivalDate.add(Calendar.DATE, route.get(route.size() - 1).getArrivalDay());
+		return arrivalDate.getTime();
+	}
+	
+	private static MappedService createMappedService(Trip trip, Map<String, Locality> localities,
+			Date departure) throws ParseException {
+		MappedService mappedService = new MappedService();
+		mappedService.setTripId(trip.getId());
+		mappedService.setTripDeparture(departure);
+		mappedService.setFromDeparture(departure);
+		
+		List<RoutePoint> route = getRoute(trip);
+		mappedService.setFromId(Long.parseLong(route.get(0).getLocality().getParent().getId()));
+		mappedService.setToId(Long.parseLong(route.get(route.size() - 1).getLocality().getParent().getId()));
+		mappedService.setToDeparture(getArrivalDate(route, departure));
+		
+		return mappedService;
+	}
+	
+	private static MappedService createLastMappedService(Trip trip, Map<String, Locality> localities,
+			Segment segment, Date departure) {
+		MappedService mappedService = new MappedService();
+		mappedService.setTripId(trip.getId());
+		mappedService.setTripDeparture(departure);
+		mappedService.setFromDeparture(departure);
+		mappedService.setToDeparture(segment.getArrivalDate());
+		
+		List<RoutePoint> route = getRoute(trip);
+		RoutePoint point = getRoutePoint(route, segment.getArrival().getId(), localities, null);
+		mappedService.setFromId(Long.parseLong(route.get(0).getLocality().getParent().getId()));
+		mappedService.setToId(Long.parseLong(point.getLocality().getParent().getId()));
+		
+		return mappedService;
 	}
 	
 	private static List<Trip> sort(List<Trip> trips) {
@@ -424,19 +517,50 @@ public class DataConverter {
 		return point.getLocality().getParent().getId();
 	}
 	
-	private static int addedDays(Trip trip, String time) {
+	private static int addedDays(Trip trip, String fromId, Map<String, Locality> localities, String time) {
 		List<RoutePoint> route = getRoute(trip);
-		int currDays = 0;
+		RoutePoint point = getRoutePoint(route, fromId, localities, time);
+		return route.get(route.size() - 1).getArrivalDay() - (point != null ? point.getArrivalDay() : 0);
+	}
+	
+	private static RoutePoint getRoutePoint(List<RoutePoint> route, String fromId, Map<String, Locality> localities, String time) {
 		for (RoutePoint point : route) {
-			if (time.equals(point.getDepartureTime())) {
-				currDays = point.getArrivalDay();
+			if (isFromId(point, fromId, localities)
+					&& (time == null
+							|| time.equals(point.getDepartureTime())
+							|| time.equals(point.getArrivalTime()))) {
+				return point;
 			}
 		}
-		return route.get(route.size() - 1).getArrivalDay() - currDays;
+		return null;
+	}
+	
+	private static boolean isFromId(RoutePoint point, String fromId, Map<String, Locality> localities) {
+		String stationId = point.getLocality().getId();
+		String cityId = point.getLocality().getParent().getId();
+		if (fromId.equals(stationId)
+				|| fromId.equals(cityId)) {
+			return true;
+		} else {
+			Locality locality = localities.get(fromId);
+			if (locality != null
+					&& locality.getParent() != null) {
+				return isFromId(point, locality.getParent().getId(), localities);
+			}
+			return false;
+		}
 	}
 	
 	private static String getDepartureTime(Trip trip) {
-		return getRoute(trip).get(0).getDepartureTime();
+		return getDepartureTime(getRoute(trip));
+	}
+	
+	private static String getDepartureTime(List<RoutePoint> route) {
+		return route.get(0).getDepartureTime();
+	}
+	
+	private static String getArrivalTime(List<RoutePoint> route) {
+		return route.get(route.size() - 1).getArrivalTime();
 	}
 	
 	private static int getLastArrivalDay(Trip trip) {

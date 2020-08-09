@@ -1,5 +1,6 @@
 package com.gillsoft.control.service.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -21,8 +22,10 @@ import com.gillsoft.ms.entity.User;
 @Entity
 @Table(name = "clients", indexes = { @Index(columnList = "client_id"), @Index(columnList = "phone") },
 		uniqueConstraints = { @UniqueConstraint(columnNames = { "client_id", "phone", "order_id" }) })
-public class OrderClient {
+public class OrderClient implements Serializable {
 	
+	private static final long serialVersionUID = 4995650300617490752L;
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;

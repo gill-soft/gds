@@ -252,7 +252,9 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public Trip getTripWithChilds(long id) {
 		Trip trip = getResult(MessageFormat.format(GET_TRIP, String.valueOf(id)), null, new ParameterizedTypeReference<Trip>() { });
-		trip.setChilds(getResult(MessageFormat.format(GET_TRIP_CHILDREN, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
+		if (trip != null) {
+			trip.setChilds(getResult(MessageFormat.format(GET_TRIP_CHILDREN, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
+		}
 		return trip;
 	}
 	
