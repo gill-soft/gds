@@ -113,20 +113,21 @@ public class MappingCreator<T> {
 		Locality locality = DataConverter.createLocality(mapping, lang, original);
 		Locality result = locality;
 		while ((mapping = mapping.getParent()) != null) {
-			locality.setParent(DataConverter.createLocality(mapping, lang, original));
+			locality.setParent(DataConverter.createLocality(mapping, lang, null));
 			locality = locality.getParent();
 		}
 		return result;
 	}
 	
 	private static Unmapping createUnmappingLocality(LangRequest request, Locality locality) {
+		Unmapping unmapping = UnmappingConverter.createUnmappingLocality(locality);
 		long resourceId = MappingCreator.getResourceId(request);
 		Locality parent = null;
 		while ((parent = locality.getParent()) != null) {
 			locality.setParent(new Locality(getKey(resourceId, parent.getId())));
 			locality = parent;
 		}
-		return UnmappingConverter.createUnmappingLocality(locality);
+		return unmapping;
 	}
 	
 	public static MappingCreator<Organisation> organisationMappingCreator(LangRequest request,
