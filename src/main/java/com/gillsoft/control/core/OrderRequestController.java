@@ -23,7 +23,6 @@ import org.springframework.util.SerializationUtils;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.OrderDAOManager;
-import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
@@ -91,7 +90,7 @@ public class OrderRequestController {
 			}
 			try {
 				resourceItem.getAdditionals().put("uniqueId", String.valueOf(manager.getUniqueId(serviceResource.getId())));
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Can not create unique id for resource " + serviceResource.getId(), e);
 			}
 			resourceRequest.getServices().add(resourceItem);

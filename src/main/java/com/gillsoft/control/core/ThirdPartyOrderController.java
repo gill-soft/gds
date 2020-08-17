@@ -28,11 +28,9 @@ import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.concurrent.PoolType;
 import com.gillsoft.concurrent.ThreadPoolStore;
-import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.OrderDAOManager;
-import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
@@ -101,12 +99,12 @@ public class ThirdPartyOrderController {
 		Order order = null;
 		try {
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			order = orderConverter.convertToNewOrder(orderResponse);
 			try {
 				markUnmapped(order);
 				manager.create(order);
-			} catch (ManageException e1) {
+			} catch (Exception e1) {
 				LOGGER.error("findOrCreateOrder error");
 			}
 			registerClients(order);
@@ -142,7 +140,7 @@ public class ThirdPartyOrderController {
 				if (client != null) {
 					try {
 						manager.addOrderClient(order, client);
-					} catch (ManageException e) {
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
 				}
@@ -160,7 +158,7 @@ public class ThirdPartyOrderController {
 		try {
 			markUnmapped(order);
 			manager.addServices(order);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Add services to order error in db", e);
 		}
 	}
@@ -194,7 +192,7 @@ public class ThirdPartyOrderController {
 		order = orderConverter.removeServices(order, servicesForRemove, false);
 		try {
 			manager.removeServices(order);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Remove services from order error in db", e);
 		}
 	}
@@ -251,7 +249,7 @@ public class ThirdPartyOrderController {
 					ServiceStatus.CONFIRM, ServiceStatus.CONFIRM_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
-		} catch (MethodUnavalaibleException | ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("confirmOrder error");
 		}
 	}
@@ -266,7 +264,7 @@ public class ThirdPartyOrderController {
 			order = orderConverter.convertToReturn(order, prepareResponses(order, orderResponse, statusesForSave));
 			markUnmapped(order);
 			manager.confirm(order);
-		} catch (MethodUnavalaibleException | ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("returnOrder error");
 		}
 	}
@@ -282,7 +280,7 @@ public class ThirdPartyOrderController {
 					ServiceStatus.CANCEL, ServiceStatus.CANCEL_ERROR);
 			markUnmapped(order);
 			manager.confirm(order);
-		} catch (MethodUnavalaibleException | ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("cancelOrder error");
 		}
 	}
@@ -352,7 +350,7 @@ public class ThirdPartyOrderController {
 				// обновляем смапленные заказы
 				updateByMappedTrips(order, grouped);
 			}
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Get orders error in db");
 		}
 	}
@@ -441,11 +439,11 @@ public class ThirdPartyOrderController {
 			for (ResourceService service : services) {
 				try {
 					manager.markResourceServiceMappedTrip(service);
-				} catch (ManageException e) {
+				} catch (Exception e) {
 					LOGGER.error("saveUpdated service error");
 				}
 			}
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("saveUpdated order error");
 		}
 	}

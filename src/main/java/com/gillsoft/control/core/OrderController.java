@@ -19,7 +19,6 @@ import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.OrderDAOManager;
-import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderParams;
@@ -110,7 +109,7 @@ public class OrderController {
 		}
 		try {
 			return orderConverter.getResponse(manager.create(order));
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error(e);
 			throw new ApiException(e);
 		}
@@ -134,7 +133,7 @@ public class OrderController {
 			order = orderConverter.convertToConfirm(order, requests, responses, ServiceStatus.BOOKING, ServiceStatus.BOOKING_ERROR);
 			try {
 				manager.booking(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Booking order error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -166,7 +165,7 @@ public class OrderController {
 			}
 			try {
 				manager.confirm(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Confirm order error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -196,7 +195,7 @@ public class OrderController {
 			order.setCancelReason(reason);
 			try {
 				manager.cancel(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Cancel order error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -244,7 +243,7 @@ public class OrderController {
 		Order order = null;
 		try {
 			order = manager.getFullOrder(params);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Find order error in db", e);
 		}
 		if (order == null) {
@@ -257,7 +256,7 @@ public class OrderController {
 		Order order = null;
 		try {
 			order = manager.getOrderPart(params);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Find order error in db", e);
 		}
 		if (order == null) {
@@ -284,7 +283,7 @@ public class OrderController {
 			order = orderConverter.joinOrders(order, newOrder);
 			try {
 				order = manager.addServices(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Add services to order error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -312,7 +311,7 @@ public class OrderController {
 			order = orderConverter.removeServices(order, request.getServices());
 			try {
 				order = manager.removeServices(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Remove services from order error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -333,7 +332,7 @@ public class OrderController {
 		Order order = null;
 		try {
 			order = manager.getDocuments(params);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Find order documents error in db", e);
 		}
 		return order;
@@ -362,7 +361,7 @@ public class OrderController {
 			order = orderConverter.addDocuments(order, requests, responses);
 			try {
 				order = manager.update(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Save documents to order error in db", e);
 			}
 		} catch (Exception e) {
@@ -398,7 +397,7 @@ public class OrderController {
 			order = orderConverter.convertToReturn(order, requests, returnResponses, calcResponses);
 			try {
 				manager.returnServices(order);
-			} catch (ManageException e) {
+			} catch (Exception e) {
 				LOGGER.error("Return services error in db", e);
 			}
 			return orderConverter.getResponse(order);
@@ -428,7 +427,7 @@ public class OrderController {
 							ro -> ro.getServices().forEach(
 									rs -> rs.getStatuses().removeIf(ServiceStatusEntity::isReported))));
 			return orders;
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Get orders error in db", e);
 			throw new ApiException(e);
 		}
@@ -450,7 +449,7 @@ public class OrderController {
 		try {
 			List<Order> orders = manager.getOrders(params);
 			return orders.stream().map(o -> orderConverter.getResponse(o)).collect(Collectors.toList());
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Get orders error in db", e);
 			throw new ApiException(e);
 		}
@@ -459,7 +458,7 @@ public class OrderController {
 	public void reportStatuses(Set<Long> ids) {
 		try {
 			manager.reportStatuses(ids);
-		} catch (ManageException e) {
+		} catch (Exception e) {
 			LOGGER.error("Report statuses error in db", e);
 			throw new ApiException(e);
 		}
