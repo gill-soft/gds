@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.gillsoft.control.core.DispatcherService;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.TripDateServices;
 
 import springfox.documentation.annotations.ApiIgnore;
 
@@ -33,6 +34,13 @@ public class DispatcherApiController {
 	public List<MappedService> getMappedServices(@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureTo) {
 		return dispatcherService.getMappedServices(Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
+				Date.from(tripDepartureTo.atStartOfDay().toInstant(ZoneOffset.UTC)));
+	}
+	
+	@GetMapping("/services/grouped/{tripDepartureFrom}/{tripDepartureTo}")
+	public List<TripDateServices> getGroupedServices(@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
+			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureTo) {
+		return dispatcherService.getGroupedServices(Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
 				Date.from(tripDepartureTo.atStartOfDay().toInstant(ZoneOffset.UTC)));
 	}
 	

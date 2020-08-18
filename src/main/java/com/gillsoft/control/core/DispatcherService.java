@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.gillsoft.control.service.OrderDispatcherDAOService;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.TripDateServices;
 import com.gillsoft.util.StringUtil;
 
 @Service
@@ -26,6 +27,17 @@ public class DispatcherService {
 			return dispatcherDAOService.getMappedServices(tripDepartureFrom, tripDepartureTo);
 		} catch (Exception e) {
 			LOGGER.error("Can not get mapped services "
+					+ StringUtil.fullDateFormat.format(tripDepartureFrom) + " "
+					+ StringUtil.fullDateFormat.format(tripDepartureTo), e);
+			return null;
+		}
+	}
+	
+	public List<TripDateServices> getGroupedServices(Date tripDepartureFrom, Date tripDepartureTo) {
+		try {
+			return dispatcherDAOService.getGroupedServices(tripDepartureFrom, tripDepartureTo);
+		} catch (Exception e) {
+			LOGGER.error("Can not get grouped services "
 					+ StringUtil.fullDateFormat.format(tripDepartureFrom) + " "
 					+ StringUtil.fullDateFormat.format(tripDepartureTo), e);
 			return null;

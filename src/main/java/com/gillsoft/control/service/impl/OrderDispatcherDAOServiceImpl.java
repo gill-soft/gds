@@ -14,6 +14,7 @@ import com.gillsoft.control.service.OrderDispatcherDAOService;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.TripDateServices;
 
 @Repository
 public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService {
@@ -31,6 +32,16 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			+ "where mc.tripDeparture >= :tripDepartureFrom "
 			+ "and mc.tripDeparture <= :tripDepartureTo "
 			+ "and " + EXISTS_STATUS;
+	
+	private final static String GET_GROUPED_SERVICES = "select new com.gillsoft.control.service.model.TripDateServices(mc.tripId, mc.tripDeparture, count(mc.tripId)) "
+			+ "from Order as o "
+			+ "join o.orders as ro "
+			+ "join ro.services as rs "
+			+ "join rs.mappedServices as mc "
+			+ "where mc.tripDeparture >= :tripDepartureFrom "
+			+ "and mc.tripDeparture <= :tripDepartureTo "
+			+ "and " + EXISTS_STATUS
+			+ " group by mc.tripId, mc.tripDeparture";
 	
 	private final static String SELECT_ORDERS = "select o from Order as o "
 			+ "join fetch o.orders as ro "
@@ -72,7 +83,20 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 					.setParameter("tripDepartureTo", endOfDay(tripDepartureTo))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
-			throw new ManageException("Error when get order", e);
+			throw new ManageException("Error when get mapped services", e);
+		}
+	}
+	
+	@Transactional(readOnly = true)
+	@Override
+	public List<TripDateServices> getGroupedServices(Date tripDepartureFrom, Date tripDepartureTo)
+			throws ManageException {
+		try {
+			return sessionFactory.getCurrentSession().createQuery(GET_GROUPED_SERVICES, TripDateServices.class)
+					.setParameter("tripDepartureFrom", beginOfDay(tripDepartureFrom))
+					.setParameter("tripDepartureTo", endOfDay(tripDepartureTo)).getResultList();
+		} catch (Exception e) {
+			throw new ManageException("Error when get grouped services", e);
 		}
 	}
 
@@ -88,7 +112,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 					.setParameter("fromDepartureTo", endOfDay(fromDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
-			throw new ManageException("Error when get order", e);
+			throw new ManageException("Error when get from mapped orders", e);
 		}
 	}
 
@@ -104,7 +128,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 					.setParameter("toDepartureTo", endOfDay(toDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
-			throw new ManageException("Error when get order", e);
+			throw new ManageException("Error when get to mapped orders", e);
 		}
 	}
 
@@ -119,7 +143,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 					.setParameter("tripDepartureTo", endOfDay(departure))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
-			throw new ManageException("Error when get order", e);
+			throw new ManageException("Error when get trip mapped orders", e);
 		}
 	}
 	
