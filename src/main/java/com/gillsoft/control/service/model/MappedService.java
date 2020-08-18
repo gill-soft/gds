@@ -13,6 +13,8 @@ import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,6 +22,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.gillsoft.model.ApiDateDeserializer;
+import com.gillsoft.model.ApiDateSerializer;
 import com.gillsoft.model.ApiDateTimeDeserializer;
 import com.gillsoft.model.ApiDateTimeSerializer;
 
@@ -52,8 +56,9 @@ public class MappedService implements Serializable {
 	private long toId;
 
 	@Column(name = "trip_departure")
-	@JsonSerialize(using = ApiDateTimeSerializer.class)
-	@JsonDeserialize(using = ApiDateTimeDeserializer.class)
+	@Temporal(TemporalType.DATE)
+	@JsonSerialize(using = ApiDateSerializer.class)
+	@JsonDeserialize(using = ApiDateDeserializer.class)
 	private Date tripDeparture;
 
 	@Column(name = "from_departure")

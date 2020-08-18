@@ -4,6 +4,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.TemporalType;
+
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,8 +81,8 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	public List<MappedService> getMappedServices(Date tripDepartureFrom, Date tripDepartureTo) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_MAPPED_SERVICES, MappedService.class)
-					.setParameter("tripDepartureFrom", beginOfDay(tripDepartureFrom))
-					.setParameter("tripDepartureTo", endOfDay(tripDepartureTo))
+					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
+					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get mapped services", e);
@@ -93,8 +95,8 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_GROUPED_SERVICES, TripDateServices.class)
-					.setParameter("tripDepartureFrom", beginOfDay(tripDepartureFrom))
-					.setParameter("tripDepartureTo", endOfDay(tripDepartureTo)).getResultList();
+					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
+					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get grouped services", e);
 		}
@@ -139,8 +141,8 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_TRIP_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
-					.setParameter("tripDepartureFrom", beginOfDay(departure))
-					.setParameter("tripDepartureTo", endOfDay(departure))
+					.setParameter("tripDepartureFrom", departure, TemporalType.DATE)
+					.setParameter("tripDepartureTo", departure, TemporalType.DATE)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get trip mapped orders", e);
