@@ -68,8 +68,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	
 	private final static String GET_TRIP_MAPPED_ORDERS = SELECT_ORDERS
 			+ " where mc.tripId = :tripId "
-			+ "and mc.tripDeparture >= :tripDepartureFrom "
-			+ "and mc.tripDeparture <= :tripDepartureTo "
+			+ "and mc.tripDeparture = :tripDeparture "
 			+ "and " + EXISTS_STATUS;
 	
 	@Autowired
@@ -141,8 +140,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_TRIP_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
-					.setParameter("tripDepartureFrom", departure, TemporalType.DATE)
-					.setParameter("tripDepartureTo", departure, TemporalType.DATE)
+					.setParameter("tripDeparture", departure, TemporalType.DATE)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get trip mapped orders", e);
