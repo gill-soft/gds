@@ -12,12 +12,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +37,7 @@ import com.gillsoft.util.StringUtil;
 
 @Component(value = "ResourceFilterController")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
+@EnableScheduling
 public class ResourceFilterController extends FilterController {
 	
 	private static Logger LOGGER = LogManager.getLogger(ResourceFilterController.class);
@@ -47,8 +47,8 @@ public class ResourceFilterController extends FilterController {
 		return LOGGER;
 	}
 
-	@PostConstruct
 	@Scheduled(initialDelay = 120000, fixedDelay = 120000)
+	@Override
 	public void updateFields() {
 		Map<String, Field> fieldsMap = new HashMap<>();
 		
@@ -66,7 +66,7 @@ public class ResourceFilterController extends FilterController {
 		);
 		updateServiceFilterFields(fieldsMap, activateFilters);
 		updateFilterConditionFields(fieldsMap, filterConditions);
-		this.fields = fieldsMap;
+		setFields(fieldsMap);
 	}
 	
 	protected void updateFilterConditionFields(Map<String, Field> fieldsMap, Map<Long, List<BaseEntity>> entities) {
@@ -322,7 +322,7 @@ public class ResourceFilterController extends FilterController {
 	private Object getValue(Segment segment, String[] name) {
 		Object value = segment;
 		for (int i = 1; i < name.length; i++) {
-			Field field = fields.get(getKey(name, i));
+			Field field = getFields().get(getKey(name, i));
 			if (field == null) {
 				break;
 			}

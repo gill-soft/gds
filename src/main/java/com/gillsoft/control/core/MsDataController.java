@@ -19,8 +19,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -155,7 +153,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllCommissions() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -164,7 +161,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllReturnConditions() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -173,7 +169,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllTicketLayouts() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -182,7 +177,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllFilters() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -191,7 +185,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllOrdersAccess() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -200,7 +193,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllResourceFilters() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -209,7 +201,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllResourceConnections() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -218,7 +209,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<Long, List<CodeEntity>> getAllResourceConnectionDiscounts() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -227,7 +217,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<String, Organisation> getAllOrganisations() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
@@ -247,7 +236,6 @@ public class MsDataController {
 	}
 	
 	@SuppressWarnings("unchecked")
-	@PostConstruct
 	public Map<String, com.gillsoft.ms.entity.ResourceParams> getAllResourceParams() {
 		
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями

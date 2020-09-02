@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.annotation.PostConstruct;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,18 +34,28 @@ public class FilterController {
 	@Autowired
 	protected MsDataController dataController;
 	
-	protected Map<String, Field> fields;
+	private Map<String, Field> fields;
 	
 	protected Logger getLogger() {
 		return LOGGER;
 	}
 	
-	@PostConstruct
+	public Map<String, Field> getFields() {
+		if (fields == null) {
+			updateFields();
+		}
+		return fields;
+	}
+
+	public void setFields(Map<String, Field> fields) {
+		this.fields = fields;
+	}
+
 	@Scheduled(initialDelay = 120000, fixedDelay = 120000)
 	public void updateFields() {
 		Map<String, Field> fieldsMap = new HashMap<>();
 		updateServiceFilterFields(fieldsMap, dataController.getAllFilters());
-		this.fields = fieldsMap;
+		setFields(fieldsMap);
 	}
 	
 	protected void updateServiceFilterFields(Map<String, Field> fieldsMap, Map<Long, List<CodeEntity>> entities) {
@@ -117,7 +125,7 @@ public class FilterController {
 				String[] name = filter.getFilteredField().split("\\.");
 				Object value = segment;
 				for (int i = 1; i < name.length; i++) {
-					Field field = fields.get(getKey(name, i));
+					Field field = getFields().get(getKey(name, i));
 					if (field == null) {
 						currFilter = true;
 						break;
