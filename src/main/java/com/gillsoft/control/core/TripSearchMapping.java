@@ -1,6 +1,7 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +157,7 @@ public class TripSearchMapping {
 		ResourceParams params = new ResourceParams();
 		params.setResource(segmentsOfResource.values().iterator().next().getResource());
 		request.setParams(params);
+		segmentsOfResource.keySet().removeIf(key -> segmentsOfResource.get(key).getTripId() != null);
 		Map<String, List<Segment>> fromMapping = mapSegments(new TripSearchResponse(), request, segmentsOfResource);
 		long resourceId = MappingCreator.getResourceId(request);
 		for (Segment segment : segmentsOfResource.values()) {
@@ -168,18 +170,34 @@ public class TripSearchMapping {
 	private Map<String, List<Segment>> mapSegments(TripSearchResponse searchResponse, TripSearchRequest request,
 			Map<String, Segment> responseSegments) {
 		long resourceId = MappingCreator.getResourceId(request);
-		Map<String, Segment> segments = responseSegments.values().stream().collect(
+		Map<String, List<Segment>> result = mapSegments(resourceId, searchResponse, request, responseSegments);
+		result.putAll(getMappedSegments(resourceId, responseSegments));
+		return result;
+	}
+	
+	private Map<String, List<Segment>> mapSegments(long resourceId, TripSearchResponse searchResponse,
+			TripSearchRequest request, Map<String, Segment> responseSegments) {
+		Map<String, Segment> segments = responseSegments.values().stream().filter(s -> Objects.isNull(s.getTripId())).collect(
 				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
 		Map<String, List<Segment>> result = new HashMap<>();
 		MappingCreator.segmentMappingCreator(searchResponse, request, segments, result).mappingObjects(mappingService);
 		return result;
 	}
 	
+	private Map<String, List<Segment>> getMappedSegments(long resourceId, Map<String, Segment> responseSegments) {
+		Map<String, Segment> segments = responseSegments.values().stream().filter(s -> Objects.nonNull(s.getTripId())).collect(
+				Collectors.toMap(s -> MappingService.getResourceTripNumber(s, resourceId), s -> s, (s1, s2) -> s1));
+		return segments.values().stream().collect(
+				Collectors.toMap(s -> getKey(resourceId, MappingService.getResourceTripNumber(s, resourceId)),
+						s -> Arrays.asList(s.getTripId().split(";")).stream()
+						.map(tripId -> DataConverter.createSegment(tripId, s)).collect(Collectors.toList()), (s1, s2) -> s1));
+	}
+	
 	private void setTripId(Map<String, Locality> localities, Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
 		if (fromMapping.containsKey(segmentKey)) {
 			List<Segment> segments = fromMapping.get(segmentKey);
 			DataConverter.addMappedTrips(localities, segment, segments.stream().filter(s -> s.getTripId() != null)
-					.map(s -> dataController.getTrip(Long.parseLong(s.getTripId()))).collect(Collectors.toList()));
+					.map(s -> dataController.getTrip(Long.parseLong(s.getTripId()))).filter(Objects::nonNull).collect(Collectors.toList()));
 		}
 	}
 	

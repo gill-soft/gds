@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.gillsoft.control.service.model.LocalityType;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.model.CalcType;
@@ -285,8 +286,7 @@ public class DataConverter {
 				locality.setLongitude(createDecimal(mapping.getId(), mapping.getAttributes().get("LONGITUDE")));
 				locality.setTimezone(mapping.getAttributes().get("TIMEZONE"));
 				locality.setDetails(mapping.getAttributes().get("DETAILS"));
-				locality.setType(mapping.getAttributes().get("TYPE"));
-				locality.setSubtype(mapping.getAttributes().get("SUBTYPE"));
+				locality.setType(LocalityType.get(mapping.getAttributes().get("TYPE")).name());
 			}
 			return locality;
 		}
@@ -297,7 +297,7 @@ public class DataConverter {
 		return locality;
 	}
 	
-	public static Segment createSegment(Mapping mapping, Lang lang, Segment original) {
+	public static Segment createSegment(Mapping mapping, Segment original) {
 		Segment segment = new Segment();
 		segment.setId(String.valueOf(mapping.getId()));
 		if (mapping.getAttributes() != null) {
@@ -310,6 +310,13 @@ public class DataConverter {
 		}
 		return segment;
 	}
+	
+	public static Segment createSegment(String tripId, Segment original) {
+		Segment segment = new Segment();
+		segment.setId(original.getId());
+		segment.setTripId(tripId);
+		return segment;
+}
 	
 	private static BigDecimal createDecimal(long mappingId, String value) {
 		if (value == null) {

@@ -21,6 +21,7 @@ import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.service.AgregatorLocalityService;
+import com.gillsoft.control.service.model.LocalityType;
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
@@ -115,7 +116,22 @@ public class LocalityController {
 		for (Mapping mapping : mappings.values()) {
 			addLocality(mapping, mainRequest.getLang(), localities);
 		}
+		setLocalitiesType(localities);
 		return new ArrayList<>(localities.values());
+	}
+	
+	private void setLocalitiesType(Map<String, Locality> localities) {
+		for (Locality locality : localities.values()) {
+			if (locality.getParent() == null) {
+				locality.setType(LocalityType.COUNTRY.name());
+			} else {
+				Locality parent = localities.get(locality.getParent().getId());
+				if (parent != null
+						&& LocalityType.LOCALITY.name().equals(parent.getType())) {
+					locality.setType(LocalityType.STOPPING.name());
+				}
+			}
+		}
 	}
 	
 	public void addLocality(Mapping mapping, Lang lang, Map<String, Locality> localities) {

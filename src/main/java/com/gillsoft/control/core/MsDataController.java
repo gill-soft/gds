@@ -304,6 +304,19 @@ public class MsDataController {
 				new UserByIdUpdateTask(id), () -> msService.getUser(id), 120000l);
 	}
 	
+	public Trip getTrip(String id) {
+		if (id == null
+				|| id.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return getTrip(Long.parseLong(id));
+		} catch (Exception e) {
+			LOGGER.error("Trip id " + id + " is not number");
+		}
+		return null;
+	}
+	
 	public Trip getTrip(long id) {
 		return (Trip) getFromCache(getTripCacheKey(id),
 				new TripByIdUpdateTask(id), () -> msService.getTripWithChilds(id), 120000l);

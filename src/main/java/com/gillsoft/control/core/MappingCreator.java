@@ -181,7 +181,7 @@ public class MappingCreator<T> {
 		creator.objects = objects;
 		creator.result = result;
 		creator.mapType = MapType.TRIP;
-		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> DataConverter.createSegment(m, lang, original)).collect(Collectors.toList());
+		creator.creator = (mappings, lang, original) -> mappings.stream().map(m -> DataConverter.createSegment(m, original)).collect(Collectors.toList());
 		creator.unmappingCreator = (original) -> UnmappingConverter.createUnmappingSegment(searchResponse, original);
 		creator.idSetter = (resourceId, id, s) -> s.setId(getKey(resourceId, id));
 		return creator;
