@@ -459,7 +459,8 @@ public class OrderResponseConverter {
 	}
 	
 	public OrderResponse getResponse(Order order) {
-		return convertResponse(order, order.getResponse());
+		OrderResponse response = (OrderResponse) SerializationUtils.deserialize(SerializationUtils.serialize(order.getResponse()));
+		return convertResponse(order, response);
 	}
 	
 	private OrderResponse convertResponse(Order order, OrderResponse response) {
