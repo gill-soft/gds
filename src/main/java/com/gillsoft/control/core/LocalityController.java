@@ -95,7 +95,7 @@ public class LocalityController {
 					
 					// мапинг ресурса
 					long resourceId = Long.parseLong(request.getParams().getResource().getId());
-					mappings.putAll(localityResponse.getLocalities().stream()
+					mappings.putAll(localityResponse.getLocalities().parallelStream()
 							.map(l -> {
 								List<Mapping> mapped = mappingService.getMappings(MapType.GEO, resourceId, l.getId(), mainRequest.getLang());
 								if (mapped == null) {
