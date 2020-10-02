@@ -294,12 +294,8 @@ public class ConnectionsController {
 	}
 	
 	private boolean isCarriersEnabled(Segment fromSegment, Segment toSegment, SegmentConnection connection) {
-		if (fromSegment.getCarrier() == null
-				|| toSegment.getCarrier() == null) {
-			return false;
-		}
-		String fromCarrier = fromSegment.getCarrier().getId();
-		String toCarrier = toSegment.getCarrier().getId();
+		String fromCarrier = fromSegment.getCarrier() != null ? fromSegment.getCarrier().getId() : null;
+		String toCarrier = toSegment.getCarrier() != null ? toSegment.getCarrier().getId() : null;
 		return (connection.getFromCarriers() == null
 				|| connection.getFromCarriers().isEmpty()
 				|| connection.getFromCarriers().contains(fromCarrier))
@@ -309,12 +305,8 @@ public class ConnectionsController {
 	}
 	
 	private boolean isResourcesEnabled(Segment fromSegment, Segment toSegment, SegmentConnection connection) {
-		if (fromSegment.getResource() == null
-				|| toSegment.getResource() == null) {
-			return false;
-		}
-		String fromResource = fromSegment.getResource().getId();
-		String toResource = toSegment.getResource().getId();
+		String fromResource = fromSegment.getResource() != null ? fromSegment.getResource().getId() : null;
+		String toResource = toSegment.getResource() != null ? toSegment.getResource().getId() : null;
 		return (connection.getFromResources() == null
 				|| connection.getFromResources().isEmpty()
 				|| connection.getFromResources().contains(fromResource))

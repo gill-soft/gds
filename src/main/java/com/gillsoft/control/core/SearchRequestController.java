@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.Resource;
@@ -33,6 +36,9 @@ import com.gillsoft.util.StringUtil;
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class SearchRequestController {
+	
+	public final static String USER_ID_KEY = "userId";
+	public final static String USER_ORG_ID_KEY = "userOrganisationId";
 	
 	@Autowired
 	private MsDataController dataController;
@@ -51,6 +57,7 @@ public class SearchRequestController {
 		if (resources != null) {
 			SearchRequestContainer requestContainer = new SearchRequestContainer();
 			searchRequest.setToResult(true);
+			addUserInfo(searchRequest);
 			requestContainer.setOriginRequest(searchRequest);
 			
 			// проверяем запрос на поиск стыковочных рейсов и делаем пары с учетом стыковок
@@ -77,48 +84,22 @@ public class SearchRequestController {
 		throw new ResourceUnavailableException("User does not has available resources");
 	}
 	
-	private void addSearchRequest(TripSearchRequest searchRequest, Resource resource, String[] pair,
-			SearchRequestContainer requestContainer, int addedDays, Integer maxConnections, boolean toResult) {
-		Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[0]));
-		if (fromIds != null) {
-			Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[1]));
-			if (toIds != null) {
-				TripSearchRequest resourceSearchRequest = new TripSearchRequest();
-				
-				// оригинальный ид, который будеи в ответе, плюс уникальный ид запроса
-				resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
-				resourceSearchRequest.setToResult(toResult);
-				resourceSearchRequest.setParams(resource.createParams());
-				resourceSearchRequest.setDates(addDays(searchRequest.getDates(), addedDays));
-				resourceSearchRequest.setMaxConnections(maxConnections);
-				if (!searchRequest.isUseTranfers()) {
-					resourceSearchRequest.setBackDates(searchRequest.getBackDates());
-				}
-				resourceSearchRequest.setCurrency(searchRequest.getCurrency());
-				resourceSearchRequest.setLocalityPairs(new ArrayList<>());
-				resourceSearchRequest.setLang(searchRequest.getLang());
-				for (String fromId : fromIds) {
-					for (String toId : toIds) {
-						resourceSearchRequest.getLocalityPairs().add(new String[] { fromId, toId });
-					}
-				}
-				requestContainer.add(resourceSearchRequest);
-			}
-		}
+	private void addUserInfo(TripSearchRequest searchRequest) {
+		ConcurrentMap<String, String> additional = new ConcurrentHashMap<String, String>();
+		additional.put(USER_ID_KEY, String.valueOf(dataController.getUser().getId()));
+		additional.put(USER_ORG_ID_KEY, String.valueOf(dataController.getUserOrganisation().getId()));
+		addAdditional(searchRequest, additional);
 	}
 	
-	private List<Date> addDays(List<Date> dates, int addedDays) {
-		if (addedDays == 0) {
-			return dates;
+	private void addAdditional(TripSearchRequest searchRequest, ConcurrentMap<String, String> additional) {
+		if (searchRequest.getParams() == null) {
+			searchRequest.setParams(new ResourceParams());
 		}
-		List<Date> newDates = new ArrayList<>(dates.size());
-		for (Date date : dates) {
-			Calendar c = Calendar.getInstance();
-			c.setTime(date);
-			c.add(Calendar.DATE, addedDays);
-			newDates.add(c.getTime());
+		if (searchRequest.getParams().getAdditional() == null) {
+			searchRequest.getParams().setAdditional(additional);
+		} else {
+			searchRequest.getParams().getAdditional().putAll(additional);
 		}
-		return newDates;
 	}
 	
 	private void addConnectionRequests(TripSearchRequest searchRequest, SearchRequestContainer requestContainer,
@@ -184,27 +165,6 @@ public class SearchRequestController {
 	}
 	
 	/*
-	 * Сравнивает пары для стыковки.
-	 */
-	private void createAvailablePairs(Map<Long, ResourceConnection> resourceConnections, Set<Pair> currPairs, Set<Pair> nextPairs) {
-		Set<Pair> newCurrPairs = new HashSet<>();
-		Set<Pair> newNextPairs = new HashSet<>();
-		for (Pair pairFrom : currPairs) {
-			for (Pair pairTo : nextPairs) {
-				if (isPairsAvailable(resourceConnections, pairFrom, pairTo)
-						&& isPairsAvailable(resourceConnections, pairTo, pairFrom)) {
-					newCurrPairs.add(pairFrom);
-					newNextPairs.add(pairTo);
-				}
-			}
-		}
-		currPairs.clear();
-		currPairs.addAll(newCurrPairs);
-		nextPairs.clear();
-		nextPairs.addAll(newNextPairs);
-	}
-	
-	/*
 	 * Возвращает список пар для указанных пунктов.
 	 */
 	private Set<Pair> getPairs(Set<Pair> pairs, long fromId, long toId) {
@@ -235,6 +195,27 @@ public class SearchRequestController {
 	}
 	
 	/*
+	 * Сравнивает пары для стыковки.
+	 */
+	private void createAvailablePairs(Map<Long, ResourceConnection> resourceConnections, Set<Pair> currPairs, Set<Pair> nextPairs) {
+		Set<Pair> newCurrPairs = new HashSet<>();
+		Set<Pair> newNextPairs = new HashSet<>();
+		for (Pair pairFrom : currPairs) {
+			for (Pair pairTo : nextPairs) {
+				if (isPairsAvailable(resourceConnections, pairFrom, pairTo)
+						&& isPairsAvailable(resourceConnections, pairTo, pairFrom)) {
+					newCurrPairs.add(pairFrom);
+					newNextPairs.add(pairTo);
+				}
+			}
+		}
+		currPairs.clear();
+		currPairs.addAll(newCurrPairs);
+		nextPairs.clear();
+		nextPairs.addAll(newNextPairs);
+	}
+	
+	/*
 	 * Проверяем можно ли стыковать пару.
 	 */
 	private boolean isPairsAvailable(Map<Long, ResourceConnection> resourceConnections, Pair pairFrom, Pair pairTo) {
@@ -256,5 +237,50 @@ public class SearchRequestController {
 			return !resources.contains(pairTo.getResourceId());
 		}
 	}
-
+	
+	private void addSearchRequest(TripSearchRequest searchRequest, Resource resource, String[] pair,
+			SearchRequestContainer requestContainer, int addedDays, Integer maxConnections, boolean toResult) {
+		Set<String> fromIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[0]));
+		if (fromIds != null) {
+			Set<String> toIds = mappingService.getResourceIds(resource.getId(), Long.parseLong(pair[1]));
+			if (toIds != null) {
+				TripSearchRequest resourceSearchRequest = new TripSearchRequest();
+				
+				// оригинальный ид, который будеи в ответе, плюс уникальный ид запроса
+				resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
+				resourceSearchRequest.setToResult(toResult);
+				resourceSearchRequest.setParams(resource.createParams());
+				resourceSearchRequest.setDates(addDays(searchRequest.getDates(), addedDays));
+				resourceSearchRequest.setMaxConnections(maxConnections);
+				if (!searchRequest.isUseTranfers()) {
+					resourceSearchRequest.setBackDates(searchRequest.getBackDates());
+				}
+				resourceSearchRequest.setCurrency(searchRequest.getCurrency());
+				resourceSearchRequest.setLocalityPairs(new ArrayList<>());
+				resourceSearchRequest.setLang(searchRequest.getLang());
+				for (String fromId : fromIds) {
+					for (String toId : toIds) {
+						resourceSearchRequest.getLocalityPairs().add(new String[] { fromId, toId });
+					}
+				}
+				resourceSearchRequest.copyAdditional(searchRequest);
+				requestContainer.add(resourceSearchRequest);
+			}
+		}
+	}
+	
+	private List<Date> addDays(List<Date> dates, int addedDays) {
+		if (addedDays == 0) {
+			return dates;
+		}
+		List<Date> newDates = new ArrayList<>(dates.size());
+		for (Date date : dates) {
+			Calendar c = Calendar.getInstance();
+			c.setTime(date);
+			c.add(Calendar.DATE, addedDays);
+			newDates.add(c.getTime());
+		}
+		return newDates;
+	}
+	
 }
