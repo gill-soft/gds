@@ -395,6 +395,7 @@ public class DataConverter {
 		MappedService mappedService = new MappedService();
 		mappedService.setOrder(0);
 		mappedService.setTripId(trip.getId());
+		mappedService.setCarrierId(getCarrierId(trip));
 		mappedService.setFromDeparture(segment.getDepartureDate());
 		
 		List<RoutePoint> route = getRoute(trip);
@@ -414,6 +415,15 @@ public class DataConverter {
 		return mappedService;
 	}
 	
+	private static long getCarrierId(Trip trip) {
+		for (BaseEntity parent : trip.getParents()) {
+			if (parent.getType() == EntityType.CARRIER) {
+				return parent.getId();
+			}
+		}
+		return 0;
+	}
+	
 	private static Date getArrivalDate(List<RoutePoint> route, Date tripDate) throws ParseException {
 		Calendar arrivalDate = Calendar.getInstance();
 		arrivalDate.setTime(StringUtil.fullDateFormat.parse(StringUtil.dateFormat.format(tripDate)
@@ -426,6 +436,7 @@ public class DataConverter {
 			Date departure) throws ParseException {
 		MappedService mappedService = new MappedService();
 		mappedService.setTripId(trip.getId());
+		mappedService.setCarrierId(getCarrierId(trip));
 		mappedService.setTripDeparture(departure);
 		mappedService.setFromDeparture(departure);
 		
@@ -441,6 +452,7 @@ public class DataConverter {
 			Segment segment, Date departure) {
 		MappedService mappedService = new MappedService();
 		mappedService.setTripId(trip.getId());
+		mappedService.setCarrierId(getCarrierId(trip));
 		mappedService.setTripDeparture(departure);
 		mappedService.setFromDeparture(departure);
 		mappedService.setToDeparture(segment.getArrivalDate());

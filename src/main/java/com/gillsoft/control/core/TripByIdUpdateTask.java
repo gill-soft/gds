@@ -25,7 +25,7 @@ public class TripByIdUpdateTask extends MsDataObjectUpdateTask implements Serial
 
 	@Override
 	protected Object getDataObject(MsDataService service) {
-		return service.getTripWithChilds(id);
+		return service.getTripWithParentsChilds(id);
 	}
 
 }

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gillsoft.control.core.MsDataController;
 import com.gillsoft.control.service.OrderDispatcherDAOService;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.MappedService;
@@ -33,6 +34,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			+ "join rs.mappedServices as mc "
 			+ "where mc.tripDeparture >= :tripDepartureFrom "
 			+ "and mc.tripDeparture <= :tripDepartureTo "
+			+ "and mc.carrierid = :carrierId "
 			+ "and " + EXISTS_STATUS;
 	
 	private final static String GET_GROUPED_SERVICES = "select new com.gillsoft.control.service.model.TripDateServices(mc.tripId, mc.tripDeparture, count(mc.tripId)) "
@@ -42,6 +44,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			+ "join rs.mappedServices as mc "
 			+ "where mc.tripDeparture >= :tripDepartureFrom "
 			+ "and mc.tripDeparture <= :tripDepartureTo "
+			+ "and mc.carrierid = :carrierId "
 			+ "and " + EXISTS_STATUS
 			+ " group by mc.tripId, mc.tripDeparture";
 	
@@ -73,8 +76,10 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	
 	@Autowired
 	protected SessionFactory sessionFactory;
+	
+	@Autowired
+	private MsDataController msData;
 
-	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
 	public List<MappedService> getMappedServices(Date tripDepartureFrom, Date tripDepartureTo) throws ManageException {
@@ -82,10 +87,14 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			return sessionFactory.getCurrentSession().createQuery(GET_MAPPED_SERVICES, MappedService.class)
 					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
 					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE)
-					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
+					.setParameter("carrierId", getCarrierId()).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get mapped services", e);
 		}
+	}
+	
+	private long getCarrierId() {
+		return msData.getUserOrganisation().getId();
 	}
 	
 	@Transactional(readOnly = true)
@@ -95,7 +104,8 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_GROUPED_SERVICES, TripDateServices.class)
 					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
-					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE).getResultList();
+					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE)
+					.setParameter("carrierId", getCarrierId()).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get grouped services", e);
 		}

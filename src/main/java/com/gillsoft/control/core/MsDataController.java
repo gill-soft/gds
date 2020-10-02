@@ -91,6 +91,8 @@ public class MsDataController {
 	
 	private static final String USER_KEY = "user.";
 	
+	private static final String USER_ORGANISATION_KEY = "organisation.";
+	
 	private static final String TRIP_KEY = "trip.";
 	
 	@Autowired
@@ -289,6 +291,12 @@ public class MsDataController {
 				new UserByNameUpdateTask(userName), () -> msService.getUser(userName), 120000l);
 	}
 	
+	public Organisation getUserOrganisation() {
+		String userName = getUserName();
+		return (Organisation) getFromCache(getUserOrganisationCacheKey(userName),
+				new UserOrganisationUpdateTask(userName), () -> msService.getUserOrganisation(userName), 120000l);
+	}
+	
 	public String getUserTimeZone() {
 		if (getUser().getParents() != null) {
 			BaseEntity organisation = getUser().getParents().iterator().next();
@@ -319,7 +327,7 @@ public class MsDataController {
 	
 	public Trip getTrip(long id) {
 		return (Trip) getFromCache(getTripCacheKey(id),
-				new TripByIdUpdateTask(id), () -> msService.getTripWithChilds(id), 120000l);
+				new TripByIdUpdateTask(id), () -> msService.getTripWithParentsChilds(id), 120000l);
 	}
 	
 	public Organisation getOrganisation(long id) {
@@ -882,6 +890,10 @@ public class MsDataController {
 	
 	public static String getUserCacheKey(String userName) {
 		return USER_KEY + userName;
+	}
+	
+	public static String getUserOrganisationCacheKey(String userName) {
+		return USER_ORGANISATION_KEY + userName;
 	}
 	
 	public static String getUserCacheKey(long id) {

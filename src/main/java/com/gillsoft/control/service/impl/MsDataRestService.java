@@ -83,6 +83,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String GET_TRIP = "trip/{0}";
 	
+	private static final String GET_TRIP_PARENT = "trip/{0}/parent";
+	
 	private static final String GET_TRIP_CHILDREN = "trip/{0}/sub";
 	
 	private static final String ALL_ORGANISATIONS = "organisation";
@@ -250,9 +252,10 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	}
 	
 	@Override
-	public Trip getTripWithChilds(long id) {
+	public Trip getTripWithParentsChilds(long id) {
 		Trip trip = getResult(MessageFormat.format(GET_TRIP, String.valueOf(id)), null, new ParameterizedTypeReference<Trip>() { });
 		if (trip != null) {
+			trip.setParents(getResult(MessageFormat.format(GET_TRIP_PARENT, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
 			trip.setChilds(getResult(MessageFormat.format(GET_TRIP_CHILDREN, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
 		}
 		return trip;

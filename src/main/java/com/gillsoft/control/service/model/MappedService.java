@@ -28,8 +28,9 @@ import com.gillsoft.model.ApiDateTimeDeserializer;
 import com.gillsoft.model.ApiDateTimeSerializer;
 
 @Entity
-@Table(name = "mapped_services", indexes = { @Index(columnList = "trip_departure"),
-		@Index(columnList = "trip_id,trip_departure"), @Index(columnList = "trip_id,from_id,from_departure"),
+@Table(name = "mapped_services", indexes = { @Index(columnList = "carrier_id,trip_departure"),
+		@Index(columnList = "trip_id,trip_departure"),
+		@Index(columnList = "trip_id,from_id,from_departure"),
 		@Index(columnList = "trip_id,to_id,to_departure") },
 		uniqueConstraints = { @UniqueConstraint(columnNames = { "trip_id", "from_id", "to_id", "trip_departure", "from_departure", "to_departure", "resource_service_id" }) })
 @JsonInclude(Include.NON_NULL)
@@ -45,6 +46,9 @@ public class MappedService implements Serializable {
 	
 	@Column(name = "order_index")
 	private int order;
+	
+	@Column(name = "carrier_id")
+	private long carrierId;
 
 	@Column(name = "trip_id")
 	private long tripId;
@@ -90,6 +94,14 @@ public class MappedService implements Serializable {
 
 	public void setOrder(int order) {
 		this.order = order;
+	}
+
+	public long getCarrierId() {
+		return carrierId;
+	}
+
+	public void setCarrierId(long carrierId) {
+		this.carrierId = carrierId;
 	}
 
 	public long getTripId() {

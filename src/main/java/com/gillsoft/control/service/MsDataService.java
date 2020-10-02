@@ -153,10 +153,10 @@ public interface MsDataService {
 	public List<Attribute> getAllAttributes();
 	
 	/**
-	 * Возвращает по указанному ид с дочерними элементами.
+	 * Возвращает рейс по указанному ид с родительскими и дочерними элементами.
 	 * 
 	 * @return Рейс с дочерними элементами.
 	 */
-	public Trip getTripWithChilds(long id);
+	public Trip getTripWithParentsChilds(long id);
 	
 }
