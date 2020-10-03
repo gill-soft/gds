@@ -34,7 +34,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			+ "join rs.mappedServices as mc "
 			+ "where mc.tripDeparture >= :tripDepartureFrom "
 			+ "and mc.tripDeparture <= :tripDepartureTo "
-			+ "and mc.carrierid = :carrierId "
+			+ "and mc.carrierId = :carrierId "
 			+ "and " + EXISTS_STATUS;
 	
 	private final static String GET_GROUPED_SERVICES = "select new com.gillsoft.control.service.model.TripDateServices(mc.tripId, mc.tripDeparture, count(mc.tripId)) "
@@ -44,7 +44,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			+ "join rs.mappedServices as mc "
 			+ "where mc.tripDeparture >= :tripDepartureFrom "
 			+ "and mc.tripDeparture <= :tripDepartureTo "
-			+ "and mc.carrierid = :carrierId "
+			+ "and mc.carrierId = :carrierId "
 			+ "and " + EXISTS_STATUS
 			+ " group by mc.tripId, mc.tripDeparture";
 	

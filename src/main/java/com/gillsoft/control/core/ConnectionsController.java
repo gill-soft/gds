@@ -117,6 +117,27 @@ public class ConnectionsController {
 		}
 	}
 	
+	private Set<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
+		Set<String> segmentIds = new HashSet<>();
+		for (TripContainer container : tripSearchResponse.getTripContainers()) {
+			if (container.getRequest().isPermittedToResult()) {
+				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
+					if (!segmentIds.contains(entry.getKey())
+							&& entry.getValue().getDeparture() != null
+							&& entry.getValue().getArrival() != null) {
+						String departureId = entry.getValue().getDeparture().getId();
+						String arrivalId = entry.getValue().getArrival().getId();
+						if (isEqualsPoints(String.valueOf(from), departureId, tripSearchResponse.getLocalities())
+								&& isEqualsPoints(String.valueOf(to), arrivalId, tripSearchResponse.getLocalities())) {
+							segmentIds.add(entry.getKey());
+						}
+					}
+				}
+			}
+		}
+		return segmentIds;
+	}
+	
 	private void joinSegments(Map<Long, List<ResourceConnection>> resourceConnectionsMap,
 			TripSearchResponse tripSearchResponse, SearchRequestContainer requestContainer, List<Trip> result,
 			List<Set<String>> segments) {
@@ -256,27 +277,6 @@ public class ConnectionsController {
 			}
 		}
 		return enabled;
-	}
-	
-	private Set<String> getTripIds(long from, long to, TripSearchResponse tripSearchResponse) {
-		Set<String> segmentIds = new HashSet<>();
-		for (TripContainer container : tripSearchResponse.getTripContainers()) {
-			if (container.getRequest().isPermittedToResult()) {
-				for (Entry<String, Segment> entry : tripSearchResponse.getSegments().entrySet()) {
-					if (!segmentIds.contains(entry.getKey())
-							&& entry.getValue().getDeparture() != null
-							&& entry.getValue().getArrival() != null) {
-						String departureId = entry.getValue().getDeparture().getId();
-						String arrivalId = entry.getValue().getArrival().getId();
-						if (isEqualsPoints(String.valueOf(from), departureId, tripSearchResponse.getLocalities())
-								&& isEqualsPoints(String.valueOf(to), arrivalId, tripSearchResponse.getLocalities())) {
-							segmentIds.add(entry.getKey());
-						}
-					}
-				}
-			}
-		}
-		return segmentIds;
 	}
 	
 	private boolean isEqualsPoints(String pointId, String segmentPointId, Map<String, Locality> localities) {
