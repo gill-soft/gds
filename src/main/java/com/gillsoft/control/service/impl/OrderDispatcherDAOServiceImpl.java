@@ -58,6 +58,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	private final static String GET_FROM_MAPPED_ORDERS = SELECT_ORDERS
 			+ " where mc.tripId = :tripId "
 			+ "and mc.fromId = :fromId "
+			+ "and mc.carrierId = :carrierId "
 			+ "and mc.fromDeparture >= :fromDepartureFrom "
 			+ "and mc.fromDeparture <= :fromDepartureTo "
 			+ "and " + EXISTS_STATUS;
@@ -65,6 +66,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	private final static String GET_TO_MAPPED_ORDERS = SELECT_ORDERS
 			+ " where mc.tripId = :tripId "
 			+ "and mc.toId = :toId "
+			+ "and mc.carrierId = :carrierId "
 			+ "and mc.toDeparture >= :toDepartureFrom "
 			+ "and mc.toDeparture <= :toDepartureTo "
 			+ "and " + EXISTS_STATUS;
@@ -72,6 +74,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	private final static String GET_TRIP_MAPPED_ORDERS = SELECT_ORDERS
 			+ " where mc.tripId = :tripId "
 			+ "and mc.tripDeparture = :tripDeparture "
+			+ "and mc.carrierId = :carrierId "
 			+ "and " + EXISTS_STATUS;
 	
 	@Autowired
@@ -119,6 +122,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			return sessionFactory.getCurrentSession().createQuery(GET_FROM_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("fromId", fromId)
+					.setParameter("carrierId", getCarrierId())
 					.setParameter("fromDepartureFrom", beginOfDay(fromDeparture))
 					.setParameter("fromDepartureTo", endOfDay(fromDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
@@ -135,6 +139,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			return sessionFactory.getCurrentSession().createQuery(GET_TO_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("toId", toId)
+					.setParameter("carrierId", getCarrierId())
 					.setParameter("toDepartureFrom", beginOfDay(toDeparture))
 					.setParameter("toDepartureTo", endOfDay(toDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
@@ -151,6 +156,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 			return sessionFactory.getCurrentSession().createQuery(GET_TRIP_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("tripDeparture", departure, TemporalType.DATE)
+					.setParameter("carrierId", getCarrierId())
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get trip mapped orders", e);
