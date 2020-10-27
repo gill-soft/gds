@@ -22,9 +22,9 @@ public class DispatcherService {
 	@Autowired
 	private OrderDispatcherDAOService dispatcherDAOService;
 	
-	public List<MappedService> getMappedServices(Date tripDepartureFrom, Date tripDepartureTo) {
+	public List<MappedService> getMappedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) {
 		try {
-			return dispatcherDAOService.getMappedServices(tripDepartureFrom, tripDepartureTo);
+			return dispatcherDAOService.getMappedServices(carrierId, tripDepartureFrom, tripDepartureTo);
 		} catch (Exception e) {
 			LOGGER.error("Can not get mapped services "
 					+ StringUtil.fullDateFormat.format(tripDepartureFrom) + " "
@@ -33,9 +33,9 @@ public class DispatcherService {
 		}
 	}
 	
-	public List<TripDateServices> getGroupedServices(Date tripDepartureFrom, Date tripDepartureTo) {
+	public List<TripDateServices> getGroupedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) {
 		try {
-			return dispatcherDAOService.getGroupedServices(tripDepartureFrom, tripDepartureTo);
+			return dispatcherDAOService.getGroupedServices(carrierId, tripDepartureFrom, tripDepartureTo);
 		} catch (Exception e) {
 			LOGGER.error("Can not get grouped services "
 					+ StringUtil.fullDateFormat.format(tripDepartureFrom) + " "
@@ -44,9 +44,9 @@ public class DispatcherService {
 		}
 	}
 	
-	public List<Order> getFromMappedOrders(long tripId, long fromId, Date fromDeparture) {
+	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDeparture) {
 		try {
-			return dispatcherDAOService.getFromMappedOrders(tripId, fromId, fromDeparture);
+			return dispatcherDAOService.getFromMappedOrders(carrierId, tripId, fromId, fromDeparture);
 		} catch (Exception e) {
 			LOGGER.error("Can not get from mapped orders " + tripId + " " + fromId + " "
 					+ StringUtil.fullDateFormat.format(fromDeparture), e);
@@ -54,9 +54,9 @@ public class DispatcherService {
 		}
 	}
 
-	public List<Order> getToMappedOrders(long tripId, long toId, Date toDeparture) {
+	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toDeparture) {
 		try {
-			return dispatcherDAOService.getToMappedOrders(tripId, toId, toDeparture);
+			return dispatcherDAOService.getToMappedOrders(carrierId, tripId, toId, toDeparture);
 		} catch (Exception e) {
 			LOGGER.error("Can not get to mapped orders " + tripId + " " + toId + " "
 					+ StringUtil.fullDateFormat.format(toDeparture), e);
@@ -64,9 +64,9 @@ public class DispatcherService {
 		}
 	}
 
-	public List<Order> getTripMappedOrders(long tripId, Date departure) {
+	public List<Order> getTripMappedOrders(long carrierId, long tripId, Date departure) {
 		try {
-			return dispatcherDAOService.getTripMappedOrders(tripId, departure);
+			return dispatcherDAOService.getTripMappedOrders(carrierId, tripId, departure);
 		} catch (Exception e) {
 			LOGGER.error("Can not get trip mapped orders " + tripId + " "
 					+ StringUtil.fullDateFormat.format(departure), e);

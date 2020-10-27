@@ -10,14 +10,14 @@ import com.gillsoft.control.service.model.TripDateServices;
 
 public interface OrderDispatcherDAOService {
 	
-	public List<MappedService> getMappedServices(Date tripDepartureFrom, Date tripDepartureTo) throws ManageException;
+	public List<MappedService> getMappedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) throws ManageException;
 	
-	public List<TripDateServices> getGroupedServices(Date tripDepartureFrom, Date tripDepartureTo) throws ManageException;
+	public List<TripDateServices> getGroupedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) throws ManageException;
 	
-	public List<Order> getFromMappedOrders(long tripId, long fromId, Date fromDeparture) throws ManageException;
+	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDeparture) throws ManageException;
 	
-	public List<Order> getToMappedOrders(long tripId, long toId, Date toDeparture) throws ManageException;
+	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toDeparture) throws ManageException;
 	
-	public List<Order> getTripMappedOrders(long tripId, Date departure) throws ManageException;
+	public List<Order> getTripMappedOrders(long carrierId, long tripId, Date departure) throws ManageException;
 
 }

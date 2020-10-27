@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.gillsoft.control.core.MsDataController;
 import com.gillsoft.control.service.OrderDispatcherDAOService;
 import com.gillsoft.control.service.model.ManageException;
 import com.gillsoft.control.service.model.MappedService;
@@ -79,36 +78,29 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	
 	@Autowired
 	protected SessionFactory sessionFactory;
-	
-	@Autowired
-	private MsDataController msData;
 
 	@Transactional(readOnly = true)
 	@Override
-	public List<MappedService> getMappedServices(Date tripDepartureFrom, Date tripDepartureTo) throws ManageException {
+	public List<MappedService> getMappedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_MAPPED_SERVICES, MappedService.class)
 					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
 					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE)
-					.setParameter("carrierId", getCarrierId()).getResultList();
+					.setParameter("carrierId", carrierId).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get mapped services", e);
 		}
 	}
 	
-	private long getCarrierId() {
-		return msData.getUserOrganisation().getId();
-	}
-	
 	@Transactional(readOnly = true)
 	@Override
-	public List<TripDateServices> getGroupedServices(Date tripDepartureFrom, Date tripDepartureTo)
+	public List<TripDateServices> getGroupedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo)
 			throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_GROUPED_SERVICES, TripDateServices.class)
 					.setParameter("tripDepartureFrom", tripDepartureFrom, TemporalType.DATE)
 					.setParameter("tripDepartureTo", tripDepartureTo, TemporalType.DATE)
-					.setParameter("carrierId", getCarrierId()).getResultList();
+					.setParameter("carrierId", carrierId).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get grouped services", e);
 		}
@@ -117,12 +109,12 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public List<Order> getFromMappedOrders(long tripId, long fromId, Date fromDeparture) throws ManageException {
+	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDeparture) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_FROM_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("fromId", fromId)
-					.setParameter("carrierId", getCarrierId())
+					.setParameter("carrierId", carrierId)
 					.setParameter("fromDepartureFrom", beginOfDay(fromDeparture))
 					.setParameter("fromDepartureTo", endOfDay(fromDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
@@ -134,12 +126,12 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public List<Order> getToMappedOrders(long tripId, long toId, Date toDeparture) throws ManageException {
+	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toDeparture) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_TO_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("toId", toId)
-					.setParameter("carrierId", getCarrierId())
+					.setParameter("carrierId", carrierId)
 					.setParameter("toDepartureFrom", beginOfDay(toDeparture))
 					.setParameter("toDepartureTo", endOfDay(toDeparture))
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
@@ -151,12 +143,12 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public List<Order> getTripMappedOrders(long tripId, Date departure) throws ManageException {
+	public List<Order> getTripMappedOrders(long carrierId, long tripId, Date departure) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_TRIP_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("tripDeparture", departure, TemporalType.DATE)
-					.setParameter("carrierId", getCarrierId())
+					.setParameter("carrierId", carrierId)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get trip mapped orders", e);

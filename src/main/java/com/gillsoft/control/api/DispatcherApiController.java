@@ -30,36 +30,43 @@ public class DispatcherApiController {
 	@Autowired
 	private DispatcherService dispatcherService;
 	
-	@GetMapping("/services/{tripDepartureFrom}/{tripDepartureTo}")
-	public List<MappedService> getMappedServices(@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
+	@GetMapping("/{carrierId}/services/{tripDepartureFrom}/{tripDepartureTo}")
+	public List<MappedService> getMappedServices(@Validated @PathVariable long carrierId,
+			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureTo) {
-		return dispatcherService.getMappedServices(Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
+		return dispatcherService.getMappedServices(carrierId,
+				Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
 				Date.from(tripDepartureTo.atStartOfDay().toInstant(ZoneOffset.UTC)));
 	}
 	
-	@GetMapping("/services/grouped/{tripDepartureFrom}/{tripDepartureTo}")
-	public List<TripDateServices> getGroupedServices(@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
+	@GetMapping("/{carrierId}/services/grouped/{tripDepartureFrom}/{tripDepartureTo}")
+	public List<TripDateServices> getGroupedServices(@Validated @PathVariable long carrierId,
+			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureFrom,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate tripDepartureTo) {
-		return dispatcherService.getGroupedServices(Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
+		return dispatcherService.getGroupedServices(carrierId,
+				Date.from(tripDepartureFrom.atStartOfDay().toInstant(ZoneOffset.UTC)),
 				Date.from(tripDepartureTo.atStartOfDay().toInstant(ZoneOffset.UTC)));
 	}
 	
-	@GetMapping("/services/trip/{tripId}/from/{fromId}/{fromDeparture}")
-	public List<Order> getFromMappedOrders(@Validated @PathVariable long tripId, @Validated @PathVariable long fromId,
+	@GetMapping("/{carrierId}/services/trip/{tripId}/from/{fromId}/{fromDeparture}")
+	public List<Order> getFromMappedOrders(@Validated @PathVariable long carrierId,
+			@Validated @PathVariable long tripId, @Validated @PathVariable long fromId,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime fromDeparture) {
-		return dispatcherService.getFromMappedOrders(tripId, fromId, Date.from(fromDeparture.toInstant(ZoneOffset.UTC)));
+		return dispatcherService.getFromMappedOrders(carrierId, tripId, fromId, Date.from(fromDeparture.toInstant(ZoneOffset.UTC)));
 	}
 	
-	@GetMapping("/services/trip/{tripId}/to/{toId}/{toDeparture}")
-	public List<Order> getToMappedOrders(@Validated @PathVariable long tripId, @Validated @PathVariable long toId,
+	@GetMapping("/{carrierId}/services/trip/{tripId}/to/{toId}/{toDeparture}")
+	public List<Order> getToMappedOrders(@Validated @PathVariable long carrierId,
+			@Validated @PathVariable long tripId, @Validated @PathVariable long toId,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime toDeparture) {
-		return dispatcherService.getToMappedOrders(tripId, toId, Date.from(toDeparture.toInstant(ZoneOffset.UTC)));
+		return dispatcherService.getToMappedOrders(carrierId, tripId, toId, Date.from(toDeparture.toInstant(ZoneOffset.UTC)));
 	}
 	
-	@GetMapping("/services/trip/{tripId}/{departure}")
-	public List<Order> getTripMappedOrders(@Validated @PathVariable long tripId,
+	@GetMapping("/{carrierId}/services/trip/{tripId}/{departure}")
+	public List<Order> getTripMappedOrders(@Validated @PathVariable long carrierId,
+			@Validated @PathVariable long tripId,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE) LocalDate departure) {
-		return dispatcherService.getTripMappedOrders(tripId, Date.from(departure.atStartOfDay().toInstant(ZoneOffset.UTC)));
+		return dispatcherService.getTripMappedOrders(carrierId, tripId, Date.from(departure.atStartOfDay().toInstant(ZoneOffset.UTC)));
 	}
 
 }
