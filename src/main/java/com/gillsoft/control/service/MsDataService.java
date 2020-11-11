@@ -13,6 +13,7 @@ import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TariffMarkup;
 import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
@@ -136,6 +137,14 @@ public interface MsDataService {
 	 * @return Список скидок на стыковки ресурсов.
 	 */
 	public List<ConnectionDiscount> getAllResourceConnectionDiscounts();
+	
+	/**
+	 * Возвращает список всех надбавок к тарифу, от которого считатать, с
+	 * родетельскими объектами, к которым принадлежит надбавка.
+	 * 
+	 * @return Список надбавок к тарифу.
+	 */
+	public List<TariffMarkup> getAllTariffMarkups();
 	
 	/**
 	 * Возвращает список всех параметров доступа к ресурсам заказов с

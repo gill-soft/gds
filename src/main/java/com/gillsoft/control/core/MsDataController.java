@@ -57,6 +57,7 @@ import com.gillsoft.ms.entity.ResourceConnection;
 import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TariffMarkup;
 import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
@@ -70,6 +71,8 @@ public class MsDataController {
 	private static final String ACTIVE_RESOURCES_CACHE_KEY = "active.resources.";
 	
 	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
+	
+	private static final String ALL_TARIFF_MARKUPS_KEY = "all.tariff.markups";
 	
 	private static final String ALL_RETURN_CONDITIONS_KEY = "all.return.conditions";
 	
@@ -160,6 +163,14 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllCommissionsKey(),
 				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 120000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<Long, List<CodeEntity>> getAllTariffMarkups() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllTariffMarkupsKey(),
+				new AllTariffMarkupsUpdateTask(), () -> toMap(msService.getAllTariffMarkups()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -408,7 +419,7 @@ public class MsDataController {
 				}
 			}
 		}
-		Price calculated = calculator.calculateResource(price, getUser(), currency);
+		Price calculated = calculator.calculateResource(price, getUser(), currency, getTariffMarkups(segment));
 		calculated.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
 		addReturnConditions(segment, calculated);
 		return calculated;
@@ -418,6 +429,14 @@ public class MsDataController {
 		List<BaseEntity> entities = getParentEntities(segment);
 		if (entities != null) {
 			return getCommissions(entities);
+		}
+		return null;
+	}
+	
+	public List<TariffMarkup> getTariffMarkups(Segment segment) {
+		List<BaseEntity> entities = getParentEntities(segment);
+		if (entities != null) {
+			return getTariffMarkups(entities);
 		}
 		return null;
 	}
@@ -580,6 +599,14 @@ public class MsDataController {
 			
 			// конвертируем из комиссий базы в комиссии апи gds-commons
 			return codeEntities.stream().map(c -> DataConverter.convert((Commission) c)).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<TariffMarkup> getTariffMarkups(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllTariffMarkups());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(tm -> (TariffMarkup) tm).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -850,6 +877,10 @@ public class MsDataController {
 
 	public static String getAllCommissionsKey() {
 		return ALL_COMMISSIONS_KEY;
+	}
+	
+	public static String getAllTariffMarkupsKey() {
+		return ALL_TARIFF_MARKUPS_KEY;
 	}
 	
 	public static String getAllReturnConditionsKey() {

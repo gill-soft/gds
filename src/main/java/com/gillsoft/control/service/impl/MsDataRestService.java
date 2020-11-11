@@ -46,6 +46,7 @@ import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ResourceParams;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.ms.entity.TariffMarkup;
 import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
@@ -70,6 +71,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_RESOURCE_CONNECTIONS = "resource_connection/all_with_sub_main";
 	
 	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS = "connection_discount/all_with_sub_main";
+	
+	private static final String ALL_TARIFF_MARKUPS = "tariff_markup/all_with_sub_main";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -239,6 +242,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 		List<ConnectionDiscount> discounts =
 				getResult(ALL_RESOURCE_CONNECTION_DISCOUNTS, null, new ParameterizedTypeReference<List<ConnectionDiscount>>() { });
 		return new EntityMultiplier<ConnectionDiscount>().multiplyChilds(discounts);
+	}
+	
+	@Override
+	public List<TariffMarkup> getAllTariffMarkups() {
+		return getResult(ALL_TARIFF_MARKUPS, null, new ParameterizedTypeReference<List<TariffMarkup>>() { });
 	}
 	
 	@Override
