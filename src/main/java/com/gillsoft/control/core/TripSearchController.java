@@ -246,7 +246,7 @@ public class TripSearchController {
 			
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
-			System.out.println(System.currentTimeMillis() - time);
+			System.out.println("getresult: " + (System.currentTimeMillis() - time));
 			return result;
 		}
 		// добавляем в кэш запрос под новым searchId, для получения остального результата

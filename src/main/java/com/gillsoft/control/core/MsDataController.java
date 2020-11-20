@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.cache.IOCacheException;
@@ -420,7 +419,7 @@ public class MsDataController {
 			}
 		}
 		Price calculated = calculator.calculateResource(price, getUser(), currency, getTariffMarkups(segment));
-		calculated.setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(price)));
+		calculated.setSource(calculator.copy(price));
 		addReturnConditions(segment, calculated);
 		return calculated;
 	}
@@ -454,7 +453,7 @@ public class MsDataController {
 				new Date(Utils.getCurrentTimeInMilis(timeZone)), segment.getDepartureDate()));
 		
 		// устанавливаем исходную сумму возврата от ресурса
-		price.getReturned().setSource((Price) SerializationUtils.deserialize(SerializationUtils.serialize(resourcePrice)));
+		price.getReturned().setSource(calculator.copy(resourcePrice));
 		return price;
 	}
 	

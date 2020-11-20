@@ -149,7 +149,7 @@ public class TripSearchMapping {
 	}
 	
 	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
-		updateSegments(request, searchResponse, result, true);
+		updateSegments(request, searchResponse, result, true, false);
 	}
 	
 	public void mapSegmentsTripId(Map<String, Locality> localities, Map<String, Segment> segmentsOfResource) {
@@ -194,21 +194,31 @@ public class TripSearchMapping {
 	}
 	
 	private void setTripId(Map<String, Locality> localities, Segment segment, Map<String, List<Segment>> fromMapping, String segmentKey) {
-		if (fromMapping.containsKey(segmentKey)) {
+		if (fromMapping != null
+				&& fromMapping.containsKey(segmentKey)) {
 			List<Segment> segments = fromMapping.get(segmentKey);
 			DataConverter.addMappedTrips(localities, segment, segments.stream().filter(s -> s.getTripId() != null)
 					.map(s -> dataController.getTrip(Long.parseLong(s.getTripId()))).filter(Objects::nonNull).collect(Collectors.toList()));
 		}
 	}
 	
+	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result,
+			boolean onlyCalculated) {
+		updateSegments(request, searchResponse, result, onlyCalculated, true);
+	}
+	
 	/**
 	 * Проставляет мапинг всех объектов рейса, валидирует поля рейса и дополняет данными.
 	 */
-	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result, boolean onlyCalculated) {
+	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result,
+			boolean onlyCalculated, boolean mapSegments) {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		Map<String, List<Segment>> fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
+		Map<String, List<Segment>> fromMapping = null;
+		if (mapSegments) {
+			fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
+		}
 		long resourceId = MappingCreator.getResourceId(request);
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
@@ -301,8 +311,9 @@ public class TripSearchMapping {
 		updateDictionaries(result);
 		
 		// проставляем время в пути
+		Map<String, String> timezones = new HashMap<>();
 		for (Segment segment : result.getSegments().values()) {
-			setTimeInWay(segment);
+			setTimeInWay(segment, timezones);
 		}
 	}
 	
@@ -438,12 +449,22 @@ public class TripSearchMapping {
 	/*
 	 * Время в пути с учетом таймзон
 	 */
-	private void setTimeInWay(Segment segment) {
+	private void setTimeInWay(Segment segment, Map<String, String> timezones) {
 		try {
 			segment.setTimeInWay(Utils.getTimeInWay(segment.getDepartureDate(), segment.getArrivalDate(),
-					Utils.getLocalityTimeZone(segment.getDeparture().getId()),
-					Utils.getLocalityTimeZone(segment.getArrival().getId())));
+					getTimeZone(segment.getDeparture().getId(), timezones),
+					getTimeZone(segment.getArrival().getId(), timezones)));
 		} catch (NumberFormatException e) {
+		}
+	}
+	
+	private String getTimeZone(String localityId, Map<String, String> timezones) {
+		if (timezones.containsKey(localityId)) {
+			return timezones.get(localityId);
+		} else {
+			String timezone = Utils.getLocalityTimeZone(localityId);
+			timezones.put(localityId, timezone);
+			return timezone;
 		}
 	}
 	

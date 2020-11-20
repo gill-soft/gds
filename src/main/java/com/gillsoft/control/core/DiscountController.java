@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.commission.Calculator;
 import com.gillsoft.model.Commission;
@@ -197,7 +196,7 @@ public class DiscountController {
 			return preparedDiscounts.get(key);
 		}
 		Commission commission = DataConverter.convert(connectionDiscount);
-		Price price = updatePrice ? discountSegment.getPrice() : (Price) SerializationUtils.deserialize(SerializationUtils.serialize(discountSegment.getPrice()));
+		Price price = updatePrice ? discountSegment.getPrice() : calculator.copy(discountSegment.getPrice());
 		if (price.getCommissions() == null) {
 			price.setCommissions(new ArrayList<>());
 		}

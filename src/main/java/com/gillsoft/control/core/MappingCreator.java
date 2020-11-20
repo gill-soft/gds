@@ -6,8 +6,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.springframework.util.SerializationUtils;
-
 import com.gillsoft.mapper.model.MapType;
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.model.Unmapping;
@@ -190,7 +188,6 @@ public class MappingCreator<T> {
 	/**
 	 * Получает мапинг словарей ответа и создает словари из мапинга. Если мапинга нет, то добавляется объект ответа.
 	 */
-	@SuppressWarnings("unchecked")
 	public void mappingObjects(MappingService mappingService) {
 		if (objects == null
 				|| objects.isEmpty()) {
@@ -206,7 +203,7 @@ public class MappingCreator<T> {
 			// добавляем сущность в мапу под ключем ид ресурса + ид обьекта,
 			// чтобы от разных ресурсов не пересекались ид
 			if (object.getValue() != null) {
-				T value = (T) SerializationUtils.deserialize(SerializationUtils.serialize(object.getValue()));
+				T value = (T) object.getValue();
 				if (mappings == null) {
 					
 					// сохраняем несмапленные данные
