@@ -39,7 +39,7 @@ public abstract class AbstractRestService {
 				return response.getBody();
 			}
 		} catch (RestClientException e) {
-			getLogger().error("REST execute error. Method: " + request.getUrl().getPath(), e);
+			getLogger().error("REST execute error. Method: " + request.getUrl().getPath() + " " + e.getMessage());
 			throw new ResponseError("REST execute error. Method: " + request.getUrl().getPath(), e);
 		}
 	}

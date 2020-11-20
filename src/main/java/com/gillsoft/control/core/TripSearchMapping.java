@@ -423,15 +423,15 @@ public class TripSearchMapping {
 	private void updateDictionaries(TripSearchResponse result) {
 		if (result.getLocalities() != null
 				&& !result.getLocalities().isEmpty()) {
-			result.setLocalities(result.getLocalities().values().stream().collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
+			result.setLocalities(result.getLocalities().values().stream().filter(l -> l.getId() != null).collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
 		}
 		if (result.getOrganisations() != null
 				&& !result.getOrganisations().isEmpty()) {
-			result.setOrganisations(result.getOrganisations().values().stream().collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
+			result.setOrganisations(result.getOrganisations().values().stream().filter(o -> o.getId() != null).collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
 		}
 		if (result.getVehicles() != null
 				&& !result.getVehicles().isEmpty()) {
-			result.setVehicles(result.getVehicles().values().stream().collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
+			result.setVehicles(result.getVehicles().values().stream().filter(v -> v.getId() != null).collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
 		}
 	}
 	
