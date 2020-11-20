@@ -263,13 +263,19 @@ public class TripSearchController {
 	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
 		
 		// мапим словари
+		long time = System.currentTimeMillis();
 		tripSearchMapping.mapDictionaries(request, searchResponse, result);
+		System.out.println("mapDictionaries:" + (System.currentTimeMillis() - time));
 		
 		// обновляем мапингом рейсы
+		time = System.currentTimeMillis();
 		tripSearchMapping.updateSegments(request, searchResponse, result);
+		System.out.println("updateSegments:" + (System.currentTimeMillis() - time));
 		
 		// применяем фильтр
+		time = System.currentTimeMillis();
 		filter.apply(result.getSegments());
+		System.out.println("filter.apply:" + (System.currentTimeMillis() - time));
 	}
 	
 	private void logError(TripSearchResponse searchResponse) {
@@ -284,7 +290,6 @@ public class TripSearchController {
 			}
 		}
 	}
-	
 	
 	public Route getRoute(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
