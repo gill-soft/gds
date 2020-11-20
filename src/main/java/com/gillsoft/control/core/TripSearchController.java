@@ -167,7 +167,7 @@ public class TripSearchController {
 	}
 	
 	public TripSearchResponse getSearchResult(String searchId) {
-		
+		long time = System.currentTimeMillis();
 		// получает запросы поиска с памяти по ид поиска и проверяем их
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
@@ -246,6 +246,7 @@ public class TripSearchController {
 			
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
+			System.out.println(System.currentTimeMillis() - time);
 			return result;
 		}
 		// добавляем в кэш запрос под новым searchId, для получения остального результата
