@@ -179,7 +179,7 @@ public class DataConverter {
 					try {
 						vehicle.setCapacity(Integer.valueOf(mapping.getAttributes().get("CAPACITY")));
 					} catch (NumberFormatException e) {
-						LOGGER.error("Invalid capacity for busmodel id: " + mapping.getId(), e);
+						LOGGER.error("Invalid capacity for busmodel id: " + mapping.getId() + " " + e.getMessage());
 					}
 				} else {
 					vehicle.setCapacity(original.getCapacity());
@@ -316,7 +316,7 @@ public class DataConverter {
 		segment.setId(original.getId());
 		segment.setTripId(tripId);
 		return segment;
-}
+	}
 	
 	private static BigDecimal createDecimal(long mappingId, String value) {
 		if (value == null) {
@@ -325,7 +325,7 @@ public class DataConverter {
 		try {
 			return new BigDecimal(value);
 		} catch (NumberFormatException e) {
-			LOGGER.error("Invalid latitude or longitude for geo point id: " + mappingId, e);
+			LOGGER.error("Invalid latitude or longitude for geo point id: " + mappingId + " " + e.getMessage());
 			return null;
 		}
 	}
@@ -378,7 +378,7 @@ public class DataConverter {
 				segment.setTripId(tripId.toString());
 				addMappedServices(segment, services);
 			} catch (Exception e) {
-				LOGGER.error("Can not set tripId from mapping", e);
+				LOGGER.error("Can not set tripId from mapping " + e.getMessage());
 			}
 		}
 	}

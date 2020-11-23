@@ -137,7 +137,7 @@ public class TripSearchMapping {
 				fillMapByParents(parent, result);
 			}
 			result.putIfAbsent(parent.getId(), parent);
-			locality.setParent(new Locality(result.get(parent.getId()).getId()));
+			locality.setParent(new Locality(parent.getId()));
 		}
 	}
 	

@@ -76,7 +76,8 @@ public class LocalityController {
 		return getMapping(requests, responses, mainRequest, usedNotMapped);
 	}
 	
-	private List<Locality> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses, LocalityRequest mainRequest, Map<Long, Set<Locality>> notMapped) {
+	private List<Locality> getMapping(List<LocalityRequest> requests, List<LocalityResponse> responses,
+			LocalityRequest mainRequest, Map<Long, Set<Locality>> notMapped) {
 		if (responses == null) {
 			return new ArrayList<>(0);
 		}
