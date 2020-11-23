@@ -149,7 +149,7 @@ public class TripSearchMapping {
 	}
 	
 	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
-		updateSegments(request, searchResponse, result, true, false);
+		updateSegments(request, searchResponse, result, true);
 	}
 	
 	public void mapSegmentsTripId(Map<String, Locality> localities, Map<String, Segment> segmentsOfResource) {
@@ -202,23 +202,15 @@ public class TripSearchMapping {
 		}
 	}
 	
-	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result,
-			boolean onlyCalculated) {
-		updateSegments(request, searchResponse, result, onlyCalculated, true);
-	}
-	
 	/**
 	 * Проставляет мапинг всех объектов рейса, валидирует поля рейса и дополняет данными.
 	 */
 	public void updateSegments(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result,
-			boolean onlyCalculated, boolean mapSegments) {
+			boolean onlyCalculated) {
 		if (searchResponse.getSegments() == null) {
 			return;
 		}
-		Map<String, List<Segment>> fromMapping = null;
-		if (mapSegments) {
-			fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
-		}
+		Map<String, List<Segment>> fromMapping = mapSegments(searchResponse, request, searchResponse.getSegments());
 		long resourceId = MappingCreator.getResourceId(request);
 		result.getResources().put(String.valueOf(resourceId), request.getParams().getResource());
 		for (Entry<String, Segment> entry : searchResponse.getSegments().entrySet()) {
