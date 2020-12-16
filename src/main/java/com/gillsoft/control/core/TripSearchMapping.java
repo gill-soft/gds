@@ -396,7 +396,7 @@ public class TripSearchMapping {
 				segment.setArrival(result.getLocalities().get(
 						getKey(resourceId, segment.getArrival().getId())));
 				
-				String tripNumber = mappingService.getResourceTripNumber(segment, resourceId);
+				String tripNumber = MappingService.getResourceTripNumber(segment, resourceId);
 				
 				// если транспорта нет, то добавляем его с маппинга по уникальному номеру рейса
 				if (segment.getVehicle() == null

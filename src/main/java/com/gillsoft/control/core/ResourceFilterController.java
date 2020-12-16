@@ -22,7 +22,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.gillsoft.control.service.model.SearchRequestContainer;
-import com.gillsoft.model.GdsDate;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
@@ -35,6 +34,7 @@ import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ResourceFilter;
 import com.gillsoft.ms.entity.ResourceFilterCondition;
 import com.gillsoft.ms.entity.ServiceFilter;
+import com.gillsoft.util.StringUtil;
 
 @Component(value = "ResourceFilterController")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -275,7 +275,7 @@ public class ResourceFilterController extends FilterController {
 	
 	private String toString(Object value) {
 		if (value instanceof Date) {
-			return new GdsDate(((Date) value).getTime()).toString();
+			return StringUtil.fullDateFormat.format((Date) value);
 		} else if (value instanceof Number) {
 			try {
 				return new BigDecimal(value.toString()).toString();
@@ -299,9 +299,9 @@ public class ResourceFilterController extends FilterController {
 				long modValue = Long.parseLong(condition.getValue());
 				switch (condition.getOperation()) {
 				case PLUS:
-					return new GdsDate(date.getTime() + modValue).toString();
+					return StringUtil.fullDateFormat.format(new Date(date.getTime() + modValue));
 				case MINUS:
-					return new GdsDate(date.getTime() - modValue).toString();
+					return StringUtil.fullDateFormat.format(new Date(date.getTime() - modValue));
 				default:
 					return value.toString();
 				}
