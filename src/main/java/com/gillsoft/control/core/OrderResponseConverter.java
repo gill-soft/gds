@@ -423,6 +423,9 @@ public class OrderResponseConverter {
 			}
 		}
 		response.fillMaps();
+		if (response.getCustomers() != null) {
+			response.getCustomers().keySet().stream().forEach(id -> response.getCustomers().get(id).setId(id));
+		}
 		return response;
 	}
 	
