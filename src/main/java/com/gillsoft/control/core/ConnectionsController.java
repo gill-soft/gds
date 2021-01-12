@@ -281,11 +281,17 @@ public class ConnectionsController {
 	
 	private boolean isEqualsPoints(String pointId, String segmentPointId, Map<String, Locality> localities) {
 		Locality locality = localities.get(segmentPointId);
+		if (locality == null) {
+			return false;
+		}
 		if (Objects.equals(locality.getId(), pointId)) {
 			return true;
 		}
 		while (locality.getParent() != null) {
 			locality = localities.get(locality.getParent().getId());
+			if (locality == null) {
+				return false;
+			}
 			if (Objects.equals(locality.getId(), pointId)) {
 				return true;
 			}
