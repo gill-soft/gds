@@ -167,7 +167,7 @@ public class TripSearchController {
 	}
 	
 	public TripSearchResponse getSearchResult(String searchId) {
-		long time = System.currentTimeMillis();
+		
 		// получает запросы поиска с памяти по ид поиска и проверяем их
 		Map<String, Object> params = new HashMap<>();
 		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
@@ -246,7 +246,6 @@ public class TripSearchController {
 			
 			// меняем ключи мап на ид из мапинга
 			tripSearchMapping.updateResultDictionaries(result);
-			System.out.println("getresult: " + (System.currentTimeMillis() - time));
 			return result;
 		}
 		// добавляем в кэш запрос под новым searchId, для получения остального результата
@@ -263,19 +262,13 @@ public class TripSearchController {
 	private void prepareResult(TripSearchRequest request, TripSearchResponse searchResponse, TripSearchResponse result) {
 		
 		// мапим словари
-		long time = System.currentTimeMillis();
 		tripSearchMapping.mapDictionaries(request, searchResponse, result);
-		System.out.println("mapDictionaries:" + (System.currentTimeMillis() - time));
 		
 		// обновляем мапингом рейсы
-		time = System.currentTimeMillis();
 		tripSearchMapping.updateSegments(request, searchResponse, result);
-		System.out.println("updateSegments:" + (System.currentTimeMillis() - time));
 		
 		// применяем фильтр
-		time = System.currentTimeMillis();
 		filter.apply(result.getSegments());
-		System.out.println("filter.apply:" + (System.currentTimeMillis() - time));
 	}
 	
 	private void logError(TripSearchResponse searchResponse) {

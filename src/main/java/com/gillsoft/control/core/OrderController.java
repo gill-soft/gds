@@ -437,6 +437,7 @@ public class OrderController {
 		OrderParams params = new OrderParams();
 		params.setDepartureFrom(new Date()); //TODO convert to departure city timezone
 		User client = dataController.getUser();
+		params.setUserId(client.getId());
 		params.setClientId(client.getId());
 		params.setClientPhone(OrderClient.getPhone(client));
 		params.setStatuses(Arrays.asList(ServiceStatus.NEW,
