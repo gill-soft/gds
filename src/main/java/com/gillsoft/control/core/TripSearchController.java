@@ -421,8 +421,11 @@ public class TripSearchController {
 		try {
 			// создаем поиски
 			SearchRequestContainer requestContainer = new SearchRequestContainer();
+			Set<String> updatedTripIds = new HashSet<>(tripIds.size());
 			for (String tripId : tripIds) {
 				TripIdModel model = new TripIdModel().create(tripId);
+				model.setNext(null);
+				updatedTripIds.add(model.asString());
 				model.getRequest().setId(StringUtil.generateUUID());
 				model.getRequest().setParams(dataController.createResourceParams(model.getResourceId()));
 				model.getRequest().setCurrency(request.getCurrency());
@@ -439,7 +442,7 @@ public class TripSearchController {
 				if (response.getSegments() != null) {
 						
 					// оставляем в запросе только указанный рейс
-					response.getSegments().keySet().removeIf(key -> !tripIds.contains(key));
+					response.getSegments().keySet().removeIf(key -> !updatedTripIds.contains(key));
 					response.getSegments().values().forEach(segment -> {
 						segment.setRoute(null);
 						segment.setSeats(null);

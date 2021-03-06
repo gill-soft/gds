@@ -42,7 +42,7 @@ public class NotificationController {
 						&& segment != null
 						&& !clientNotifications.containsKey(service.getCustomer().getId() + "_" + service.getSegment().getId())) {
 					StringBuilder notification = new StringBuilder();
-					notification.append("Ви купили билет ")
+					notification.append("Вы купили билет ")
 							.append(getLocalityName(orderResponse, segment.getDeparture(), true))
 							.append("-")
 							.append(getLocalityName(orderResponse, segment.getArrival(), true))
