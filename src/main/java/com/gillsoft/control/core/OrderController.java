@@ -352,7 +352,7 @@ public class OrderController {
 		}
 		try {
 			// если нет, то берем у ресурсов и сохраняем что есть
-			List<OrderRequest> requests = orderRequestController.operationRequests(order, Method.ORDER_DOCUMENTS, null);
+			List<OrderRequest> requests = orderRequestController.operationRequests(order, Method.ORDER_DOCUMENTS, null, true);
 			
 			// получаем документы в ресурсах
 			List<OrderResponse> responses = agregatorService.getPdfDocuments(requests);

@@ -102,6 +102,10 @@ public class OrderRequestController {
 	}
 	
 	public List<OrderRequest> operationRequests(Order order, String method, Set<ServiceStatus> statuses) {
+		return operationRequests(order, method, statuses, false);
+	}
+	
+	public List<OrderRequest> operationRequests(Order order, String method, Set<ServiceStatus> statuses, boolean ignoreException) {
 		List<OrderRequest> requests = new ArrayList<>();
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			if (statuses == null
@@ -116,6 +120,9 @@ public class OrderRequestController {
 				}
 				// проверяем доступность метода
 				if (!infoController.isMethodAvailable(serviceResource, method, MethodType.POST)) {
+					if (ignoreException) {
+						continue;
+					}
 					throw new MethodUnavalaibleException("Method is unavailable for service ids "
 							+ Arrays.toString(resourceOrder.getServices().stream().map(ResourceService::getId)
 									.collect(Collectors.toList()).toArray()));
