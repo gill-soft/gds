@@ -1243,5 +1243,16 @@ public class OrderResponseConverter {
 			throw new MethodUnavalaibleException(errorMsg.toString().trim());
 		}
 	}
+	
+	public OrderResponse removeExistingServices(OrderResponse response, OrderRequest request) {
+		if (response.getServices() == null
+				|| request.getServices() == null
+				|| request.getServices().isEmpty()) {
+			return response;
+		}
+		response.getServices().removeIf(s -> request.getServices().stream().noneMatch(rs -> rs.getId().equals(s.getId())));
+		response.fillMaps();
+		return response;
+	}
 
 }
