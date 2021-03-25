@@ -284,11 +284,12 @@ public class OrderRequestController {
 								if (statuses.contains(orderConverter.getLastStatus(resourceService.getStatuses()))) {
 									
 									// устанавливаем ид ресурса и добавляем в запрос
-									service.setId(new IdModel().create(resourceService.getResourceNativeServiceId()).getId());
+									ServiceItem requestService = (ServiceItem) SerializationUtils.deserialize(SerializationUtils.serialize(service));
+									requestService.setId(new IdModel().create(resourceService.getResourceNativeServiceId()).getId());
 									if (orderRequest.getServices() == null) {
 										orderRequest.setServices(new ArrayList<>());
 									}
-									orderRequest.getServices().add(service);
+									orderRequest.getServices().add(requestService);
 								} else {
 									errorMsg.append("Service id=").append(service.getId()).append(" status is not ").append(ServiceStatus.CONFIRM).append("\r\n");
 								}
