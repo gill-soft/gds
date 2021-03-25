@@ -400,6 +400,7 @@ public class OrderController {
 			} catch (Exception e) {
 				LOGGER.error("Return services error in db", e);
 			}
+			order.getResponse().getServices().removeIf(s -> request.getServices().stream().noneMatch(rs -> rs.getId().equals(s.getId())));
 			return orderConverter.getResponse(order);
 		} finally {
 			
