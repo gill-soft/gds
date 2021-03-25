@@ -24,7 +24,8 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	private final static String EXISTS_STATUS = "exists (from ServiceStatusEntity as sse "
 				+ "where sse.parent = rs "
 				+ "and sse.created = (select max(ssem.created) from ServiceStatusEntity as ssem "
-					+ "where ssem.parent = rs) "
+					+ "where ssem.parent = rs "
+					+ "and ssem.status not like '%_ERROR') "
 				+ "and sse.status = 'CONFIRM')";
 	
 	private final static String GET_MAPPED_SERVICES = "select mc from Order as o "
