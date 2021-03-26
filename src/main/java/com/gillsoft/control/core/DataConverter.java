@@ -534,10 +534,9 @@ public class DataConverter {
 		List<SegmentTariff> tariffs = getTariffs(trip);
 		if (price != null
 				&& price.getTariff() != null) {
-			String tariffId = price.getTariff().getId();
-			SegmentTariff segmentTariff = getTariff(tariffId, tariffs, departureId, arrivalId);
+			SegmentTariff segmentTariff = getTariff(price, tariffs, departureId, arrivalId);
 			if (segmentTariff == null) {
-				segmentTariff = getTariff(tariffId, tariffs, mappedService.getFromId(), mappedService.getToId());
+				segmentTariff = getTariff(price, tariffs, mappedService.getFromId(), mappedService.getToId());
 			}
 			if (segmentTariff != null) {
 				setTariff(mappedService, segmentTariff);
@@ -545,10 +544,13 @@ public class DataConverter {
 		}
 	}
 	
-	private static SegmentTariff getTariff(String tariffId, List<SegmentTariff> tariffs, long departureId, long arrivalId) {
+	private static SegmentTariff getTariff(Price price, List<SegmentTariff> tariffs, long departureId, long arrivalId) {
+		String tariffId = price.getTariff().getId();
+		com.gillsoft.ms.entity.Currency currency = com.gillsoft.ms.entity.Currency.valueOf(price.getCurrency().name());
 		for (SegmentTariff segmentTariff : tariffs) {
 			if (segmentTariff.getFromId() == departureId
-					&& segmentTariff.getToId() == arrivalId) {
+					&& segmentTariff.getToId() == arrivalId
+					&& segmentTariff.getCurrency() == currency) {
 				if (String.valueOf(segmentTariff.getTariffId()).equals(tariffId)) {
 					return segmentTariff;
 				} else if (segmentTariff.getTariffGridPlaceQuota() != null) {
