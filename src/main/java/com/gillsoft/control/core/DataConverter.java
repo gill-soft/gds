@@ -28,6 +28,7 @@ import com.gillsoft.model.CalcType;
 import com.gillsoft.model.Currency;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
+import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.Vehicle;
@@ -39,6 +40,9 @@ import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.ReturnCondition;
 import com.gillsoft.ms.entity.Route;
 import com.gillsoft.ms.entity.RoutePoint;
+import com.gillsoft.ms.entity.SegmentTariff;
+import com.gillsoft.ms.entity.TariffGrid;
+import com.gillsoft.ms.entity.TariffGridPlaceQuota;
 import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
 import com.gillsoft.util.StringUtil;
@@ -512,16 +516,78 @@ public class DataConverter {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static List<RoutePoint> getRoute(Trip trip) {
-		Optional<BaseEntity> o = trip.getChilds().stream().filter(c -> c.getType() == EntityType.ROUTE).findFirst();
-		if (o.isPresent()) {
-			Route route = (Route) o.get();
-			if (route.getPoints() != null
+		List<Route> routes = (List<Route>) getChildsByType(trip, EntityType.ROUTE);
+		if (!routes.isEmpty()) {
+			Route route = routes.get(0);
+			if (route != null
+					&& route.getPoints() != null
 					&& !route.getPoints().isEmpty()) {
 				return route.getPoints();
 			}
 		}
 		throw new NullPointerException("Empty route. tripId = " + trip.getId());
+	}
+	
+	public static void setTariff(MappedService mappedService, Trip trip, Price price, long departureId, long arrivalId) {
+		List<SegmentTariff> tariffs = getTariffs(trip);
+		if (price != null
+				&& price.getTariff() != null) {
+			String tariffId = price.getTariff().getId();
+			SegmentTariff segmentTariff = getTariff(tariffId, tariffs, departureId, arrivalId);
+			if (segmentTariff == null) {
+				segmentTariff = getTariff(tariffId, tariffs, mappedService.getFromId(), mappedService.getToId());
+			}
+			if (segmentTariff != null) {
+				setTariff(mappedService, segmentTariff);
+			}
+		}
+	}
+	
+	private static SegmentTariff getTariff(String tariffId, List<SegmentTariff> tariffs, long departureId, long arrivalId) {
+		for (SegmentTariff segmentTariff : tariffs) {
+			if (segmentTariff.getFromId() == departureId
+					&& segmentTariff.getToId() == arrivalId) {
+				if (String.valueOf(segmentTariff.getTariffId()).equals(tariffId)) {
+					return segmentTariff;
+				} else if (segmentTariff.getTariffGridPlaceQuota() != null) {
+					Optional<TariffGridPlaceQuota> optional = segmentTariff.getTariffGridPlaceQuota().stream()
+							.filter(pq -> pq.getId().equals(tariffId)).findFirst();
+					if (optional.isPresent()) {
+						TariffGridPlaceQuota placeQuota = optional.get();
+						SegmentTariff tariff = new SegmentTariff();
+						tariff.setCurrency(segmentTariff.getCurrency());
+						tariff.setValue(placeQuota.getPrice());
+						return tariff;
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
+	private static void setTariff(MappedService mappedService, SegmentTariff tariff) { 
+		mappedService.setTariffValue(tariff.getValue());
+		mappedService.setCurrency(Currency.valueOf(tariff.getCurrency().name()));
+	}
+	
+	@SuppressWarnings("unchecked")
+	private static List<SegmentTariff> getTariffs(Trip trip) {
+		List<TariffGrid> grids = (List<TariffGrid>) getChildsByType(trip, EntityType.TARIFF_GRID);
+		if (!grids.isEmpty()) {
+			TariffGrid grid = grids.get(0);
+			if (grid != null
+					&& grid.getSegmentTariffs() != null
+					&& !grid.getSegmentTariffs().isEmpty()) {
+				return grid.getSegmentTariffs();
+			}
+		}
+		throw new NullPointerException("Empty tariffs. tripId = " + trip.getId());
+	}
+	
+	private static List<? extends BaseEntity> getChildsByType(Trip trip, EntityType type) {
+		return trip.getChilds().stream().filter(e -> e.getType() == type).collect(Collectors.toList());
 	}
 	
 	private static boolean isBefore(List<RoutePoint> curr, List<RoutePoint> route) {

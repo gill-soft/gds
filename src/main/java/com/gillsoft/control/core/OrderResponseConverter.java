@@ -162,6 +162,8 @@ public class OrderResponseConverter {
 		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
 		Map<String, String> segmentIds = getSegmentIds(originalRequest);
 		
+		Map<Long, com.gillsoft.ms.entity.Trip> mappedTrips = new HashMap<>();
+		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : response.getResources()) {
 			Optional<OrderRequest> optional = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
@@ -197,7 +199,7 @@ public class OrderResponseConverter {
 					// сервисы ресурса для сохранения
 					currRequest.getServices().forEach(s -> {
 						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), s, ServiceStatus.NEW_ERROR,
-								orderResponse.getError().getMessage()));
+								orderResponse.getError().getMessage(), mappedTrips));
 					});
 				} else {
 					// маппим рейсы заказа из ответа
@@ -233,10 +235,10 @@ public class OrderResponseConverter {
 							}
 							// добавляем условия возврата
 							addReturnConditions(item, segment);
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW, null));
+							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW, null, mappedTrips));
 						} else {
 							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW_ERROR,
-									item.getError().getMessage()));
+									item.getError().getMessage(), mappedTrips));
 						}
 						result.getServices().add(item);
 					}
@@ -404,7 +406,8 @@ public class OrderResponseConverter {
 		}
 	}
 	
-	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service, ServiceStatus statusType, String error) {
+	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service,
+			ServiceStatus statusType, String error, Map<Long, com.gillsoft.ms.entity.Trip> mappedTrips) {
 		ResourceService resourceService = new ResourceService();
 		if (service.getId() == null
 				|| service.getId().isEmpty()) {
@@ -420,7 +423,21 @@ public class OrderResponseConverter {
 					&& additionals.containsKey(MappedService.MAPPED_SERVICES_KEY)) {
 				
 				@SuppressWarnings("unchecked")
-				Set<MappedService> mappedServices = (Set<MappedService>) additionals.get(MappedService.MAPPED_SERVICES_KEY);
+				List<MappedService> mappedServices = new ArrayList<>((Set<MappedService>) additionals.get(MappedService.MAPPED_SERVICES_KEY));
+				Collections.sort(mappedServices, Comparator.comparing(MappedService::getOrder));
+				long departureId = mappedServices.get(0).getFromId();
+				long arrivalId = mappedServices.get(mappedServices.size() - 1).getToId();
+				for (MappedService mappedService : mappedServices) {
+					long tripId = mappedService.getTripId();
+					com.gillsoft.ms.entity.Trip trip = mappedTrips.get(tripId);
+					if (trip == null) {
+						trip = dataController.getTripWithoutCache(tripId);
+						mappedTrips.put(tripId, trip);
+					}
+					if (trip != null) {
+						DataConverter.setTariff(mappedService, trip, service.getPrice(), departureId, arrivalId);
+					}
+				}
 				mappedServices.forEach(ms -> resourceService.addMappedService(
 						(MappedService) SerializationUtils.deserialize(SerializationUtils.serialize(ms))));
 			}

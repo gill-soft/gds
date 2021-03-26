@@ -1,10 +1,13 @@
 package com.gillsoft.control.service.model;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -26,6 +29,7 @@ import com.gillsoft.model.ApiDateDeserializer;
 import com.gillsoft.model.ApiDateSerializer;
 import com.gillsoft.model.ApiDateTimeDeserializer;
 import com.gillsoft.model.ApiDateTimeSerializer;
+import com.gillsoft.model.Currency;
 
 @Entity
 @Table(name = "mapped_services", indexes = { @Index(columnList = "carrier_id,trip_departure"),
@@ -74,6 +78,13 @@ public class MappedService implements Serializable {
 	@JsonSerialize(using = ApiDateTimeSerializer.class)
 	@JsonDeserialize(using = ApiDateTimeDeserializer.class)
 	private Date toDeparture;
+	
+	@Column(name = "tariff_value", nullable = true)
+	private BigDecimal tariffValue;
+	
+	@Column(nullable = true)
+	@Enumerated(EnumType.STRING)
+	private Currency currency;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "resource_service_id", nullable = false)
@@ -150,6 +161,22 @@ public class MappedService implements Serializable {
 
 	public void setToDeparture(Date toDeparture) {
 		this.toDeparture = toDeparture;
+	}
+
+	public BigDecimal getTariffValue() {
+		return tariffValue;
+	}
+
+	public void setTariffValue(BigDecimal tariffValue) {
+		this.tariffValue = tariffValue;
+	}
+
+	public Currency getCurrency() {
+		return currency;
+	}
+
+	public void setCurrency(Currency currency) {
+		this.currency = currency;
 	}
 
 	public ResourceService getParent() {

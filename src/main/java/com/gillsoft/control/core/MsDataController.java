@@ -340,6 +340,10 @@ public class MsDataController {
 				new TripByIdUpdateTask(id), () -> msService.getTripWithParentsChilds(id), 120000l);
 	}
 	
+	public Trip getTripWithoutCache(long id) {
+		return msService.getTripWithParentsChilds(id);
+	}
+	
 	public Organisation getOrganisation(long id) {
 		return getAllOrganisations().get(getEntityId(id));
 	}
