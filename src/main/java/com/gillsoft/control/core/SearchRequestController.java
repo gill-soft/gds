@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -128,6 +129,7 @@ public class SearchRequestController {
 		if (resourceConnections == null) {
 			return connections.getPairs();
 		}
+		Map<Long, Mapping> currentMapping = new HashMap<>();
 		Map<Long, ResourceConnection> resourceConnectionsMap = resourceConnections.stream()
 				.collect(Collectors.toMap(rc -> rc.getResource().getId(), rc -> rc, (rc1, rc2) -> rc1));
 		
@@ -141,7 +143,7 @@ public class SearchRequestController {
 				long currPoint = route.get(0);
 				for (int i = 1; i < route.size(); i++) {
 					long nextPoint = route.get(i);
-					Set<Pair> nextPairs = getPairs(connections.getPairs(), currPoint, nextPoint);
+					Set<Pair> nextPairs = getPairs(connections.getPairs(), currentMapping, currPoint, nextPoint);
 					if (nextPairs.isEmpty()) {
 						break;
 					} else if (currPairs != null) {
@@ -167,11 +169,11 @@ public class SearchRequestController {
 	/*
 	 * Возвращает список пар для указанных пунктов.
 	 */
-	private Set<Pair> getPairs(Set<Pair> pairs, long fromId, long toId) {
+	private Set<Pair> getPairs(Set<Pair> pairs, Map<Long, Mapping> currentMapping, long fromId, long toId) {
 		Set<Pair> pairsPart = new HashSet<>();
 		for (Pair pair : pairs) {
-			Mapping from = mappingService.getMapping(pair.getFrom());
-			Mapping to = mappingService.getMapping(pair.getTo());
+			Mapping from = getMapping(currentMapping, pair.getFrom());
+			Mapping to = getMapping(currentMapping, pair.getTo());
 			if (from != null && to != null
 					&& isEqualsPoints(fromId, from)
 					&& isEqualsPoints(toId, to)) {
@@ -179,6 +181,16 @@ public class SearchRequestController {
 			}
 		}
 		return pairsPart;
+	}
+	
+	private Mapping getMapping(Map<Long, Mapping> currentMapping, long id) {
+		if (currentMapping.containsKey(id)) {
+			return currentMapping.get(id);
+		} else {
+			Mapping mapping = mappingService.getMapping(id);
+			currentMapping.put(id, mapping);
+			return mapping;
+		}
 	}
 	
 	private boolean isEqualsPoints(long pointId, Mapping mapping) {
