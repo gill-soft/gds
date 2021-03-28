@@ -128,7 +128,9 @@ public class TripSearchController {
 		
 		// проверяем ответ и записываем в память запросы под ид поиска
 		TripSearchResponse response = checkResponse(null, service.initSearch(requestContainer.getRequests()));
-		response.setId(requestContainer.getOriginRequest().getId());
+		if (requestContainer.getOriginRequest() != null) {
+			response.setId(requestContainer.getOriginRequest().getId());
+		}
 		putRequestToCache(response.getSearchId(), requestContainer);
 		return response;
 	}
@@ -183,7 +185,9 @@ public class TripSearchController {
 			throw new ApiException(new ResponseError("Too late for getting result or invalid searchId."));
 		}
 		TripSearchResponse response = service.getSearchResult(searchId);
-		response.setId(requestContainer.getOriginRequest().getId());
+		if (requestContainer.getOriginRequest() != null) {
+			response.setId(requestContainer.getOriginRequest().getId());
+		}
 		if (response.getError() != null) {
 			throw new ApiException(response.getError());
 		}
@@ -191,7 +195,9 @@ public class TripSearchController {
 				&& !response.getResult().isEmpty()) {
 			TripSearchResponse result = new TripSearchResponse();
 			List<TripSearchRequest> requests = requestContainer.getRequests();
-			result.setId(requestContainer.getOriginRequest().getId());
+			if (requestContainer.getOriginRequest() != null) {
+				result.setId(requestContainer.getOriginRequest().getId());
+			}
 			result.setSearchId(response.getSearchId());
 			tripSearchMapping.createDictionaries(result);
 			
