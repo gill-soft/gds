@@ -70,6 +70,7 @@ public class SearchRequestContainer implements Serializable {
 		boolean added = false;
 		for (String[] pair : request.getLocalityPairs()) {
 			StringBuilder key = new StringBuilder();
+			key.append(request.isToResult()).append(";");
 			key.append(StringUtil.dateFormat.format(date)).append(";");
 			if (back != null) {
 				key.append(StringUtil.dateFormat.format(back)).append(";");

@@ -1271,5 +1271,9 @@ public class OrderResponseConverter {
 		response.fillMaps();
 		return response;
 	}
+	
+	public void replaceResponseWithConverted(Order order) {
+		order.setResponse(convertResponse(order, order.getResponse()));
+	}
 
 }

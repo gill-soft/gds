@@ -22,6 +22,9 @@ public class DispatcherService {
 	@Autowired
 	private OrderDispatcherDAOService dispatcherDAOService;
 	
+	@Autowired
+	private OrderResponseConverter converter;
+	
 	public List<MappedService> getMappedServices(long carrierId, Date tripDepartureFrom, Date tripDepartureTo) {
 		try {
 			return dispatcherDAOService.getMappedServices(carrierId, tripDepartureFrom, tripDepartureTo);
@@ -46,7 +49,7 @@ public class DispatcherService {
 	
 	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDeparture) {
 		try {
-			return dispatcherDAOService.getFromMappedOrders(carrierId, tripId, fromId, fromDeparture);
+			return replaceResponse(dispatcherDAOService.getFromMappedOrders(carrierId, tripId, fromId, fromDeparture));
 		} catch (Exception e) {
 			LOGGER.error("Can not get from mapped orders " + tripId + " " + fromId + " "
 					+ StringUtil.fullDateFormat.format(fromDeparture), e);
@@ -56,7 +59,7 @@ public class DispatcherService {
 
 	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toDeparture) {
 		try {
-			return dispatcherDAOService.getToMappedOrders(carrierId, tripId, toId, toDeparture);
+			return replaceResponse(dispatcherDAOService.getToMappedOrders(carrierId, tripId, toId, toDeparture));
 		} catch (Exception e) {
 			LOGGER.error("Can not get to mapped orders " + tripId + " " + toId + " "
 					+ StringUtil.fullDateFormat.format(toDeparture), e);
@@ -66,12 +69,17 @@ public class DispatcherService {
 
 	public List<Order> getTripMappedOrders(long carrierId, long tripId, Date departure) {
 		try {
-			return dispatcherDAOService.getTripMappedOrders(carrierId, tripId, departure);
+			return replaceResponse(dispatcherDAOService.getTripMappedOrders(carrierId, tripId, departure));
 		} catch (Exception e) {
 			LOGGER.error("Can not get trip mapped orders " + tripId + " "
 					+ StringUtil.fullDateFormat.format(departure), e);
 			return null;
 		}
+	}
+	
+	private List<Order> replaceResponse(List<Order> orders) {
+		orders.forEach(o -> converter.replaceResponseWithConverted(o));
+		return orders;
 	}
 	
 }
