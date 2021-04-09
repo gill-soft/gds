@@ -473,6 +473,7 @@ public class TripSearchController {
 			result.getVehicles().putAll(response.getVehicles());
 			result.getOrganisations().putAll(response.getOrganisations());
 			result.getResources().putAll(response.getResources());
+			result.getAdditionalServices().putAll(response.getAdditionalServices());
 			result.getLocalities().putAll(response.getLocalities());
 			response = result;
 		}
@@ -571,6 +572,7 @@ public class TripSearchController {
 		if (searchResponse != null) {
 			orderResponse.setVehicles(searchResponse.getVehicles());
 			orderResponse.setOrganisations(searchResponse.getOrganisations());
+			orderResponse.setAdditionalServices(searchResponse.getAdditionalServices());
 			orderResponse.setLocalities(searchResponse.getLocalities());
 			orderResponse.setSegments(searchResponse.getSegments());
 			if (orderResponse.getSegments() != null) {
@@ -630,6 +632,11 @@ public class TripSearchController {
 				} else if (segmentResponse.getLocalities() != null) {
 					segmentResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
 				}
+				if (result.getAdditionalServices() == null) {
+					result.setAdditionalServices(segmentResponse.getAdditionalServices());
+				} else if (segmentResponse.getAdditionalServices() != null) {
+					segmentResponse.getAdditionalServices().forEach((id, v) -> result.getAdditionalServices().putIfAbsent(id, v));
+				}
 				if (result.getSegments() == null) {
 					result.setSegments(segmentResponse.getSegments());
 				} else if (segmentResponse.getSegments() != null) {
@@ -678,6 +685,7 @@ public class TripSearchController {
 		searchResponse.setLocalities(orderResponse.getLocalities());
 		searchResponse.setVehicles(orderResponse.getVehicles());
 		searchResponse.setOrganisations(orderResponse.getOrganisations());
+		searchResponse.setAdditionalServices(orderResponse.getAdditionalServices());
 		searchResponse.setSegments(orderResponse.getSegments());
 		
 		TripSearchResponse searchResult = getMappingResult(orderRequest, searchResponse);
@@ -700,6 +708,11 @@ public class TripSearchController {
 			result.setLocalities(orderResponse.getLocalities());
 		} else if (orderResponse.getLocalities() != null) {
 			orderResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
+		}
+		if (result.getAdditionalServices() == null) {
+			result.setAdditionalServices(orderResponse.getAdditionalServices());
+		} else if (orderResponse.getAdditionalServices() != null) {
+			orderResponse.getAdditionalServices().forEach((id, o) -> result.getAdditionalServices().putIfAbsent(id, o));
 		}
 		if (result.getSegments() == null) {
 			result.setSegments(orderResponse.getSegments());

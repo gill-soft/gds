@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.model.ResponseError;
+import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.Attribute;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.BaseEntityDeserializer;
@@ -73,6 +74,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_RESOURCE_CONNECTION_DISCOUNTS = "connection_discount/all_with_sub_main";
 	
 	private static final String ALL_TARIFF_MARKUPS = "tariff_markup/all_with_sub_main";
+	
+	private static final String ALL_ADDITIONAL_SERVICES = "additional_service/all_with_sub_main";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -247,6 +250,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<TariffMarkup> getAllTariffMarkups() {
 		return getResult(ALL_TARIFF_MARKUPS, null, new ParameterizedTypeReference<List<TariffMarkup>>() { });
+	}
+	
+	@Override
+	public List<AdditionalServiceItem> getAllAdditionalServices() {
+		return getResult(ALL_ADDITIONAL_SERVICES, null, new ParameterizedTypeReference<List<AdditionalServiceItem>>() { });
 	}
 	
 	@Override

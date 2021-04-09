@@ -2,6 +2,7 @@ package com.gillsoft.control.service;
 
 import java.util.List;
 
+import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.Attribute;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.ConnectionDiscount;
@@ -145,6 +146,14 @@ public interface MsDataService {
 	 * @return Список надбавок к тарифу.
 	 */
 	public List<TariffMarkup> getAllTariffMarkups();
+	
+	/**
+	 * Возвращает список всех допуслуг, с родетельскими объектами, к которым
+	 * принадлежит надбавка.
+	 * 
+	 * @return Список допуслуг.
+	 */
+	public List<AdditionalServiceItem> getAllAdditionalServices();
 	
 	/**
 	 * Возвращает список всех параметров доступа к ресурсам заказов с

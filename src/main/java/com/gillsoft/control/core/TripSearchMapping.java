@@ -1,5 +1,6 @@
 package com.gillsoft.control.core;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +35,8 @@ import com.gillsoft.model.request.LangRequest;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.model.response.TripSearchResponse;
+import com.gillsoft.ms.entity.AdditionalServiceItem;
+import com.gillsoft.ms.entity.ValueType;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -67,6 +70,10 @@ public class TripSearchMapping {
 		// resource vehicle id -> vehicle from mapping
 		if (result.getVehicles() == null) {
 			result.setVehicles(new HashMap<>());
+		}
+		// resourceId + ";" + resource additional service id -> additional service
+		if (result.getAdditionalServices() == null) {
+			result.setAdditionalServices(new HashMap<>());
 		}
 		// resourceId + ";" + resource segment id -> segment
 		if (result.getSegments() == null) {
@@ -291,6 +298,9 @@ public class TripSearchMapping {
 						continue;
 					}
 				}
+				// добавление допуслуг
+				addAdditionalServices(request, result, segment);
+				
 				// добавляем рейсы в результат
 				result.getSegments().put(new IdModel(resourceId, entry.getKey()).asString(), segment);
 			} catch (Exception e) {
@@ -306,6 +316,29 @@ public class TripSearchMapping {
 		Map<String, String> timezones = new HashMap<>();
 		for (Segment segment : result.getSegments().values()) {
 			setTimeInWay(segment, timezones);
+		}
+	}
+	
+	private void addAdditionalServices(TripSearchRequest request, TripSearchResponse result, Segment segment) {
+		List<AdditionalServiceItem> additionalServices = dataController.getAdditionalServices(segment);
+		if (additionalServices != null) {
+			for (AdditionalServiceItem additionalServiceItem : additionalServices) {
+				if (additionalServiceItem.getValueType() == ValueType.PERCENT) {
+					additionalServiceItem.setValue(segment.getPrice().getTariff().getValue()
+							.multiply(additionalServiceItem.getValue().multiply(new BigDecimal(0.01))));
+					
+				}
+			}
+			if (segment.getAdditionalServices() == null) {
+				segment.setAdditionalServices(new ArrayList<>());
+			}
+			segment.getAdditionalServices().addAll(additionalServices.stream().map(as -> DataConverter.convert(as)).collect(Collectors.toList()));
+			segment.getAdditionalServices().forEach(as -> {
+				applyLang(as, request.getLang());
+				dataController.recalculate(as, as.getPrice(), request.getCurrency());
+				as.setId(new IdModel(-1, as.getId()).asString());
+				result.getAdditionalServices().put(as.getId(), as);
+			});
 		}
 	}
 	
@@ -372,6 +405,21 @@ public class TripSearchMapping {
 		}
 	}
 	
+	public void applyLang(com.gillsoft.model.AdditionalServiceItem additionalService, Lang lang) {
+		if (additionalService != null
+				&& lang != null) {
+			if (additionalService.getName() != null
+					&& additionalService.getName().get(lang) != null) {
+				additionalService.getName().keySet().removeIf(k -> k != lang);
+			}
+			if (additionalService.getDescription() != null
+					&& additionalService.getDescription().get(lang) != null) {
+				additionalService.getDescription().keySet().removeIf(k -> k != lang);
+			}
+			applyLang(additionalService.getPrice().getTariff(), lang);
+		}
+	}
+	
 	/*
 	 * Обновляет ид рейсов и запросы.
 	 */
@@ -426,15 +474,23 @@ public class TripSearchMapping {
 	private void updateDictionaries(TripSearchResponse result) {
 		if (result.getLocalities() != null
 				&& !result.getLocalities().isEmpty()) {
-			result.setLocalities(result.getLocalities().values().stream().filter(l -> l.getId() != null).collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
+			result.setLocalities(result.getLocalities().values().stream()
+					.filter(l -> l.getId() != null).collect(Collectors.toMap(Locality::getId, l -> l, (l1, l2) -> l1)));
 		}
 		if (result.getOrganisations() != null
 				&& !result.getOrganisations().isEmpty()) {
-			result.setOrganisations(result.getOrganisations().values().stream().filter(o -> o.getId() != null).collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
+			result.setOrganisations(result.getOrganisations().values().stream()
+					.filter(o -> o.getId() != null).collect(Collectors.toMap(Organisation::getId, o -> o, (o1, o2) -> o1)));
 		}
 		if (result.getVehicles() != null
 				&& !result.getVehicles().isEmpty()) {
-			result.setVehicles(result.getVehicles().values().stream().filter(v -> v.getId() != null).collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
+			result.setVehicles(result.getVehicles().values().stream()
+					.filter(v -> v.getId() != null).collect(Collectors.toMap(Vehicle::getId, v -> v, (v1, v2) -> v1)));
+		}
+		if (result.getAdditionalServices() != null
+				&& !result.getAdditionalServices().isEmpty()) {
+			result.setAdditionalServices(result.getAdditionalServices().values().stream()
+					.filter(as -> as.getId() != null).collect(Collectors.toMap(com.gillsoft.model.AdditionalServiceItem::getId, as -> as, (as1, as2) -> as1)));
 		}
 	}
 	

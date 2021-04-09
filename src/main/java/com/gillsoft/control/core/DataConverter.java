@@ -30,8 +30,10 @@ import com.gillsoft.model.Lang;
 import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.ValueType;
 import com.gillsoft.model.Vehicle;
+import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.AttributeValue;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.Commission;
@@ -78,6 +80,26 @@ public class DataConverter {
 		for (Lang lang : Lang.values()) {
 			converted.setTitle(lang, getValue("name_" + lang.name(), returnCondition));
 		}
+		return converted;
+	}
+	
+	public static com.gillsoft.model.AdditionalServiceItem convert(AdditionalServiceItem additionalService) {
+		com.gillsoft.model.AdditionalServiceItem converted = new com.gillsoft.model.AdditionalServiceItem();
+		converted.setId(String.valueOf(additionalService.getId()));
+		converted.setCode(additionalService.getCode());
+		converted.setName(getValue("name", additionalService));
+		for (Lang lang : Lang.values()) {
+			converted.setName(lang, getValue("name_" + lang.name(), additionalService));
+		}
+		converted.setDescription(getValue("description", additionalService));
+		for (Lang lang : Lang.values()) {
+			converted.setDescription(lang, getValue("description_" + lang.name(), additionalService));
+		}
+		Tariff tariff = new Tariff();
+		tariff.setValue(additionalService.getValue());
+		Price price = new Price(Currency.valueOf(additionalService.getCurrency().name()), additionalService.getValue(), null);
+		price.setTariff(tariff);
+		converted.setPrice(price);
 		return converted;
 	}
 	

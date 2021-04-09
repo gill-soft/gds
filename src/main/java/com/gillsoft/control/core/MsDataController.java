@@ -44,6 +44,7 @@ import com.gillsoft.model.Price;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.ResourceParams;
+import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
@@ -72,6 +73,8 @@ public class MsDataController {
 	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
 	
 	private static final String ALL_TARIFF_MARKUPS_KEY = "all.tariff.markups";
+	
+	private static final String ALL_ADDITIONAL_SERVICES_KEY = "all.additional.services";
 	
 	private static final String ALL_RETURN_CONDITIONS_KEY = "all.return.conditions";
 	
@@ -170,6 +173,14 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllTariffMarkupsKey(),
 				new AllTariffMarkupsUpdateTask(), () -> toMap(msService.getAllTariffMarkups()), 120000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<Long, List<CodeEntity>> getAllAdditionalServices() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllAdditionalServicesKey(),
+				new AllAdditionalServicesUpdateTask(), () -> toMap(msService.getAllAdditionalServices()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -405,7 +416,14 @@ public class MsDataController {
 		if (price.getCommissions() != null) {
 			price.getCommissions().forEach(c -> c.setId(null));
 		}
-		List<com.gillsoft.model.Commission> commissions = getCommissions(segment);
+		addCommissions(getCommissions(segment), price);
+		Price calculated = calculator.calculateResource(price, getUser(), currency, getTariffMarkups(segment));
+		calculated.setSource(calculator.copy(price));
+		addReturnConditions(segment, calculated);
+		return calculated;
+	}
+	
+	private void addCommissions(List<com.gillsoft.model.Commission> commissions, Price price) {
 		if (commissions != null) {
 			if (price.getCommissions() == null) {
 				price.setCommissions(commissions);
@@ -422,10 +440,41 @@ public class MsDataController {
 				}
 			}
 		}
-		Price calculated = calculator.calculateResource(price, getUser(), currency, getTariffMarkups(segment));
+	}
+	
+	public Price recalculate(com.gillsoft.model.AdditionalServiceItem additionalService, Price price, Currency currency) {
+		if (price.getCommissions() != null) {
+			price.getCommissions().forEach(c -> c.setId(null));
+		}
+		List<com.gillsoft.model.Commission> commissions = getCommissions();
+		if (commissions != null) {
+			if (price.getCommissions() == null) {
+				price.setCommissions(commissions);
+			} else {
+				price.getCommissions().addAll(commissions);
+			}
+			for (com.gillsoft.model.Commission commission : price.getCommissions()) {
+				if (commission.getCurrency() == null) {
+					commission.setCurrency(price.getCurrency());
+				}
+				if (commission.getVat() == null) {
+					commission.setVat(BigDecimal.ZERO);
+					commission.setVatCalcType(CalcType.IN);
+				}
+			}
+		}
+		Price calculated = calculator.calculateResource(price, getUser(), currency);
 		calculated.setSource(calculator.copy(price));
-		addReturnConditions(segment, calculated);
+		addReturnConditions(additionalService, calculated);
 		return calculated;
+	}
+	
+	public List<com.gillsoft.model.Commission> getCommissions() {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return getCommissions(entities);
+		}
+		return null;
 	}
 	
 	public List<com.gillsoft.model.Commission> getCommissions(Segment segment) {
@@ -440,6 +489,17 @@ public class MsDataController {
 		List<BaseEntity> entities = getParentEntities(segment);
 		if (entities != null) {
 			return getTariffMarkups(entities);
+		}
+		return null;
+	}
+	
+	public List<AdditionalServiceItem> getAdditionalServices(Segment segment) {
+		List<BaseEntity> entities = getParentEntities(segment);
+		if (entities != null) {
+			List<AdditionalServiceItem> services = getAdditionalServices(entities);
+			if (services != null) {
+				return services.stream().filter(AdditionalServiceItem::isUsedWithTrip).collect(Collectors.toList());
+			}
 		}
 		return null;
 	}
@@ -464,6 +524,10 @@ public class MsDataController {
 	private void addReturnConditions(Segment segment, Price price) {
 		// условия возврата для стоимости установленные на организацию
 		List<com.gillsoft.model.ReturnCondition> conditions = getReturnConditions(segment);
+		addReturnConditions(conditions, price);
+	}
+	
+	private void addReturnConditions(List<com.gillsoft.model.ReturnCondition> conditions, Price price) {
 		if (conditions != null) {
 			if (price.getTariff().getReturnConditions() == null) {
 				price.getTariff().setReturnConditions(conditions);
@@ -491,6 +555,18 @@ public class MsDataController {
 				}
 			}
 		}
+	}
+	
+	private void addReturnConditions(com.gillsoft.model.AdditionalServiceItem serviceItem, Price price) {
+		// условия возврата для стоимости установленные на организацию
+		List<com.gillsoft.model.ReturnCondition> conditions = null;
+		BaseEntity entity = new BaseEntity();
+		try {
+			entity.setId(Long.parseLong(serviceItem.getId()));
+			conditions = getReturnConditions(Collections.singletonList(entity));
+		} catch (NumberFormatException e) {
+		}
+		addReturnConditions(conditions, price);
 	}
 	
 	public List<com.gillsoft.model.ReturnCondition> getReturnConditions(Segment segment) {
@@ -610,6 +686,14 @@ public class MsDataController {
 		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllTariffMarkups());
 		if (codeEntities != null) {
 			return codeEntities.stream().map(tm -> (TariffMarkup) tm).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<AdditionalServiceItem> getAdditionalServices(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllAdditionalServices());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(as -> (AdditionalServiceItem) as).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -884,6 +968,10 @@ public class MsDataController {
 	
 	public static String getAllTariffMarkupsKey() {
 		return ALL_TARIFF_MARKUPS_KEY;
+	}
+	
+	public static String getAllAdditionalServicesKey() {
+		return ALL_ADDITIONAL_SERVICES_KEY;
 	}
 	
 	public static String getAllReturnConditionsKey() {
