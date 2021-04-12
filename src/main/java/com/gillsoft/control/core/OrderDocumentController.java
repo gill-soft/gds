@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.service.PrintTicketService;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.PrintOrderWrapper;
@@ -20,6 +22,8 @@ import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Lang;
+import com.gillsoft.model.Locality;
+import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.response.OrderResponse;
@@ -38,6 +42,9 @@ public class OrderDocumentController {
 	@Autowired
 	private OrderResponseConverter orderConverter;
 	
+	@Autowired
+	private LocalityController localityController;
+	
 	public void addSystemDocuments(Order order, Lang lang) {
 		
 		// макеты по ресурсам заказа и текущему пользователю
@@ -47,7 +54,7 @@ public class OrderDocumentController {
 		OrderResponse response = orderConverter.getResponse(order);
 		
 		// проставляем данные со словарей
-		orderConverter.updateSegments(response);
+		updateResponseData(response);
 		List<ServiceItem> items = response.getServices();
 		
 		// формируем билет по каждой позиции отдельно
@@ -109,6 +116,81 @@ public class OrderDocumentController {
 								}
 							}
 						}
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Заполняем сегменты данными из словарей.
+	 * 
+	 * @param response
+	 *            Заказ.
+	 */
+	public void updateResponseData(OrderResponse response) {
+		if (response.getLocalities() != null) {
+			for (Entry<String, Locality> entry : response.getLocalities().entrySet()) {
+				Locality locality = entry.getValue();
+				locality.setId(entry.getKey());
+				if (locality.getParent() != null
+						&& locality.getParent().getId() != null) {
+					if (response.getLocalities().containsKey(locality.getParent().getId())) {
+						locality.setParent(response.getLocalities().get(locality.getParent().getId()));
+					} else {
+						try {
+							Locality parent = localityController.getLocality(Long.valueOf(locality.getParent().getId()));
+							if (parent != null) {
+								locality.setParent(parent);
+							}
+						} catch (NumberFormatException e) {
+						}
+					}
+				}
+			}
+		}
+		if (response.getSegments() != null) {
+			for (Entry<String, Segment> entry : response.getSegments().entrySet()) {
+				Segment segment = entry.getValue();
+				segment.setId(entry.getKey());
+				segment.setDeparture(response.getLocalities().get(segment.getDeparture().getId()));
+				segment.setArrival(response.getLocalities().get(segment.getArrival().getId()));
+				if (response.getSegments() != null) {
+					if (segment.getCarrier() != null) {
+						segment.setCarrier(response.getOrganisations().get(segment.getCarrier().getId()));
+					}
+					if (segment.getInsurance() != null) {
+						segment.setInsurance(response.getOrganisations().get(segment.getInsurance().getId()));
+					}
+				}
+			}
+		}
+		if (response.getCustomers() != null) {
+			response.getCustomers().forEach((k, v) -> v.setId(k));
+		}
+		for (ServiceItem service : response.getServices()) {
+			if (service.getSegment() != null) {
+				service.setSegment(response.getSegments().get(service.getSegment().getId()));
+			}
+			if (service.getAdditionalService() != null) {
+				service.setAdditionalService(response.getAdditionalServices().get(service.getAdditionalService().getId()));
+			}
+			if (service.getCustomer() != null) {
+				service.setCustomer(response.getCustomers().get(service.getCustomer().getId()));
+			}
+			if (response.getUsers() != null) {
+				if (service.getCreateUser() != null) {
+					service.setCreateUser(response.getUsers().get(service.getCreateUser().getId()));
+					if (service.getCreateUser().getOrganisation() != null) {
+						service.getCreateUser().setOrganisation(response.getOrganisations().get(
+								service.getCreateUser().getOrganisation().getId()));
+					}
+				}
+				if (service.getUpdateUser() != null) {
+					service.setUpdateUser(response.getUsers().get(service.getUpdateUser().getId()));
+					if (service.getUpdateUser().getOrganisation() != null) {
+						service.getUpdateUser().setOrganisation(response.getOrganisations().get(
+								service.getUpdateUser().getOrganisation().getId()));
 					}
 				}
 			}

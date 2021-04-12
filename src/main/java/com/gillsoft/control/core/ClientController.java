@@ -1,5 +1,6 @@
 package com.gillsoft.control.core;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public class ClientController {
 	}
 	
 	public void addClientsToOrder(Order order, Map<String, Customer> customers) {
+		updateCustomerPhones(customers.values());
 		for (Customer customer : customers.values()) {
 			OrderClient orderClient = new OrderClient();
 			Client client = getByCustomer(customer);
@@ -53,6 +55,11 @@ public class ClientController {
 			orderClient.setPhone(customer.getPhone());
 			order.addOrderClient(orderClient);
 		}
+	}
+	
+
+	public void updateCustomerPhones(Collection<Customer> customers) {
+		customers.forEach(c -> c.setPhone(com.gillsoft.pubsub.util.StringUtil.getCorrectPhone(c.getPhone())));
 	}
 
 }

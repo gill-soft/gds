@@ -30,6 +30,8 @@ import com.gillsoft.concurrent.PoolType;
 import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.config.Config;
+import com.gillsoft.control.core.mapping.TripSearchMapping;
+import com.gillsoft.control.core.request.OrderRequestController;
 import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.Order;
@@ -74,7 +76,7 @@ public class ThirdPartyOrderController {
 	public void saveOrUpdate(List<OrderResponse> responses) {
 		for (OrderResponse orderResponse : responses) {
 			try {
-				orderConverter.updateCustomerPhones(orderResponse.getCustomers().values());
+				clientController.updateCustomerPhones(orderResponse.getCustomers().values());
 				Order order = findOrCreateOrder(getCopy(orderResponse));
 				if (order == null) {
 					throw new NoDataFoundException("Order not found and not created");

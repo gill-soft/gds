@@ -31,6 +31,11 @@ import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
+import com.gillsoft.control.core.data.DataConverter;
+import com.gillsoft.control.core.data.MsDataController;
+import com.gillsoft.control.core.mapping.TripIdModel;
+import com.gillsoft.control.core.mapping.TripSearchMapping;
+import com.gillsoft.control.core.request.SearchRequestController;
 import com.gillsoft.control.service.AgregatorTripSearchService;
 import com.gillsoft.control.service.ScheduleService;
 import com.gillsoft.control.service.model.SearchRequestContainer;
@@ -349,7 +354,7 @@ public class TripSearchController {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
 		TariffsResponse response = checkResponse(requests.get(0), service.getTariffs(requests).get(0));
 		if (response.getTariffs() != null) {
-			response.getTariffs().forEach(t -> tripSearchMapping.applyLang(t, lang)); 
+			response.getTariffs().forEach(t -> DataConverter.applyLang(t, lang)); 
 		}
 		return response.getTariffs();
 	}
@@ -372,7 +377,7 @@ public class TripSearchController {
 		requests.get(0).setTariffId(tariffId);
 		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
 		if (response.getConditions() != null) {
-			response.getConditions().forEach(c -> tripSearchMapping.applyLang(c, lang)); 
+			response.getConditions().forEach(c -> DataConverter.applyLang(c, lang)); 
 		}
 		return response.getConditions();
 	}
@@ -562,7 +567,8 @@ public class TripSearchController {
 	
 	public OrderResponse search(OrderRequest request) {
 		TripSearchResponse search = search(request,
-				request.getServices().stream().map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
+				request.getServices().stream().filter(service -> service.getSegment() != null)
+				.map(service -> service.getSegment().getId()).collect(Collectors.toSet()));
 		OrderResponse response = new OrderResponse();
 		updateOrderResponse(response, search);
 		return response;
@@ -604,43 +610,45 @@ public class TripSearchController {
 			OrderResponse result) {
 		
 		// добавляем рейсы из расписания
-		for (String segmentId : orderResponse.getSegments().keySet()) {
-			TripSearchResponse segmentResponse = null;
-			try {
-				segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
-			} catch (Exception e) {
-				LOGGER.error("Can not get segment from schedule", e);
-			}
-			// заменяем данными из расписания так как там более подробные данные по рейсу
-			if (segmentResponse != null) {
-				segmentResponse = getMappingResult(orderRequest, segmentResponse);
-				
-				updateIds(segmentIds, segmentResponse.getSegments());
-				
-				if (result.getVehicles() == null) {
-					result.setVehicles(segmentResponse.getVehicles());
-				} else if (segmentResponse.getVehicles() != null) {
-					segmentResponse.getVehicles().forEach((id, v) -> result.getVehicles().putIfAbsent(id, v));
+		if (orderResponse.getSegments() != null) {
+			for (String segmentId : orderResponse.getSegments().keySet()) {
+				TripSearchResponse segmentResponse = null;
+				try {
+					segmentResponse = scheduleService.getSegmentResponse(Long.parseLong(orderRequest.getParams().getResource().getId()), segmentId);
+				} catch (Exception e) {
+					LOGGER.error("Can not get segment from schedule", e);
 				}
-				if (result.getOrganisations() == null) {
-					result.setOrganisations(segmentResponse.getOrganisations());
-				} else if (segmentResponse.getOrganisations() != null) {
-					segmentResponse.getOrganisations().forEach((id, o) -> result.getOrganisations().putIfAbsent(id, o));
-				}
-				if (result.getLocalities() == null) {
-					result.setLocalities(segmentResponse.getLocalities());
-				} else if (segmentResponse.getLocalities() != null) {
-					segmentResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
-				}
-				if (result.getAdditionalServices() == null) {
-					result.setAdditionalServices(segmentResponse.getAdditionalServices());
-				} else if (segmentResponse.getAdditionalServices() != null) {
-					segmentResponse.getAdditionalServices().forEach((id, v) -> result.getAdditionalServices().putIfAbsent(id, v));
-				}
-				if (result.getSegments() == null) {
-					result.setSegments(segmentResponse.getSegments());
-				} else if (segmentResponse.getSegments() != null) {
-					segmentResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
+				// заменяем данными из расписания так как там более подробные данные по рейсу
+				if (segmentResponse != null) {
+					segmentResponse = getMappingResult(orderRequest, segmentResponse);
+					
+					updateIds(segmentIds, segmentResponse.getSegments());
+					
+					if (result.getVehicles() == null) {
+						result.setVehicles(segmentResponse.getVehicles());
+					} else if (segmentResponse.getVehicles() != null) {
+						segmentResponse.getVehicles().forEach((id, v) -> result.getVehicles().putIfAbsent(id, v));
+					}
+					if (result.getOrganisations() == null) {
+						result.setOrganisations(segmentResponse.getOrganisations());
+					} else if (segmentResponse.getOrganisations() != null) {
+						segmentResponse.getOrganisations().forEach((id, o) -> result.getOrganisations().putIfAbsent(id, o));
+					}
+					if (result.getLocalities() == null) {
+						result.setLocalities(segmentResponse.getLocalities());
+					} else if (segmentResponse.getLocalities() != null) {
+						segmentResponse.getLocalities().forEach((id, l) -> result.getLocalities().putIfAbsent(id, l));
+					}
+					if (result.getAdditionalServices() == null) {
+						result.setAdditionalServices(segmentResponse.getAdditionalServices());
+					} else if (segmentResponse.getAdditionalServices() != null) {
+						segmentResponse.getAdditionalServices().forEach((id, v) -> result.getAdditionalServices().putIfAbsent(id, v));
+					}
+					if (result.getSegments() == null) {
+						result.setSegments(segmentResponse.getSegments());
+					} else if (segmentResponse.getSegments() != null) {
+						segmentResponse.getSegments().forEach((id, s) -> result.getSegments().putIfAbsent(id, s));
+					}
 				}
 			}
 		}

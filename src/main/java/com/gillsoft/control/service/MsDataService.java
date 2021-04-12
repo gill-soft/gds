@@ -173,8 +173,19 @@ public interface MsDataService {
 	/**
 	 * Возвращает рейс по указанному ид с родительскими и дочерними элементами.
 	 * 
+	 * @param id
+	 *            Ид рейса.
 	 * @return Рейс с дочерними элементами.
 	 */
 	public Trip getTripWithParentsChilds(long id);
+	
+	/**
+	 * Возвращает допсервис по указанному ид.
+	 * 
+	 * @param id
+	 *            Ид допсервиса.
+	 * @return Допсервис.
+	 */
+	public AdditionalServiceItem getAdditionalService(long id);
 	
 }

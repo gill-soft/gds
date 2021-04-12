@@ -11,7 +11,10 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.core.data.MethodsUpdateTask;
+import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.service.AgregatorResourceInfoService;
+import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.ResourceRequest;
@@ -34,6 +37,9 @@ public class ResourceInfoController {
 	private AgregatorResourceInfoService service;
 	
 	public boolean isMethodAvailable(Resource resource, String methodPath, MethodType methodType) {
+		if (resource instanceof AdditionalServiceEmptyResource) {
+			return true;
+		}
 		List<Method> methods = getAvailableMethods(resource);
 		if (methods == null) {
 			return false;
@@ -49,7 +55,7 @@ public class ResourceInfoController {
 				() -> createMethods(resource), 120000l);
 	}
 	
-	protected List<Method> createMethods(Resource resource) {
+	public List<Method> createMethods(Resource resource) {
 		ResourceRequest request = createRequest(resource);
 		List<ResourceMethodResponse> response = service.getAvailableMethods(Collections.singletonList(request));
 		if (response == null
@@ -63,7 +69,7 @@ public class ResourceInfoController {
 	}
 	
 	// создание запроса получения информации о ресурсе 
-	protected ResourceRequest createRequest(Resource resource) {
+	private ResourceRequest createRequest(Resource resource) {
 		ResourceRequest request = new ResourceRequest();
 		request.setId(StringUtil.generateUUID());
 		request.setParams(resource.createParams());

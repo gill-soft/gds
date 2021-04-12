@@ -17,7 +17,9 @@ import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.api.RequestValidateException;
 import com.gillsoft.control.api.ResourceUnavailableException;
-import com.gillsoft.control.service.AgregatorOrderService;
+import com.gillsoft.control.core.data.MsDataController;
+import com.gillsoft.control.core.request.OrderRequestController;
+import com.gillsoft.control.core.request.OrderRequestValidator;
 import com.gillsoft.control.service.OrderDAOManager;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderClient;
@@ -39,7 +41,7 @@ public class OrderController {
 	private static Logger LOGGER = LogManager.getLogger(OrderController.class);
 	
 	@Autowired
-	private AgregatorOrderService agregatorService;
+	private AgragatorOrderController agregatorService;
 	
 	@Autowired
 	private MsDataController dataController;

@@ -1,7 +1,6 @@
 package com.gillsoft.control.core;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -24,29 +23,28 @@ import org.springframework.util.SerializationUtils;
 
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
-import com.gillsoft.control.service.model.MappedService;
+import com.gillsoft.control.core.data.DataConverter;
+import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.OrderDocument;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
-import com.gillsoft.model.Customer;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.DocumentType;
-import com.gillsoft.model.Locality;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
-import com.gillsoft.model.Trip;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.User;
+import com.gillsoft.util.ContextProvider;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -55,15 +53,6 @@ public class OrderResponseConverter {
 	
 	@Autowired
 	private MsDataController dataController;
-	
-	@Autowired
-	private LocalityController localityController;
-	
-	@Autowired
-	private TripSearchController searchController;
-	
-	@Autowired
-	private DiscountController discountController;
 	
 	@Autowired
 	private ClientController clientController;
@@ -134,14 +123,10 @@ public class OrderResponseConverter {
 		return -1;
 	}
 	
-	public void updateCustomerPhones(Collection<Customer> customers) {
-		customers.forEach(c -> c.setPhone(com.gillsoft.pubsub.util.StringUtil.getCorrectPhone(c.getPhone())));
-	}
-	
-	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest createRequest, OrderResponse result,
-			OrderResponse response) {
-		updateCustomerPhones(originalRequest.getCustomers().values());
+	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest resuorcesRequests, OrderResponse result,
+			OrderResponse resourcesResponses) {
 		
+		OrderResponseHelper orderResponseHelper = ContextProvider.getBean(OrderResponseHelper.class);
 		result.setId(originalRequest.getId());
 		result.setCustomers(originalRequest.getCustomers());
 		result.setServices(new ArrayList<>());
@@ -159,63 +144,47 @@ public class OrderResponseConverter {
 		
 		User user = dataController.getUser();
 		
-		Set<String> resultSegmentIds = new HashSet<>(); // ид рейсов в ответе
-		Map<String, String> segmentIds = getSegmentIds(originalRequest);
-		
-		Map<Long, com.gillsoft.ms.entity.Trip> mappedTrips = new HashMap<>();
+		// подготавливаем данные перед обработкой ответов
+		orderResponseHelper.beforeOrder(originalRequest, result, resuorcesRequests, resourcesResponses);
 		
 		// преобразовываем ответ
-		for (OrderResponse orderResponse : response.getResources()) {
-			Optional<OrderRequest> optional = createRequest.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
+		for (OrderResponse orderResponse : resourcesResponses.getResources()) {
+			Optional<OrderRequest> optional = resuorcesRequests.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
 			if (optional.isPresent()) {
 				orderResponse.fillMaps();
 				
 				// запрос, по которому получен результат
 				OrderRequest currRequest = optional.get();
 				
+				// подготавливаем данные перед обработкой сервисов
+				orderResponseHelper.beforeServices(result, currRequest, orderResponse);
+
 				// заказы ресурсов для сохранения
 				ResourceOrder resourceOrder = createResourceOrder(currRequest, orderResponse);
 				order.addResourceOrder(resourceOrder);
 				if (orderResponse.getError() != null) {
-					
-					// маппим рейсы заказа из запроса так как в ответе ошибка и их нет
-					orderResponse.setSegments(currRequest.getServices().stream().map(
-							s -> s.getSegment() != null ? s.getSegment().getId() : null).filter(v -> v != null).collect(
-									Collectors.toMap(v -> v, v -> new Segment(), (v1, v2) -> v1)));
-					searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), currRequest, orderResponse, result);
 					for (ServiceItem item : currRequest.getServices()) {
+						item.setError(orderResponse.getError());
 						
-						// устанавливаем ид сегмента рейса
-						if (item.getSegment() != null) {
-							if (result.getSegments() != null) {
-								setSegment(result.getSegments(), item);
-							}
-							resultSegmentIds.add(item.getSegment().getId());
-						}
+						// подготавливаем данные во время начала обработки сервиса
+						orderResponseHelper.beforeService(result, item, currRequest, orderResponse);
+
+						// сервисы ресурса для сохранения
+						ResourceService resourceService = createResourceService(created, user,
+								resourceOrder.getResourceId(), item, ServiceStatus.NEW_ERROR,
+								orderResponse.getError().getMessage());
+						resourceOrder.addResourceService(resourceService);
+						
+						// обрабатываем данные по окончанию обработки сервиса
+						orderResponseHelper.afterService(result, item, resourceService, currRequest, orderResponse);
 					}
-					currRequest.getServices().forEach(s -> s.setError(orderResponse.getError()));
 					result.getServices().addAll(currRequest.getServices());
-					
-					// сервисы ресурса для сохранения
-					currRequest.getServices().forEach(s -> {
-						resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), s, ServiceStatus.NEW_ERROR,
-								orderResponse.getError().getMessage(), mappedTrips));
-					});
 				} else {
-					// маппим рейсы заказа из ответа
-					searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), currRequest, orderResponse, result);
-					
 					for (ServiceItem item : orderResponse.getServices()) {
 						
-						// устанавливаем ид сегмента рейса
-						Segment segment = null;
-						if (item.getSegment() != null) {
-							if (result.getSegments() != null) {
-								setSegment(result.getSegments(), item);
-								segment = result.getSegments().get(item.getSegment().getId());
-							}
-							resultSegmentIds.add(item.getSegment().getId());
-						}
+						// подготавливаем данные во время начала обработки сервиса
+						orderResponseHelper.beforeService(result, item, currRequest, orderResponse);
+						ResourceService resourceService = null;
 						if (item.getError() == null) {
 							
 							// проверяем время на выкуп
@@ -226,33 +195,23 @@ public class OrderResponseConverter {
 							if (item.getCanceled() == null) {
 								item.setCanceled(true);
 							}
-							// пересчитываем стоимость
-							if (item.getPrice() != null) {
-								item.setPrice(dataController.recalculate(
-										segment != null ? segment : null, item.getPrice(), currRequest.getCurrency()));
-							} else if (segment != null) {
-								item.setPrice(segment.getPrice());
-							}
-							// добавляем условия возврата
-							addReturnConditions(item, segment);
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW, null, mappedTrips));
+							resourceService = createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW, null);
 						} else {
-							resourceOrder.addResourceService(createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW_ERROR,
-									item.getError().getMessage(), mappedTrips));
+							resourceService = createResourceService(created, user, resourceOrder.getResourceId(), item, ServiceStatus.NEW_ERROR, item.getError().getMessage());
 						}
+						resourceOrder.addResourceService(resourceService);
+						
+						// обрабатываем данные по окончанию обработки сервиса
+						orderResponseHelper.afterService(result, item, resourceService, currRequest, orderResponse);
 						result.getServices().add(item);
 					}
 				}
+				// обрабатываем данные после обработкой сервисов
+				orderResponseHelper.afterServices(result, currRequest, orderResponse);
 			}
 		}
-		// ид сегментов должны быть с next
-		updateResultSegmentIds(result, segmentIds);
-		
-		// проверяем наличие стыковки по каждому заказчику и насчитываем скидку
-		applyConnectionDiscount(result, order);
-		
-		// сбрасываем стоимости с рейсов - они в сервисах
-		result.getSegments().values().forEach(s -> s.setPrice(null));
+		// обрабатываем данные после обработкой сервисов
+		orderResponseHelper.afterOrder(originalRequest, result, resuorcesRequests, resourcesResponses, order);
 		result.fillMaps();
 		return order;
 	}
@@ -269,145 +228,19 @@ public class OrderResponseConverter {
 		return resourceOrder;
 	}
 	
-	private void applyConnectionDiscount(OrderResponse result, Order order) {
-		for (String customerId : result.getCustomers().keySet()) {
-			List<ServiceItem> services = result.getServices().stream()
-					.filter(s -> s.getError() == null && s.getCustomer() != null && customerId.equals(s.getCustomer().getId())).collect(Collectors.toList());
-			for (Trip trip : getTrips(services)) {
-				
-				// проставляем стоимость на сегменты с текущих сервисов, чтобы ее пересчитали (сервисов из ResourceService)
-				for (ServiceItem service : services) {
-					if (service.getSegment() != null) {
-						out:
-							for (ResourceOrder resourceOrder : order.getOrders()) {
-								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (isServiceOfResourceService(service, resourceService)) {
-										result.getSegments().get(service.getSegment().getId()).setPrice(
-												resourceService.getStatuses().iterator().next().getPrice().getPrice());
-										break out;
-									}
-								}
-							}
-					}
-				}
-				discountController.applyConnectionDiscount(trip, result.getSegments());
-				
-				// обновляем стоимости в сервисах
-				for (ServiceItem service : services) {
-					if (service.getSegment() != null) {
-						out:
-							for (ResourceOrder resourceOrder : order.getOrders()) {
-								for (ResourceService resourceService : resourceOrder.getServices()) {
-									if (isServiceOfResourceService(service, resourceService)) {
-										resourceService.getStatuses().iterator().next().getPrice().setPrice(
-												result.getSegments().get(service.getSegment().getId()).getPrice());
-										break out;
-									}
-								}
-							}
-					}
-				}
-			}
-		}
-	}
-	
-	private void updateResultSegmentIds(OrderResponse result, Map<String, String> segmentIds) {
-		if (result.getSegments() != null) {
-			for (Entry<String, String> entry : segmentIds.entrySet()) {
-				if (result.getSegments().containsKey(entry.getKey())) {
-					Segment segment = result.getSegments().get(entry.getKey());
-					result.getSegments().remove(entry.getKey());
-					result.getSegments().put(entry.getValue(), segment);
-					for (ServiceItem service : result.getServices()) {
-						if (service.getSegment() != null
-								&& entry.getKey().equals(service.getSegment().getId())) {
-							service.getSegment().setId(entry.getValue());
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	private List<Trip> getTrips(List<ServiceItem> services) {
-		List<Trip> trips = new ArrayList<>();
-		List<String> ids = services.stream().filter(s -> s.getSegment() != null)
-				.map(s -> s.getSegment().getId()).collect(Collectors.toList());
-		for (int i = 0; i < ids.size(); i++) {
-			String tripId = ids.get(i);
-			TripIdModel idModel = new TripIdModel().create(tripId);
-			if (idModel.getNext() != null) {
-				Set<String> next = idModel.getNext();
-				idModel.setNext(null);
-				for (String nextId : next) {
-					
-					// nextId в md5
-					// ищем его в имеющемся результате
-					nextId = getSegmentId(nextId, ids);
-					if (nextId != null) {
-						boolean added = false;
-						for (Trip trip : trips) {
-							if (trip.getSegments() == null) {
-								trip.setSegments(new ArrayList<>());
-							} else {
-								if (trip.getSegments().get(0).equals(nextId)) {
-									trip.getSegments().add(0, tripId);
-								}
-								if (trip.getSegments().get(trip.getSegments().size() - 1).equals(tripId)) {
-									trip.getSegments().add(nextId);
-								}
-							}
-						}
-						if (!added) {
-							Trip trip = new Trip();
-							trip.setSegments(new ArrayList<>());
-							trip.getSegments().add(tripId);
-							trip.getSegments().add(nextId);
-							trips.add(trip);
-						}
-					}
-				}
-			}
-		}
-		return trips;
-	}
-	
-	private String getSegmentId(String md5Id, List<String> ids) {
-		for (String id : ids) {
-			TripIdModel idModel = new TripIdModel().create(id);
-			idModel.setNext(null);
-			if (md5Id.equals(StringUtil.md5(idModel.asString()))) {
-				return id;
-			}
-		}
-		return null;
-	}
-	
-	private Map<String, String> getSegmentIds(OrderRequest request) {
-		return request.getServices().stream().filter(s -> s.getSegment() != null)
-				.collect(Collectors.toMap(s -> {
-					TripIdModel id = new TripIdModel().create(s.getSegment().getId());
-					id.setNext(null);
-					return id.asString();
-				}, s -> s.getSegment().getId(), (s1, s2) -> s1));
-	}
-	
-	private void addReturnConditions(ServiceItem item, Segment segment) {
-		
-		// проверяем условия возврата и, если нет, то берем с рейса
+	public void addReturnConditions(ServiceItem item, Price price) {
 		if (item.getPrice() != null
 				&& item.getPrice().getTariff() != null
 				&& (item.getPrice().getTariff().getReturnConditions() == null
 					|| item.getPrice().getTariff().getReturnConditions().isEmpty())
-				&& segment != null
-				&& segment.getPrice() != null
-				&& segment.getPrice().getTariff() != null) {
-			item.getPrice().getTariff().setReturnConditions(segment.getPrice().getTariff().getReturnConditions());
+				&& price != null
+				&& price.getTariff() != null) {
+			item.getPrice().getTariff().setReturnConditions(price.getTariff().getReturnConditions());
 		}
 	}
 	
 	private ResourceService createResourceService(Date created, User user, long resourceId, ServiceItem service,
-			ServiceStatus statusType, String error, Map<Long, com.gillsoft.ms.entity.Trip> mappedTrips) {
+			ServiceStatus statusType, String error) {
 		ResourceService resourceService = new ResourceService();
 		if (service.getId() == null
 				|| service.getId().isEmpty()) {
@@ -415,33 +248,7 @@ public class OrderResponseConverter {
 		}
 		service.setId(new IdModel(resourceId, service.getId()).asString());
 		resourceService.setResourceNativeServiceId(service.getId());
-		if (service.getSegment() != null) {
-			Segment segment = service.getSegment();
-			resourceService.setDeparture(segment.getDepartureDate());
-			Map<String, Object> additionals = segment.getAdditionals();
-			if (additionals != null
-					&& additionals.containsKey(MappedService.MAPPED_SERVICES_KEY)) {
-				
-				@SuppressWarnings("unchecked")
-				List<MappedService> mappedServices = new ArrayList<>((Set<MappedService>) additionals.get(MappedService.MAPPED_SERVICES_KEY));
-				Collections.sort(mappedServices, Comparator.comparing(MappedService::getOrder));
-				long departureId = mappedServices.get(0).getFromId();
-				long arrivalId = mappedServices.get(mappedServices.size() - 1).getToId();
-				for (MappedService mappedService : mappedServices) {
-					long tripId = mappedService.getTripId();
-					com.gillsoft.ms.entity.Trip trip = mappedTrips.get(tripId);
-					if (trip == null) {
-						trip = dataController.getTripWithoutCache(tripId);
-						mappedTrips.put(tripId, trip);
-					}
-					if (trip != null) {
-						DataConverter.setTariff(mappedService, trip, service.getPrice(), departureId, arrivalId);
-					}
-				}
-				mappedServices.forEach(ms -> resourceService.addMappedService(
-						(MappedService) SerializationUtils.deserialize(SerializationUtils.serialize(ms))));
-			}
-		}
+
 		// пересчитанную стоимость сохраняем к статусу
 		resourceService.addStatus(createStatus(created, user, statusType, error, service.getPrice()));
 		
@@ -461,18 +268,6 @@ public class OrderResponseConverter {
 		status.setError(error);
 		status.setPrice(price);
 		return status;
-	}
-	
-	private void setSegment(Map<String, Segment> segments, ServiceItem item) {
-		for (String id : segments.keySet()) {
-			TripIdModel model = new TripIdModel().create(id);
-			if (Objects.equals(item.getSegment().getId(), model.getId())) {
-				Segment segment = segments.get(id);
-				segment.setId(id);
-				item.setSegment(segment);
-				break;
-			}
-		}
 	}
 	
 	public OrderResponse getResponse(Order order) {
@@ -792,8 +587,8 @@ public class OrderResponseConverter {
 		if (newData.getTimeToCancel() != null) {
 			service.setCanceled(true);
 			service.setTimeToCancel(newData.getTimeToCancel());
-		} else if (!service.getCanceled()
-				&& newData.getCanceled()) {
+		} else if ((service.getCanceled() == null || !service.getCanceled())
+				&& (newData.getCanceled() == null || newData.getCanceled())) {
 			service.setCanceled(true);
 		}
 		if (service.getCanceled()
@@ -1143,78 +938,6 @@ public class OrderResponseConverter {
 			}
 		}
 		return orders;
-	}
-	
-	/**
-	 * Заполняем сегменты данными из словарей.
-	 * 
-	 * @param response
-	 *            Заказ.
-	 */
-	public void updateSegments(OrderResponse response) {
-		if (response.getLocalities() != null) {
-			for (Entry<String, Locality> entry : response.getLocalities().entrySet()) {
-				Locality locality = entry.getValue();
-				locality.setId(entry.getKey());
-				if (locality.getParent() != null
-						&& locality.getParent().getId() != null) {
-					if (response.getLocalities().containsKey(locality.getParent().getId())) {
-						locality.setParent(response.getLocalities().get(locality.getParent().getId()));
-					} else {
-						try {
-							Locality parent = localityController.getLocality(Long.valueOf(locality.getParent().getId()));
-							if (parent != null) {
-								locality.setParent(parent);
-							}
-						} catch (NumberFormatException e) {
-						}
-					}
-				}
-			}
-		}
-		if (response.getSegments() != null) {
-			for (Entry<String, Segment> entry : response.getSegments().entrySet()) {
-				Segment segment = entry.getValue();
-				segment.setId(entry.getKey());
-				segment.setDeparture(response.getLocalities().get(segment.getDeparture().getId()));
-				segment.setArrival(response.getLocalities().get(segment.getArrival().getId()));
-				if (response.getSegments() != null) {
-					if (segment.getCarrier() != null) {
-						segment.setCarrier(response.getOrganisations().get(segment.getCarrier().getId()));
-					}
-					if (segment.getInsurance() != null) {
-						segment.setInsurance(response.getOrganisations().get(segment.getInsurance().getId()));
-					}
-				}
-			}
-		}
-		if (response.getCustomers() != null) {
-			response.getCustomers().forEach((k, v) -> v.setId(k));
-		}
-		for (ServiceItem service : response.getServices()) {
-			if (service.getSegment() != null) {
-				service.setSegment(response.getSegments().get(service.getSegment().getId()));
-			}
-			if (service.getCustomer() != null) {
-				service.setCustomer(response.getCustomers().get(service.getCustomer().getId()));
-			}
-			if (response.getUsers() != null) {
-				if (service.getCreateUser() != null) {
-					service.setCreateUser(response.getUsers().get(service.getCreateUser().getId()));
-					if (service.getCreateUser().getOrganisation() != null) {
-						service.getCreateUser().setOrganisation(response.getOrganisations().get(
-								service.getCreateUser().getOrganisation().getId()));
-					}
-				}
-				if (service.getUpdateUser() != null) {
-					service.setUpdateUser(response.getUsers().get(service.getUpdateUser().getId()));
-					if (service.getUpdateUser().getOrganisation() != null) {
-						service.getUpdateUser().setOrganisation(response.getOrganisations().get(
-								service.getUpdateUser().getOrganisation().getId()));
-					}
-				}
-			}
-		}
 	}
 	
 	public void checkDiscountForReturn(Order order, OrderRequest request) {

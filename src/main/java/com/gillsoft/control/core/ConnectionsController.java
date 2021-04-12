@@ -17,6 +17,8 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.core.data.MsDataController;
+import com.gillsoft.control.core.mapping.TripIdModel;
 import com.gillsoft.control.service.impl.SegmentsConnectionRestService;
 import com.gillsoft.control.service.model.ConnectionParams;
 import com.gillsoft.control.service.model.ConnectionsResponse;

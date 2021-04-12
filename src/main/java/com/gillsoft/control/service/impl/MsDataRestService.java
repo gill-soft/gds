@@ -87,6 +87,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	private static final String GET_ORGANISATION = "organisation/{0}";
 	
+	private static final String GET_ADDITIONAL_SERVICE = "additional_service/{0}";
+	
 	private static final String GET_TRIP = "trip/{0}";
 	
 	private static final String GET_TRIP_PARENT = "trip/{0}/parent";
@@ -275,6 +277,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 			trip.setChilds(getResult(MessageFormat.format(GET_TRIP_CHILDREN, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
 		}
 		return trip;
+	}
+	
+	@Override
+	public AdditionalServiceItem getAdditionalService(long id) {
+		return getResult(MessageFormat.format(GET_ADDITIONAL_SERVICE, String.valueOf(id)), null, new ParameterizedTypeReference<AdditionalServiceItem>() { });
 	}
 	
 	private class EntityMultiplier<T extends BaseEntity> {
