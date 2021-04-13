@@ -493,7 +493,6 @@ public class MsDataController {
 		}
 		Price calculated = calculator.calculateResource(price, getUser(), currency);
 		calculated.setSource(calculator.copy(price));
-		addReturnConditions(additionalService, calculated);
 		return calculated;
 	}
 	
@@ -530,6 +529,21 @@ public class MsDataController {
 			}
 		}
 		return null;
+	}
+	
+	public Price recalculateReturn(com.gillsoft.model.AdditionalServiceItem serviceItem, Price price, Price resourcePrice) {
+		
+		// сборы без ид - сборы от ресурса
+		// сборы с ид - начисленные системой GDS
+		if (resourcePrice != null
+				&& resourcePrice.getCommissions() != null) {
+			resourcePrice.getCommissions().forEach(c -> c.setId(null));
+		}
+		price.setReturned(calculator.calculateReturn(price, resourcePrice, getUser(), price.getCurrency(), new Date(), new Date()));
+		
+		// устанавливаем исходную сумму возврата от ресурса
+		price.getReturned().setSource(calculator.copy(resourcePrice));
+		return price;
 	}
 	
 	public Price recalculateReturn(Segment segment, String timeZone, Price price, Price resourcePrice) {
@@ -583,18 +597,6 @@ public class MsDataController {
 				}
 			}
 		}
-	}
-	
-	public void addReturnConditions(com.gillsoft.model.AdditionalServiceItem serviceItem, Price price) {
-		// условия возврата для стоимости установленные на организацию
-		List<com.gillsoft.model.ReturnCondition> conditions = null;
-		BaseEntity entity = new BaseEntity();
-		try {
-			entity.setId(Long.parseLong(serviceItem.getId()));
-			conditions = getReturnConditions(Collections.singletonList(entity));
-		} catch (NumberFormatException e) {
-		}
-		addReturnConditions(conditions, price);
 	}
 	
 	public List<com.gillsoft.model.ReturnCondition> getReturnConditions(Segment segment) {

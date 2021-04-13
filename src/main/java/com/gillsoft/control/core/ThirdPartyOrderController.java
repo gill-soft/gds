@@ -43,8 +43,10 @@ import com.gillsoft.model.Resource;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
+import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.Client;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -102,7 +104,7 @@ public class ThirdPartyOrderController {
 		try {
 			return manager.getFullOrder(createFindOrderParams(orderResponse.getResources().get(0)));
 		} catch (Exception e) {
-			order = orderConverter.convertToNewOrder(orderResponse);
+			order = convertToNewOrder(orderResponse);
 			try {
 				markUnmapped(order);
 				manager.create(order);
@@ -155,7 +157,7 @@ public class ThirdPartyOrderController {
 		if (orderResponse.getResources().isEmpty()) {
 			return;
 		}
-		Order newOrder = orderConverter.convertToNewOrder(orderResponse);
+		Order newOrder = convertToNewOrder(orderResponse);
 		order = orderConverter.joinOrders(order, newOrder);
 		try {
 			markUnmapped(order);
@@ -448,6 +450,32 @@ public class ThirdPartyOrderController {
 		} catch (Exception e) {
 			LOGGER.error("saveUpdated order error");
 		}
+	}
+	
+	private Order convertToNewOrder(OrderResponse response) {
+		OrderRequest originalRequest = orderConverter.simulateOriginalRequest(response);
+		OrderRequest createRequest = simulateCreateRequest(response);
+		return orderConverter.convertToNewOrder(originalRequest, createRequest, new OrderResponse(), response);
+	}
+	
+	private OrderRequest simulateCreateRequest(OrderResponse response) {
+		OrderRequest createRequest = new OrderRequest();
+		createRequest.setResources(new ArrayList<>(response.getResources().size()));
+		for (OrderResponse orderResponse : response.getResources()) {
+			orderResponse.setId(StringUtil.generateUUID());
+			if (orderResponse.getSegments() != null
+					&& !orderResponse.getSegments().isEmpty()) {
+				OrderRequest resourceRequest = new OrderRequest();
+				resourceRequest.setId(orderResponse.getId());
+				resourceRequest.setCustomers(response.getCustomers());
+				resourceRequest.setServices(new ArrayList<>(0));
+				resourceRequest.setCurrency(orderResponse.getServices().get(0).getPrice().getCurrency());
+				Resource resource = orderResponse.getSegments().values().iterator().next().getResource();
+				resourceRequest.setParams(orderConverter.createResourceParams(resource));
+				createRequest.getResources().add(resourceRequest);
+			}
+		}
+		return createRequest;
 	}
 
 }

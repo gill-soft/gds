@@ -36,7 +36,6 @@ import com.gillsoft.model.DocumentType;
 import com.gillsoft.model.Price;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.RestError;
-import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
@@ -57,12 +56,6 @@ public class OrderResponseConverter {
 	@Autowired
 	private ClientController clientController;
 	
-	public Order convertToNewOrder(OrderResponse response) {
-		OrderRequest originalRequest = simulateOriginalRequest(response);
-		OrderRequest createRequest = simulateCreateRequest(response);
-		return convertToNewOrder(originalRequest, createRequest, new OrderResponse(), response);
-	}
-	
 	public OrderRequest simulateOriginalRequest(OrderResponse response) {
 		response.setId(StringUtil.generateUUID());
 		OrderRequest originalRequest = new OrderRequest();
@@ -71,26 +64,6 @@ public class OrderResponseConverter {
 		originalRequest.setServices(new ArrayList<>(0));
 		originalRequest.setOrderId(response.getOrderId());
 		return originalRequest;
-	}
-	
-	public OrderRequest simulateCreateRequest(OrderResponse response) {
-		OrderRequest createRequest = new OrderRequest();
-		createRequest.setResources(new ArrayList<>(response.getResources().size()));
-		for (OrderResponse orderResponse : response.getResources()) {
-			orderResponse.setId(StringUtil.generateUUID());
-			if (orderResponse.getSegments() != null
-					&& !orderResponse.getSegments().isEmpty()) {
-				OrderRequest resourceRequest = new OrderRequest();
-				resourceRequest.setId(orderResponse.getId());
-				resourceRequest.setCustomers(response.getCustomers());
-				resourceRequest.setServices(new ArrayList<>(0));
-				resourceRequest.setCurrency(orderResponse.getServices().get(0).getPrice().getCurrency());
-				Resource resource = orderResponse.getSegments().values().iterator().next().getResource();
-				resourceRequest.setParams(createResourceParams(resource));
-				createRequest.getResources().add(resourceRequest);
-			}
-		}
-		return createRequest;
 	}
 	
 	public ResourceParams createResourceParams(Resource resource) {
@@ -452,11 +425,11 @@ public class OrderResponseConverter {
 		OrderResponse response = new OrderResponse();
 		response.setServices(joinServices(order, requests, responses, null, null));
 		response = convertResponse(order, response);
+		
+		ReturnHelper returnHelper = ContextProvider.getBean(ReturnHelper.class);
 		for (ServiceItem service : response.getServices()) {
 			if (service.getError() == null) {
-				Segment segment = getSegment(order, service);
-				service.setPrice(dataController.recalculateReturn(segment,
-						getDepartureTimeZone(segment), service.getPrice(), service.getPrice().getSource()));
+				returnHelper.calculateReturn(order, service);
 			}
 		}
 		return response;
@@ -499,27 +472,7 @@ public class OrderResponseConverter {
 		return order;
 	}
 	
-	/*
-	 * Возвращает сегмент рейса, по переданному сервису.
-	 */
-	private Segment getSegment(Order order, ServiceItem service) {
-		ServiceItem orderService = getOrderService(order, service);
-		if (orderService != null
-				&& orderService.getSegment() != null
-				&& order.getResponse().getSegments() != null) {
-			return order.getResponse().getSegments().get(orderService.getSegment().getId());
-		}
-		return null;
-	}
-	
-	private String getDepartureTimeZone(Segment segment) {
-		if (segment != null) {
-			return Utils.getLocalityTimeZone(segment.getDeparture().getId());
-		}
-		return null;
-	}
-	
-	private ServiceItem getOrderService(Order order, ServiceItem service) {
+	public ServiceItem getOrderService(Order order, ServiceItem service) {
 		for (ResourceOrder resourceOrder : order.getOrders()) {
 			for (ResourceService resourceService : resourceOrder.getServices()) {
 				if (isServiceOfResourceService(service, resourceService)) {

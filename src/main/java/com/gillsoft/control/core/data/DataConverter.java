@@ -86,6 +86,7 @@ public class DataConverter {
 	public static com.gillsoft.model.AdditionalServiceItem convert(AdditionalServiceItem additionalService) {
 		com.gillsoft.model.AdditionalServiceItem converted = new com.gillsoft.model.AdditionalServiceItem();
 		converted.setId(String.valueOf(additionalService.getId()));
+		converted.setEnableReturn(additionalService.isEnableReturn());
 		converted.setCode(additionalService.getCode());
 		converted.setName(getValue("name", additionalService));
 		for (Lang lang : Lang.values()) {

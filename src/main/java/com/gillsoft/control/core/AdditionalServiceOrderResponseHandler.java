@@ -54,6 +54,9 @@ public class AdditionalServiceOrderResponseHandler implements ServiceOrderRespon
 				result.setAdditionalServices(new HashMap<>());
 			}
 			result.getAdditionalServices().put(id, resourceResponse.getAdditionalServices().get(additionalServiceItem.getId()));
+			if (additionalServiceItem.getEnableReturn() == null) {
+				additionalServiceItem.setEnableReturn(true);
+			}
 			additionalServiceItem.setId(id);
 		}
 	}

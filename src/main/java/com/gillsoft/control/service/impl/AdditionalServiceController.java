@@ -80,10 +80,6 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 						additionalService.setValue(idModel.getValue());
 						additionalService.setCurrency(idModel.getCurrency());
 						AdditionalServiceItem additionalServiceItem = convert(additionalService);
-						String id = additionalServiceItem.getId();
-						additionalServiceItem.setId(String.valueOf(additionalService.getId()));
-						dataController.addReturnConditions(additionalServiceItem, additionalServiceItem.getPrice());
-						additionalServiceItem.setId(id);
 						additionals.put(additionalServiceItem.getId(), additionalServiceItem);
 					}
 				}
@@ -211,6 +207,7 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 		private static final long serialVersionUID = -4125735464064216044L;
 		private BigDecimal value;
 		private Currency currency;
+		private boolean returnEnabled;
 
 		public AdditionalServiceIdModel() {
 			super();
@@ -220,6 +217,7 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 			setId(additionalService.getId());
 			setValue(additionalService.getPrice().getAmount());
 			setCurrency(Currency.valueOf(additionalService.getPrice().getCurrency().name()));
+			setReturnEnabled(additionalService.getEnableReturn() == null ? true : additionalService.getEnableReturn());
 		}
 
 		public BigDecimal getValue() {
@@ -236,6 +234,14 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 
 		public void setCurrency(Currency currency) {
 			this.currency = currency;
+		}
+
+		public boolean isReturnEnabled() {
+			return returnEnabled;
+		}
+
+		public void setReturnEnabled(boolean returnEnabled) {
+			this.returnEnabled = returnEnabled;
 		}
 
 		@Override
