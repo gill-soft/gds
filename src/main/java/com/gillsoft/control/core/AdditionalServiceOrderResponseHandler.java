@@ -57,6 +57,9 @@ public class AdditionalServiceOrderResponseHandler implements ServiceOrderRespon
 			if (additionalServiceItem.getEnableReturn() == null) {
 				additionalServiceItem.setEnableReturn(true);
 			}
+			if (additionalServiceItem.getEnableCount() == null) {
+				additionalServiceItem.setEnableCount(true);
+			}
 			additionalServiceItem.setId(id);
 		}
 	}
