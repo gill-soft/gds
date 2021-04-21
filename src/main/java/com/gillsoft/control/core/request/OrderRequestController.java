@@ -174,6 +174,12 @@ public class OrderRequestController {
 		return statuses;
 	}
 	
+	public Set<ServiceStatus> getStatusesForAddService() {
+		Set<ServiceStatus> statuses = getStatusesForConfirm();
+		statuses.add(ServiceStatus.CONFIRM);
+		return statuses;
+	}
+	
 	public List<OrderRequest> createCancelRequests(Order order) {
 		
 		// проверяем статус заказа. аннулировать можно NEW, CONFIRM_ERROR, RESERVE, RESERVE_ERROR, CONFIRM, CANCEL_ERROR

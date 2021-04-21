@@ -71,7 +71,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 				+ "join rse.statuses as sse "
 				+ "left join oe.clients as ce "
 				+ "left join rse.mappedServices as mce "
-				+ "where o = oe "
+				+ "where oe = o "
 				+ "and (sse.reported is :reported or :reported is null) "
 				+ "and ((sse.userId = :userId or :userId is null) "
 						+ "or (:clientId is null or ce.clientId = :clientId) "
@@ -86,7 +86,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					+ "exists (from ServiceStatusEntity as ssee "
 					+ "where ssee.parent = rse "
 					+ "and ssee.created = (select max(sseem.created) from ServiceStatusEntity as sseem "
-						+ "where sseem.parent = rs) "
+						+ "where sseem.parent = rse) "
 					+ "and ssee.status in (:statuses))))";
 	
 	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "

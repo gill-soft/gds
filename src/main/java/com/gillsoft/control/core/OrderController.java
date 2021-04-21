@@ -275,7 +275,7 @@ public class OrderController {
 			Order order = findOrder(orderId, ServiceStatus.NEW);
 			
 			// проверяем статус заказа. добавить в заказ можно, если он в статусе NEW, RESERV, RESERV_ERROR, CONFIRM_ERROR
-			orderRequestController.checkStatus(order, orderRequestController.getStatusesForConfirm());
+			orderRequestController.checkStatus(order, orderRequestController.getStatusesForAddService());
 			
 			// проверка блокировки
 			locker.checkLock(orderId, lockId);
