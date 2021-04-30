@@ -39,6 +39,7 @@ import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.BaseEntityDeserializer;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.ConnectionDiscount;
+import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -88,6 +89,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String GET_ORGANISATION = "organisation/{0}";
 	
 	private static final String GET_ADDITIONAL_SERVICE = "additional_service/{0}";
+	
+	private static final String GET_ADDITIONAL_SERVICE_ICON = "additional_service/{0}/sub/" + EntityType.ICON_IMAGE.name();
 	
 	private static final String GET_TRIP = "trip/{0}";
 	
@@ -281,7 +284,9 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	
 	@Override
 	public AdditionalServiceItem getAdditionalService(long id) {
-		return getResult(MessageFormat.format(GET_ADDITIONAL_SERVICE, String.valueOf(id)), null, new ParameterizedTypeReference<AdditionalServiceItem>() { });
+		AdditionalServiceItem service = getResult(MessageFormat.format(GET_ADDITIONAL_SERVICE, String.valueOf(id)), null, new ParameterizedTypeReference<AdditionalServiceItem>() { });
+		service.setChilds(getResult(MessageFormat.format(GET_ADDITIONAL_SERVICE_ICON, String.valueOf(id)), null, new ParameterizedTypeReference<Set<BaseEntity>>() { }));
+		return service;
 	}
 	
 	private class EntityMultiplier<T extends BaseEntity> {
