@@ -90,15 +90,16 @@ public class DataConverter {
 		converted.setEnableCount(additionalService.isEnableCount());
 		converted.setCode(additionalService.getCode());
 		converted.setName(getValue("name", additionalService));
+		Map<String, Object> additionals = new HashMap<>();
+		additionals.put("category", additionalService.getCategory());
 		if (additionalService.getChilds() != null
 				&& !additionalService.getChilds().isEmpty()) {
 			Optional<BaseEntity> entity = additionalService.getChilds().stream().filter(e -> e.getType() == EntityType.ICON_IMAGE).findFirst();
 			if (entity.isPresent()) {
-				Map<String, Object> additionals = new HashMap<>();
 				additionals.put("iconId", String.valueOf(entity.get().getId()));
-				converted.setAdditionals(additionals);
 			}
 		}
+		converted.setAdditionals(additionals);
 		for (Lang lang : Lang.values()) {
 			converted.setName(lang, getValue("name_" + lang.name(), additionalService));
 		}
