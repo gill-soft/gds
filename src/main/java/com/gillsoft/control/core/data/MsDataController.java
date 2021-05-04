@@ -578,9 +578,9 @@ public class MsDataController {
 				price.getTariff().getReturnConditions().addAll(conditions);
 			}
 		}
-		if (price.getTariff().getReturnConditions() != null) {
-			price.getTariff().getReturnConditions().removeIf(r -> r.getReturnPercent() == null);
-		}
+//		if (price.getTariff().getReturnConditions() != null) {
+//			price.getTariff().getReturnConditions().removeIf(r -> r.getReturnPercent() == null);
+//		}
 		// условия возврата каждого сбора
 		if (price.getCommissions() != null) {
 			for (com.gillsoft.model.Commission commission : price.getCommissions()) {
