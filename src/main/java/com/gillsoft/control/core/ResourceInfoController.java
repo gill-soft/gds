@@ -3,6 +3,7 @@ package com.gillsoft.control.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,14 +12,17 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.core.data.MethodsUpdateTask;
 import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.service.AgregatorResourceInfoService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.model.response.ResourceMethodResponse;
+import com.gillsoft.model.response.Response;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.util.StringUtil;
 
@@ -74,6 +78,18 @@ public class ResourceInfoController {
 		request.setId(StringUtil.generateUUID());
 		request.setParams(resource.createParams());
 		return request;
+	}
+	
+	public <T extends Response> T checkResponse(Request request, T response) {
+		if (request != null
+				&& !Objects.equals(request.getId(), response.getId())) {
+			throw new ApiException("The response does not match the request");
+		}
+		if (response.getError() != null) {
+			throw new ApiException(response.getError());
+		} else {
+			return response;
+		}
 	}
 
 	public static String getActiveMethodsCacheKey(long resourceId) {

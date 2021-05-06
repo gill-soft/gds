@@ -1,27 +1,37 @@
 package com.gillsoft.control.core;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
+import com.gillsoft.concurrent.PoolType;
+import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
 
 @Component
-public class AgragatorOrderController {
+public class AgregatorOrderController {
 	
 	@Autowired
 	private List<AgregatorOrderService> agregatorOrderServices;
 
 	public OrderResponse create(OrderRequest request) {
-		request = (OrderRequest) SerializationUtils.deserialize(SerializationUtils.serialize(request));
-		OrderResponse response = null;
+		OrderRequest copy = (OrderRequest) SerializationUtils.deserialize(SerializationUtils.serialize(request));
+		List<Callable<OrderResponse>> callables = new ArrayList<>(agregatorOrderServices.size());
 		for (AgregatorOrderService orderService : agregatorOrderServices) {
-			OrderResponse orderResponse = orderService.create(request);
+			callables.add(() -> {
+				return orderService.create(copy);
+			});
+		}
+		List<OrderResponse> responses = ThreadPoolStore.getResult(PoolType.ORDER, callables);
+		OrderResponse response = null;
+		for (OrderResponse orderResponse : responses) {
 			if (orderResponse != null
 					&& !orderResponse.getResources().isEmpty()) {
 				if (response != null) {
@@ -42,10 +52,16 @@ public class AgragatorOrderController {
 	@SuppressWarnings("unchecked")
 	private List<OrderResponse> orderOperation(List<OrderRequest> requests,
 			BiFunction<AgregatorOrderService, List<OrderRequest>, List<OrderResponse>> serviceOperation) {
-		requests = (List<OrderRequest>) SerializationUtils.deserialize(SerializationUtils.serialize(requests));
-		List<OrderResponse> responses = null;
+		List<OrderRequest> copy = (List<OrderRequest>) SerializationUtils.deserialize(SerializationUtils.serialize(requests));
+		List<Callable<List<OrderResponse>>> callables = new ArrayList<>(agregatorOrderServices.size());
 		for (AgregatorOrderService orderService : agregatorOrderServices) {
-			List<OrderResponse> orderResponses = serviceOperation.apply(orderService, requests);
+			callables.add(() -> {
+				return serviceOperation.apply(orderService, copy);
+			});
+		}
+		List<List<OrderResponse>> results = ThreadPoolStore.getResult(PoolType.ORDER, callables);
+		List<OrderResponse> responses = null;
+		for (List<OrderResponse> orderResponses : results) {
 			if (orderResponses != null
 					&& !orderResponses.isEmpty()) {
 				if (responses != null) {

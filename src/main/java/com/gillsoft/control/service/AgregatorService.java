@@ -35,7 +35,7 @@ public interface AgregatorService {
 	 * 
 	 * @return Сервис.
 	 */
-	public AgregatorAdditionalService getAdditionalService();
+	public AgregatorAdditionalSearchService getAdditionalService();
 	
 	
 	/**

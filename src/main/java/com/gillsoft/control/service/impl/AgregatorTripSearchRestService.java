@@ -18,13 +18,13 @@ import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.DocumentsResponse;
 import com.gillsoft.model.response.RequiredResponse;
 import com.gillsoft.model.response.ReturnConditionResponse;
 import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
 import com.gillsoft.model.response.SeatsSchemeResponse;
 import com.gillsoft.model.response.TariffsResponse;
-import com.gillsoft.model.response.TripDocumentsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 
 @Service
@@ -133,11 +133,11 @@ public class AgregatorTripSearchRestService extends AbstractAgregatorRestService
 	}
 
 	@Override
-	public List<TripDocumentsResponse> getDocuments(List<TripDetailsRequest> requests) {
+	public List<DocumentsResponse> getDocuments(List<TripDetailsRequest> requests) {
 		try {
-			return getResult(requests, new ParameterizedTypeReference<List<TripDocumentsResponse>>() { }, DOCUMENTS);
+			return getResult(requests, new ParameterizedTypeReference<List<DocumentsResponse>>() { }, DOCUMENTS);
 		} catch (ResponseError e) {
-			return Collections.singletonList(new TripDocumentsResponse(null, e));
+			return Collections.singletonList(new DocumentsResponse(null, e));
 		}
 	}
 

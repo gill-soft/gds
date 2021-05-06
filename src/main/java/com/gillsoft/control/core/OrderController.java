@@ -41,7 +41,7 @@ public class OrderController {
 	private static Logger LOGGER = LogManager.getLogger(OrderController.class);
 	
 	@Autowired
-	private AgragatorOrderController agregatorService;
+	private AgregatorOrderController agregatorService;
 	
 	@Autowired
 	private MsDataController dataController;

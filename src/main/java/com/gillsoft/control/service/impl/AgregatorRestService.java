@@ -3,7 +3,7 @@ package com.gillsoft.control.service.impl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.gillsoft.control.service.AgregatorAdditionalService;
+import com.gillsoft.control.service.AgregatorAdditionalSearchService;
 import com.gillsoft.control.service.AgregatorLocalityService;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.AgregatorResourceInfoService;
@@ -27,7 +27,7 @@ public class AgregatorRestService implements AgregatorService {
 	private AgregatorOrderRestService orderService;
 	
 	@Autowired
-	private AgregatorAdditionalService additionalService;
+	private AgregatorAdditionalSearchService additionalService;
 	
 	@Autowired
 	private AgregatorScheduleService scheduleService;
@@ -53,7 +53,7 @@ public class AgregatorRestService implements AgregatorService {
 	}
 
 	@Override
-	public AgregatorAdditionalService getAdditionalService() {
+	public AgregatorAdditionalSearchService getAdditionalService() {
 		return additionalService;
 	}
 

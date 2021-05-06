@@ -3,6 +3,7 @@ package com.gillsoft.control.service.impl;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -10,9 +11,11 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.SerializationUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.gillsoft.control.config.Config;
+import com.gillsoft.control.core.Utils;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.model.request.OrderRequest;
@@ -44,6 +47,8 @@ public class AgregatorOrderRestService extends AbstractAgregatorRestService impl
 	@Override
 	public OrderResponse create(OrderRequest request) {
 		try {
+			request = (OrderRequest) SerializationUtils.deserialize(SerializationUtils.serialize(request));
+			request.getResources().removeIf(r -> !Utils.isPresentHost(r));
 			URI uri = UriComponentsBuilder.fromUriString(Config.getResourceAgregatorUrl() + ORDER).build().toUri();
 			RequestEntity<OrderRequest> entity = new RequestEntity<OrderRequest>(request, HttpMethod.POST, uri);
 			return getResult(entity, new ParameterizedTypeReference<OrderResponse>() { });
@@ -116,6 +121,10 @@ public class AgregatorOrderRestService extends AbstractAgregatorRestService impl
 	}
 	
 	private List<OrderResponse> getResult(List<OrderRequest> request, String method) {
+		if (request.stream().noneMatch(r -> Utils.isPresentHost(r))) {
+			return null;
+		}
+		request = request.stream().filter(r -> Utils.isPresentHost(r)).collect(Collectors.toList());
 		URI uri = UriComponentsBuilder.fromUriString(Config.getResourceAgregatorUrl() + method).build().toUri();
 		RequestEntity<List<OrderRequest>> entity = new RequestEntity<List<OrderRequest>>(request, HttpMethod.POST, uri);
 		try {

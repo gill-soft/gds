@@ -4,13 +4,13 @@ import java.util.List;
 
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.DocumentsResponse;
 import com.gillsoft.model.response.RequiredResponse;
 import com.gillsoft.model.response.ReturnConditionResponse;
 import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
 import com.gillsoft.model.response.SeatsSchemeResponse;
 import com.gillsoft.model.response.TariffsResponse;
-import com.gillsoft.model.response.TripDocumentsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 
 public interface AgregatorTripSearchService {
@@ -46,6 +46,6 @@ public interface AgregatorTripSearchService {
 	
 	public List<ReturnConditionResponse> getConditions(List<TripDetailsRequest> requests);
 	
-	public List<TripDocumentsResponse> getDocuments(List<TripDetailsRequest> requests);
+	public List<DocumentsResponse> getDocuments(List<TripDetailsRequest> requests);
 
 }

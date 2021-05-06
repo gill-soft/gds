@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
+import com.gillsoft.model.request.ResourceRequest;
 import com.gillsoft.model.response.Response;
 import com.gillsoft.util.ContextProvider;
 
@@ -172,6 +173,10 @@ public class Utils {
 		} catch (NumberFormatException e) {
 			return -1;
 		}
+	}
+	
+	public static boolean isPresentHost(ResourceRequest request) {
+		return request.getParams().getHost() != null;
 	}
 
 }

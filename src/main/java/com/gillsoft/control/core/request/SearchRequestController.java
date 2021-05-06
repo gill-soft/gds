@@ -30,6 +30,7 @@ import com.gillsoft.mapper.model.Mapping;
 import com.gillsoft.mapper.service.MappingService;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.MethodType;
+import com.gillsoft.model.request.AdditionalSearchRequest;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripSearchRequest;
 import com.gillsoft.ms.entity.EntityType;
@@ -55,6 +56,32 @@ public class SearchRequestController {
 	
 	@Autowired
 	private ConnectionsController connectionsController;
+	
+	public List<AdditionalSearchRequest> createSearchRequest(AdditionalSearchRequest searchRequest) {
+		List<Resource> resources = dataController.getUserResources();
+		if (resources != null) {
+			//TODO реквизиты для договора по EWE
+			addUserInfo(searchRequest);
+			List<AdditionalSearchRequest> resourceRequests = new ArrayList<>();
+			for (Resource resource : resources) {
+				if (infoController.isMethodAvailable(resource, Method.ADDITIONAL, MethodType.POST)) {
+					AdditionalSearchRequest resourceSearchRequest = new AdditionalSearchRequest();
+					resourceSearchRequest.setId(searchRequest.getId() + ";" + StringUtil.generateUUID());
+					resourceSearchRequest.setParams(resource.createParams());
+					resourceSearchRequest.setCurrency(searchRequest.getCurrency());
+					resourceSearchRequest.setSegments(searchRequest.getSegments());
+					resourceSearchRequest.setOrder(searchRequest.getOrder());
+					resourceSearchRequest.copyAdditional(searchRequest);
+					resourceRequests.add(resourceSearchRequest);
+				}
+			}
+			if (resourceRequests.isEmpty()) {
+				throw new MethodUnavalaibleException("Method is unavailable");
+			}
+			return resourceRequests;
+		}
+		throw new ResourceUnavailableException("User does not has available resources");
+	}
 	
 	public SearchRequestContainer createSearchRequest(TripSearchRequest searchRequest) {
 		List<Resource> resources = dataController.getUserResources();

@@ -6,7 +6,7 @@ public class AdditionalServiceEmptyResource extends Resource {
 
 	private static final long serialVersionUID = -8438825614309396447L;
 	
-	private static final long ID = -1;
+	private static final long ID = -1000;
 
 	public AdditionalServiceEmptyResource() {
 		setId(ID);

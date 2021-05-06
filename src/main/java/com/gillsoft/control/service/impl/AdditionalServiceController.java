@@ -18,6 +18,7 @@ import com.gillsoft.control.core.IdModel;
 import com.gillsoft.control.core.data.DataConverter;
 import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.core.mapping.TripSearchMapping.SegmentAdditionalServiceMapper;
+import com.gillsoft.control.service.AgregatorAdditionalSearchService;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
 import com.gillsoft.model.AbstractJsonModel;
@@ -26,16 +27,23 @@ import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
+import com.gillsoft.model.request.AdditionalDetailsRequest;
+import com.gillsoft.model.request.AdditionalSearchRequest;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.AdditionalSearchResponse;
+import com.gillsoft.model.response.DocumentsResponse;
 import com.gillsoft.model.response.OrderResponse;
+import com.gillsoft.model.response.RequiredResponse;
+import com.gillsoft.model.response.ReturnConditionResponse;
+import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Currency;
 import com.gillsoft.ms.entity.ValueType;
 import com.gillsoft.util.StringUtil;
 
 @Service
-public class AdditionalServiceController implements AgregatorOrderService, SegmentAdditionalServiceMapper {
+public class AdditionalServiceController implements AgregatorOrderService, SegmentAdditionalServiceMapper, AgregatorAdditionalSearchService {
 	
 	@Autowired
 	private MsDataController dataController;
@@ -279,6 +287,42 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 			return (OrderIdModel) super.create(json);
 		}
 		
+	}
+
+	@Override
+	public AdditionalSearchResponse initSearch(List<AdditionalSearchRequest> request) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public AdditionalSearchResponse getSearchResult(String searchId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<TariffsResponse> getTariffs(List<AdditionalDetailsRequest> requests) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<RequiredResponse> getRequiredFields(List<AdditionalDetailsRequest> requests) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<ReturnConditionResponse> getConditions(List<AdditionalDetailsRequest> requests) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<DocumentsResponse> getDocuments(List<AdditionalDetailsRequest> requests) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }

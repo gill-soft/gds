@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,8 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gillsoft.cache.CacheHandler;
-import com.gillsoft.cache.IOCacheException;
-import com.gillsoft.cache.MemoryCacheHandler;
 import com.gillsoft.control.api.ApiException;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.RequestValidateException;
@@ -56,21 +53,20 @@ import com.gillsoft.model.Tariff;
 import com.gillsoft.model.Trip;
 import com.gillsoft.model.TripContainer;
 import com.gillsoft.model.request.OrderRequest;
-import com.gillsoft.model.request.Request;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripDetailsRequest;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.DocumentsResponse;
 import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.model.response.RequiredResponse;
-import com.gillsoft.model.response.Response;
 import com.gillsoft.model.response.ReturnConditionResponse;
 import com.gillsoft.model.response.RouteResponse;
 import com.gillsoft.model.response.SeatsResponse;
 import com.gillsoft.model.response.SeatsSchemeResponse;
 import com.gillsoft.model.response.TariffsResponse;
-import com.gillsoft.model.response.TripDocumentsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Resource;
+import com.gillsoft.util.CacheUtil;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -132,7 +128,7 @@ public class TripSearchController {
 	public TripSearchResponse initSearch(SearchRequestContainer requestContainer) {
 		
 		// проверяем ответ и записываем в память запросы под ид поиска
-		TripSearchResponse response = checkResponse(null, service.initSearch(requestContainer.getRequests()));
+		TripSearchResponse response = infoController.checkResponse(null, service.initSearch(requestContainer.getRequests()));
 		if (requestContainer.getOriginRequest() != null) {
 			response.setId(requestContainer.getOriginRequest().getId());
 		}
@@ -163,26 +159,17 @@ public class TripSearchController {
 	
 	private void putRequestToCache(String searchId, SearchRequestContainer requestContainer) {
 		if (searchId != null) {
-			Map<String, Object> params = new HashMap<>();
-			params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
-			params.put(MemoryCacheHandler.TIME_TO_LIVE, 60000l);
-			try {
-				cache.write(requestContainer, params);
-			} catch (IOCacheException e) {
-				LOGGER.error("Error when write searchId: " + searchId, e);
-			}
+			CacheUtil.putToCache(cache, searchId, requestContainer);
 		}
 	}
 	
 	public TripSearchResponse getSearchResult(String searchId) {
 		
 		// получает запросы поиска с памяти по ид поиска и проверяем их
-		Map<String, Object> params = new HashMap<>();
-		params.put(MemoryCacheHandler.OBJECT_NAME, searchId);
 		SearchRequestContainer requestContainer = null;
 		try {
-			requestContainer = (SearchRequestContainer) cache.read(params);
-		} catch (ClassCastException | IOCacheException e) {
+			requestContainer = (SearchRequestContainer) CacheUtil.getFromCache(cache, searchId);
+		} catch (ClassCastException e) {
 			LOGGER.error("Empty request by searchId: " + searchId, e);
 		}
 		if (requestContainer == null) {
@@ -299,7 +286,7 @@ public class TripSearchController {
 	
 	public Route getRoute(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_ROUTE, MethodType.GET);
-		RouteResponse response = checkResponse(requests.get(0), service.getRoute(requests).get(0));
+		RouteResponse response = infoController.checkResponse(requests.get(0), service.getRoute(requests).get(0));
 		
 		// мапим пункты маршрута
 		Map<String, Locality> localities = new HashMap<>();
@@ -340,19 +327,19 @@ public class TripSearchController {
 	
 	public SeatsScheme getSeatsScheme(String tripId) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS_SCHEME, MethodType.GET);
-		SeatsSchemeResponse response = checkResponse(requests.get(0), service.getSeatsScheme(requests).get(0));
+		SeatsSchemeResponse response = infoController.checkResponse(requests.get(0), service.getSeatsScheme(requests).get(0));
 		return response.getScheme();
 	}
 	
 	public List<Seat> getSeats(String tripId) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.GET);
-		SeatsResponse response = checkResponse(requests.get(0), service.getSeats(requests).get(0));
+		SeatsResponse response = infoController.checkResponse(requests.get(0), service.getSeats(requests).get(0));
 		return response.getSeats();
 	}
 	
 	public List<Tariff> getTariffs(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_TARIFFS, MethodType.GET);
-		TariffsResponse response = checkResponse(requests.get(0), service.getTariffs(requests).get(0));
+		TariffsResponse response = infoController.checkResponse(requests.get(0), service.getTariffs(requests).get(0));
 		if (response.getTariffs() != null) {
 			response.getTariffs().forEach(t -> DataConverter.applyLang(t, lang)); 
 		}
@@ -361,21 +348,21 @@ public class TripSearchController {
 
 	public List<RequiredField> getRequiredFields(String tripId) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_REQUIRED, MethodType.GET);
-		RequiredResponse response = checkResponse(requests.get(0), service.getRequiredFields(requests).get(0));
+		RequiredResponse response = infoController.checkResponse(requests.get(0), service.getRequiredFields(requests).get(0));
 		return response.getFields();
 	}
 	
 	public List<Seat> updateSeats(String tripId, @RequestBody List<Seat> seats) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, null, Method.SEARCH_TRIP_SEATS, MethodType.POST);
 		requests.get(0).setSeats(seats);
-		SeatsResponse response = checkResponse(requests.get(0), service.updateSeats(requests).get(0));
+		SeatsResponse response = infoController.checkResponse(requests.get(0), service.updateSeats(requests).get(0));
 		return response.getSeats();
 	}
 	
 	public List<ReturnCondition> getConditions(String tripId, String tariffId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_CONDITIONS, MethodType.GET);
 		requests.get(0).setTariffId(tariffId);
-		ReturnConditionResponse response = checkResponse(requests.get(0), service.getConditions(requests).get(0));
+		ReturnConditionResponse response = infoController.checkResponse(requests.get(0), service.getConditions(requests).get(0));
 		if (response.getConditions() != null) {
 			response.getConditions().forEach(c -> DataConverter.applyLang(c, lang)); 
 		}
@@ -384,24 +371,12 @@ public class TripSearchController {
 	
 	public List<Document> getDocuments(String tripId, Lang lang) {
 		List<TripDetailsRequest> requests = createTripDetailsRequests(tripId, lang, Method.SEARCH_TRIP_DOCUMENTS, MethodType.GET);
-		TripDocumentsResponse response = checkResponse(requests.get(0), service.getDocuments(requests).get(0));
+		DocumentsResponse response = infoController.checkResponse(requests.get(0), service.getDocuments(requests).get(0));
 		return response.getDocuments();
 	}
 	
 	public List<RequiredResponse> getRequiredFields(List<TripDetailsRequest> requests) {
 		return service.getRequiredFields(requests);
-	}
-	
-	private <T extends Response> T checkResponse(Request request, T response) {
-		if (request != null
-				&& !Objects.equals(request.getId(), response.getId())) {
-			throw new ApiException("The response does not match the request");
-		}
-		if (response.getError() != null) {
-			throw new ApiException(response.getError());
-		} else {
-			return response;
-		}
 	}
 	
 	public List<TripDetailsRequest> createTripDetailsRequests(String tripId, Lang lang, String methodPath, MethodType methodType) {
