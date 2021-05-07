@@ -47,20 +47,28 @@ public class AgregatorAdditionalController {
 			resultIds.add(cacheId);
 			ThreadPoolStore.execute(PoolType.SEARCH, () -> {
 				// добавляем в кэш результат под указанным ид
-				CacheUtil.putToCache(cache, cacheId, service.initSearch(request));
+				AdditionalSearchResponse additionalSearchResponse = service.initSearch(request);
+				if (additionalSearchResponse == null) {
+					additionalSearchResponse = new AdditionalSearchResponse();
+				}
+				CacheUtil.putToCache(cache, cacheId, additionalSearchResponse);
 			});
 		}
 		// под ид поиска ложим в кэш список ид, по которым будем получать результат
 		String searchId = StringUtil.generateUUID();
-		CacheUtil.putToCache(cache, searchId, resultIds);
+		CacheUtil.putToCache(cache, getResultIdsKey(searchId), resultIds);
 		return new AdditionalSearchResponse(null, searchId);
+	}
+	
+	private String getResultIdsKey(String searchId) {
+		return searchId + ";resultIds";
 	}
 
 	@SuppressWarnings("unchecked")
 	public AdditionalSearchResponse getSearchResult(String searchId) {
 		try {
 			// вытаскиваем с кэша ресурсы, по которым нужно получить результат поиска
-			List<String> resultIds = (List<String>) CacheUtil.getFromCache(cache, searchId);
+			List<String> resultIds = (List<String>) CacheUtil.getFromCache(cache, getResultIdsKey(searchId));
 			if (resultIds == null) {
 				throw new IOCacheException("Too late for getting result");
 			}
@@ -85,15 +93,20 @@ public class AgregatorAdditionalController {
 			AdditionalSearchResponse response = null;
 			if (!nextResultIds.isEmpty()) {
 				String nextSearchId = StringUtil.generateUUID();
-				CacheUtil.putToCache(cache, nextSearchId, nextResultIds);
+				CacheUtil.putToCache(cache, getResultIdsKey(nextSearchId), nextResultIds);
 				response = new AdditionalSearchResponse(null, nextSearchId);
 			} else {
 				response = new AdditionalSearchResponse();
 			}
-			response.setResult(new ArrayList<>());
-			for (AdditionalSearchResponse searchResponse : searchResponses.values()) {
-				if (searchResponse.getResult() != null) {
-					response.getResult().addAll(searchResponse.getResult());
+			if (!searchResponses.isEmpty()) {
+				for (AdditionalSearchResponse searchResponse : searchResponses.values()) {
+					if (searchResponse.getResult() != null) {
+						if (response.getResult() == null) {
+							response.setResult(searchResponse.getResult());
+						} else {
+							response.getResult().addAll(searchResponse.getResult());
+						}
+					}
 				}
 			}
 			return response;
@@ -117,7 +130,11 @@ public class AgregatorAdditionalController {
 						ThreadPoolStore.execute(PoolType.SEARCH, () -> {
 							// добавляем в кэш результат под указанным ид
 							// формируем новый ответ с новым ид поиска
-							CacheUtil.putToCache(cache, cacheId, service.getSearchResult(searchResponseEntry.getValue().getSearchId()));
+							AdditionalSearchResponse additionalSearchResponse = service.getSearchResult(searchResponseEntry.getValue().getSearchId());
+							if (additionalSearchResponse == null) {
+								additionalSearchResponse = new AdditionalSearchResponse();
+							}
+							CacheUtil.putToCache(cache, cacheId, additionalSearchResponse);
 						});
 						break;
 					}

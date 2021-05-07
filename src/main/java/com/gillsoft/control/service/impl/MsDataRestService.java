@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
+import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.Attribute;
@@ -122,7 +123,9 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 
 	@Override
 	public List<Resource> getUserResources(String userName) {
-		return getResultByUser(userName, GET_USER_RESOURCES, new ParameterizedTypeReference<List<Resource>>() { });
+		List<Resource> resources = getResultByUser(userName, GET_USER_RESOURCES, new ParameterizedTypeReference<List<Resource>>() { });
+		resources.add(new AdditionalServiceEmptyResource());
+		return resources;
 	}
 
 	@Override

@@ -470,7 +470,7 @@ public class MsDataController {
 		}
 	}
 	
-	public Price recalculate(com.gillsoft.model.AdditionalServiceItem additionalService, Price price, Currency currency) {
+	public Price recalculate(Price price, Currency currency) {
 		if (price.getCommissions() != null) {
 			price.getCommissions().forEach(c -> c.setId(null));
 		}
@@ -523,10 +523,7 @@ public class MsDataController {
 	public List<AdditionalServiceItem> getAdditionalServices(Segment segment) {
 		List<BaseEntity> entities = getParentEntities(segment);
 		if (entities != null) {
-			List<AdditionalServiceItem> services = getAdditionalServices(entities);
-			if (services != null) {
-				return services.stream().filter(AdditionalServiceItem::isUsedWithTrip).collect(Collectors.toList());
-			}
+			return getAdditionalServices(entities);
 		}
 		return null;
 	}

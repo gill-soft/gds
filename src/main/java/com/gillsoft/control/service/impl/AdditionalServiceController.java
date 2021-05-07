@@ -7,17 +7,27 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.SerializationUtils;
 
+import com.gillsoft.cache.CacheHandler;
 import com.gillsoft.control.core.IdModel;
 import com.gillsoft.control.core.data.DataConverter;
 import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.core.mapping.TripSearchMapping.SegmentAdditionalServiceMapper;
+import com.gillsoft.control.core.request.SearchRequestController;
 import com.gillsoft.control.service.AgregatorAdditionalSearchService;
 import com.gillsoft.control.service.AgregatorOrderService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
@@ -27,6 +37,7 @@ import com.gillsoft.model.Price;
 import com.gillsoft.model.RestError;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
+import com.gillsoft.model.Tariff;
 import com.gillsoft.model.request.AdditionalDetailsRequest;
 import com.gillsoft.model.request.AdditionalSearchRequest;
 import com.gillsoft.model.request.OrderRequest;
@@ -39,7 +50,9 @@ import com.gillsoft.model.response.ReturnConditionResponse;
 import com.gillsoft.model.response.TariffsResponse;
 import com.gillsoft.model.response.TripSearchResponse;
 import com.gillsoft.ms.entity.Currency;
+import com.gillsoft.ms.entity.User;
 import com.gillsoft.ms.entity.ValueType;
+import com.gillsoft.util.CacheUtil;
 import com.gillsoft.util.StringUtil;
 
 @Service
@@ -47,6 +60,13 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 	
 	@Autowired
 	private MsDataController dataController;
+	
+	@Autowired
+    @Qualifier("RedisMemoryCache")
+	private CacheHandler cache;
+	
+	@Autowired
+	private AuthenticationManager authenticationManager;
 	
 	@Override
 	public OrderResponse create(OrderRequest orderRequest) {
@@ -131,37 +151,31 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 	
 	@Override
 	public List<OrderResponse> addServices(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<OrderResponse> removeServices(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<OrderResponse> updateCustomers(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<OrderResponse> get(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<OrderResponse> getService(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<OrderResponse> booking(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -182,7 +196,6 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 
 	@Override
 	public List<OrderResponse> getPdfDocuments(List<OrderRequest> request) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -193,16 +206,16 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 			if (segment.getAdditionalServices() == null) {
 				segment.setAdditionalServices(new ArrayList<>());
 			}
-			for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceItem : additionalServices) {
-				if (additionalServiceItem.getValueType() == ValueType.PERCENT) {
-					additionalServiceItem.setValue(segment.getPrice().getTariff().getValue()
-							.multiply(additionalServiceItem.getValue().multiply(new BigDecimal(0.01))));
+			additionalServices = additionalServices.stream().filter(com.gillsoft.ms.entity.AdditionalServiceItem::isUsedWithTrip).collect(Collectors.toList());
+			for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceEntity : additionalServices) {
+				if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
+					additionalServiceEntity.setValue(segment.getPrice().getTariff().getValue()
+							.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01))));
+					additionalServiceEntity.setCurrency(Currency.valueOf(segment.getPrice().getCurrency().name()));
 				}
-				AdditionalServiceItem additionalService = convert(additionalServiceItem);
-				String id = additionalService.getId();
-				additionalService.setId(String.valueOf(additionalServiceItem.getId()));
-				additionalService.setPrice(dataController.recalculate(additionalService, additionalService.getPrice(), request.getCurrency()));
-				additionalService.setId(new IdModel(new AdditionalServiceEmptyResource().getId(), id).asString());
+				AdditionalServiceItem additionalService = convert(additionalServiceEntity);
+				additionalService.setPrice(dataController.recalculate(additionalService.getPrice(), request.getCurrency()));
+				additionalService.setId(new IdModel(new AdditionalServiceEmptyResource().getId(), additionalService.getId()).asString());
 				segment.getAdditionalServices().add(additionalService);
 				DataConverter.applyLang(additionalService, request.getLang());
 				result.getAdditionalServices().put(additionalService.getId(), additionalService);
@@ -290,38 +303,131 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 	}
 
 	@Override
-	public AdditionalSearchResponse initSearch(List<AdditionalSearchRequest> request) {
-		// TODO Auto-generated method stub
-		return null;
+	public AdditionalSearchResponse initSearch(List<AdditionalSearchRequest> requests) {
+		AdditionalSearchResponse response = new AdditionalSearchResponse();
+		for (AdditionalSearchRequest request : requests) {
+			if (request.getOrder() != null
+					&& request.getOrder().getSegments() != null) {
+				
+				signIn(request);
+				
+				// получаем допуслуги на сегменты заказа
+				for (Entry<String, Segment> segmentEntry : request.getOrder().getSegments().entrySet()) {
+					List<com.gillsoft.ms.entity.AdditionalServiceItem> additionalServices = dataController.getAdditionalServices(segmentEntry.getValue());
+					if (additionalServices != null) {
+						additionalServices = additionalServices.stream().filter(s -> !s.isUsedWithTrip()).collect(Collectors.toList());
+						
+						// получаем список сервисов, к которым применяется допуслуга
+						List<ServiceItem> services = getSegmentServices(request.getOrder(), segmentEntry.getKey());
+						BigDecimal orderAmount = getServicesAmount(services);
+						Currency currency = getServicesCurrency(services);
+						
+						AdditionalSearchResponse requestResponse = new AdditionalSearchResponse();
+						requestResponse.setId(request.getId());
+						Map<String, AdditionalServiceItem> additionals = new HashMap<>();
+						for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceEntity : additionalServices) {
+							if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
+								additionalServiceEntity.setValue(orderAmount
+										.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01))));
+								additionalServiceEntity.setCurrency(currency);
+							}
+							AdditionalServiceItem additionalService = convert(additionalServiceEntity);
+							additionalService.setId(String.valueOf(additionalServiceEntity.getId()));
+							DataConverter.applyLang(additionalService, request.getLang());
+							AdditionalServiceItem present = additionals.get(additionalService.getId());
+							if (present != null) {
+								joinServices(present, additionalService);
+							} else {
+								additionals.put(additionalService.getId(), additionalService);
+							}
+						}
+						requestResponse.setAdditionalServices(new HashMap<>());
+						for (AdditionalServiceItem additionalServiceItem : additionals.values()) {
+							additionalServiceItem.setId(new AdditionalServiceIdModel(additionalServiceItem).asString());
+							requestResponse.getAdditionalServices().put(additionalServiceItem.getId(), additionalServiceItem);
+						}
+						if (response.getResult() == null) {
+							response.setResult(new ArrayList<>());
+						}
+						response.getResult().add(requestResponse);
+					}
+				}
+			}
+		}
+		String cacheId = StringUtil.generateUUID();
+		CacheUtil.putToCache(cache, cacheId, response);
+		return new AdditionalSearchResponse(null, cacheId);
+	}
+	
+	public void signIn(AdditionalSearchRequest request) {
+		if (dataController.getUserName() != null
+				|| request.getParams() == null
+				|| request.getParams().getAdditional() == null
+				|| !request.getParams().getAdditional().containsKey(SearchRequestController.USER_ID_KEY)) {
+			return;
+		}
+		String userId = request.getParams().getAdditional().get(SearchRequestController.USER_ID_KEY);
+		User user = dataController.getUser(Long.parseLong(userId));
+		if (user != null) {
+			Authentication auth = new UsernamePasswordAuthenticationToken(user.getLogin(), user.getPassword());
+			auth = authenticationManager.authenticate(auth);
+			if (!auth.isAuthenticated()) {
+				throw new AuthenticationServiceException("Not authorized");
+			}
+			SecurityContextHolder.getContext().setAuthentication(auth);
+		}
+	}
+	
+	private void joinServices(AdditionalServiceItem present, AdditionalServiceItem additionalService) {
+		present.getSegments().addAll(additionalService.getSegments());
+		present.getServices().addAll(additionalService.getServices());
+		present.getPrice().setAmount(present.getPrice().getAmount().add(additionalService.getPrice().getAmount()));
+		Tariff presentTariff = present.getPrice().getTariff();
+		Tariff tariff = additionalService.getPrice().getTariff();
+		presentTariff.setValue(presentTariff.getValue().add(tariff.getValue()));
+		presentTariff.setVat(presentTariff.getVat().add(tariff.getVat()));
+	}
+	
+	private List<ServiceItem> getSegmentServices(OrderResponse order, String segmentId) {
+		return order.getServices().stream().filter(s -> s.getSegment() != null && segmentId.equals(s.getSegment().getId())).collect(Collectors.toList());
+	}
+	
+	private BigDecimal getServicesAmount(List<ServiceItem> services) {
+		BigDecimal total = BigDecimal.ZERO;
+		for (ServiceItem item : services) {
+			if (item.getPrice() != null) {
+				total = total.add(item.getPrice().getAmount());
+			}
+		}
+		return total;
+	}
+	
+	private Currency getServicesCurrency(List<ServiceItem> services) {
+		return Currency.valueOf(services.get(0).getPrice().getCurrency().name());
 	}
 
 	@Override
 	public AdditionalSearchResponse getSearchResult(String searchId) {
-		// TODO Auto-generated method stub
-		return null;
+		return (AdditionalSearchResponse) CacheUtil.getFromCache(cache, searchId);
 	}
 
 	@Override
 	public List<TariffsResponse> getTariffs(List<AdditionalDetailsRequest> requests) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<RequiredResponse> getRequiredFields(List<AdditionalDetailsRequest> requests) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<ReturnConditionResponse> getConditions(List<AdditionalDetailsRequest> requests) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<DocumentsResponse> getDocuments(List<AdditionalDetailsRequest> requests) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

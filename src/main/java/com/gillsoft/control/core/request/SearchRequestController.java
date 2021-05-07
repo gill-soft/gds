@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 import com.gillsoft.control.api.MethodUnavalaibleException;
 import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.core.ConnectionsController;
+import com.gillsoft.control.core.OrderController;
 import com.gillsoft.control.core.ResourceInfoController;
 import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.service.model.ConnectionsResponse;
@@ -33,6 +35,7 @@ import com.gillsoft.model.MethodType;
 import com.gillsoft.model.request.AdditionalSearchRequest;
 import com.gillsoft.model.request.ResourceParams;
 import com.gillsoft.model.request.TripSearchRequest;
+import com.gillsoft.model.response.OrderResponse;
 import com.gillsoft.ms.entity.EntityType;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.ResourceConnection;
@@ -57,11 +60,14 @@ public class SearchRequestController {
 	@Autowired
 	private ConnectionsController connectionsController;
 	
+	@Autowired
+	private OrderController orderController;
+	
 	public List<AdditionalSearchRequest> createSearchRequest(AdditionalSearchRequest searchRequest) {
 		List<Resource> resources = dataController.getUserResources();
 		if (resources != null) {
-			//TODO реквизиты для договора по EWE
 			addUserInfo(searchRequest);
+			setOrderInfo(searchRequest);
 			List<AdditionalSearchRequest> resourceRequests = new ArrayList<>();
 			for (Resource resource : resources) {
 				if (infoController.isMethodAvailable(resource, Method.ADDITIONAL, MethodType.POST)) {
@@ -81,6 +87,19 @@ public class SearchRequestController {
 			return resourceRequests;
 		}
 		throw new ResourceUnavailableException("User does not has available resources");
+	}
+	
+	private void setOrderInfo(AdditionalSearchRequest request) {
+		if (request.getOrder() != null
+				&& request.getOrder().getOrderId() != null) {
+			OrderResponse order = orderController.getOrder(Long.parseLong(request.getOrder().getOrderId()));
+			if (request.getOrder().getServices() != null
+					&& !request.getOrder().getServices().isEmpty()) {
+				order.getServices().removeIf(s -> request.getOrder().getServices().stream().noneMatch(os -> Objects.equals(s.getId(), os.getId())));
+			}
+			request.setOrder(order);
+		}
+		//TODO set segments info
 	}
 	
 	public SearchRequestContainer createSearchRequest(TripSearchRequest searchRequest) {

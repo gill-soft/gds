@@ -24,8 +24,8 @@ import com.gillsoft.control.api.ResourceUnavailableException;
 import com.gillsoft.control.core.data.DataConverter;
 import com.gillsoft.control.core.data.MsDataController;
 import com.gillsoft.control.core.mapping.MappingCreator;
+import com.gillsoft.control.core.mapping.TripSearchMapping;
 import com.gillsoft.control.core.request.SearchRequestController;
-import com.gillsoft.control.service.AgregatorAdditionalSearchService;
 import com.gillsoft.model.AdditionalServiceItem;
 import com.gillsoft.model.Document;
 import com.gillsoft.model.Lang;
@@ -57,7 +57,7 @@ public class AdditionalSearchController {
 	private CacheHandler cache;
 	
 	@Autowired
-	private AgregatorAdditionalSearchService service;
+	private AgregatorAdditionalController additionalController;
 	
 	@Autowired
 	private MsDataController dataController;
@@ -68,6 +68,9 @@ public class AdditionalSearchController {
 	@Autowired
 	private SearchRequestController requestController;
 	
+	@Autowired
+	private TripSearchMapping tripSearchMapping;
+	
 	/**
 	 * Запускает поиск по запросу с АПИ. Конвертирует обобщенный запрос в запросы ко всем доступным ресурсам.
 	 */
@@ -76,11 +79,10 @@ public class AdditionalSearchController {
 		// проверяем параметры запроса
 		validateSearchRequest(request);
 		
-		//TODO find orders
 		List<AdditionalSearchRequest> requests = requestController.createSearchRequest(request);
 		
 		// проверяем ответ и записываем в память запросы под ид поиска
-		AdditionalSearchResponse response = infoController.checkResponse(null, service.initSearch(requests));
+		AdditionalSearchResponse response = infoController.checkResponse(null, additionalController.initSearch(requests));
 		response.setId(request.getId());
 		putRequestToCache(response.getSearchId(), requests);
 		return response;
@@ -93,6 +95,14 @@ public class AdditionalSearchController {
 						|| request.getSegments().isEmpty()
 						|| request.getSegments().stream().allMatch(s -> s.getId() == null || s.getId().isEmpty()))) {
 			throw new RequestValidateException("Empty order or segments");
+		}
+		if (request.getOrder() != null
+				&& request.getOrder().getOrderId() != null) {
+			try {
+				Long.parseLong(request.getOrder().getOrderId());
+			} catch (NumberFormatException e) {
+				throw new RequestValidateException("Order id must be a number");
+			}
 		}
 	}
 	
@@ -116,7 +126,7 @@ public class AdditionalSearchController {
 			LOGGER.error("Too late for getting result by searchId: " + searchId);
 			throw new ApiException(new ResponseError("Too late for getting result or invalid searchId."));
 		}
-		AdditionalSearchResponse response = service.getSearchResult(searchId);
+		AdditionalSearchResponse response = additionalController.getSearchResult(searchId);
 		if (response.getError() != null) {
 			throw new ApiException(response.getError());
 		}
@@ -126,6 +136,7 @@ public class AdditionalSearchController {
 			AdditionalSearchResponse result = new AdditionalSearchResponse();
 			result.setId(response.getId());
 			result.setSearchId(response.getSearchId());
+			tripSearchMapping.createDictionaries(result);
 			List<AdditionalSearchResponse> responses = response.getResult().stream().map(r -> (AdditionalSearchResponse) r).collect(Collectors.toList());
 			for (AdditionalSearchResponse searchResponse : responses) {
 				Stream<AdditionalSearchRequest> stream = requests.stream().filter(r -> r.getId().equals(searchResponse.getId()));
@@ -181,7 +192,7 @@ public class AdditionalSearchController {
 			
 			// начисление сборов
 			try {
-				service.setPrice(dataController.recalculate(service, service.getPrice(), request.getCurrency()));
+				service.setPrice(dataController.recalculate(service.getPrice(), request.getCurrency()));
 				DataConverter.applyLang(service.getPrice().getTariff(), request.getLang());
 			} catch (Exception e) {
 				continue;
@@ -193,7 +204,7 @@ public class AdditionalSearchController {
 	
 	public List<Tariff> getTariffs(String serviceAdditionalId, Lang lang) {
 		List<AdditionalDetailsRequest> requests = createAdditionalDetailsRequests(serviceAdditionalId, lang, Method.ADDITIONAL_TARIFFS, MethodType.GET);
-		TariffsResponse response = infoController.checkResponse(requests.get(0), service.getTariffs(requests).get(0));
+		TariffsResponse response = infoController.checkResponse(requests.get(0), additionalController.getTariffs(requests).get(0));
 		if (response.getTariffs() != null) {
 			response.getTariffs().forEach(t -> DataConverter.applyLang(t, lang)); 
 		}
@@ -202,14 +213,14 @@ public class AdditionalSearchController {
 
 	public List<RequiredField> getRequiredFields(String serviceAdditionalId) {
 		List<AdditionalDetailsRequest> requests = createAdditionalDetailsRequests(serviceAdditionalId, null, Method.ADDITIONAL_REQUIRED, MethodType.GET);
-		RequiredResponse response = infoController.checkResponse(requests.get(0), service.getRequiredFields(requests).get(0));
+		RequiredResponse response = infoController.checkResponse(requests.get(0), additionalController.getRequiredFields(requests).get(0));
 		return response.getFields();
 	}
 	
 	public List<ReturnCondition> getConditions(String serviceAdditionalId, String tariffId, Lang lang) {
 		List<AdditionalDetailsRequest> requests = createAdditionalDetailsRequests(serviceAdditionalId, lang, Method.ADDITIONAL_CONDITIONS, MethodType.GET);
 		requests.get(0).setTariffId(tariffId);
-		ReturnConditionResponse response = infoController.checkResponse(requests.get(0), service.getConditions(requests).get(0));
+		ReturnConditionResponse response = infoController.checkResponse(requests.get(0), additionalController.getConditions(requests).get(0));
 		if (response.getConditions() != null) {
 			response.getConditions().forEach(c -> DataConverter.applyLang(c, lang)); 
 		}
@@ -218,7 +229,7 @@ public class AdditionalSearchController {
 	
 	public List<Document> getDocuments(String serviceAdditionalId, Lang lang) {
 		List<AdditionalDetailsRequest> requests = createAdditionalDetailsRequests(serviceAdditionalId, lang, Method.ADDITIONAL_DOCUMENTS, MethodType.GET);
-		DocumentsResponse response = infoController.checkResponse(requests.get(0), service.getDocuments(requests).get(0));
+		DocumentsResponse response = infoController.checkResponse(requests.get(0), additionalController.getDocuments(requests).get(0));
 		return response.getDocuments();
 	}
 	

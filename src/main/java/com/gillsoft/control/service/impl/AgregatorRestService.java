@@ -27,7 +27,7 @@ public class AgregatorRestService implements AgregatorService {
 	private AgregatorOrderRestService orderService;
 	
 	@Autowired
-	private AgregatorAdditionalSearchService additionalService;
+	private AgregatorAdditionalSearchRestService additionalService;
 	
 	@Autowired
 	private AgregatorScheduleService scheduleService;

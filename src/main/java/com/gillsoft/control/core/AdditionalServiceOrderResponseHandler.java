@@ -41,7 +41,7 @@ public class AdditionalServiceOrderResponseHandler implements ServiceOrderRespon
 		AdditionalServiceItem additionalServiceItem = serviceItem.getAdditionalService();
 		if (additionalServiceItem != null) {
 			if (serviceItem.getPrice() != null) {
-				serviceItem.setPrice(dataController.recalculate(additionalServiceItem, serviceItem.getPrice(), resuorceRequest.getCurrency()));
+				serviceItem.setPrice(dataController.recalculate(serviceItem.getPrice(), resuorceRequest.getCurrency()));
 			} else if (result.getAdditionalServices() != null) {
 				AdditionalServiceItem additionalService = result.getAdditionalServices().get(additionalServiceItem.getId());
 				if (additionalService != null) {
