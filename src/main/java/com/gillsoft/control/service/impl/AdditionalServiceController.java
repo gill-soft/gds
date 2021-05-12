@@ -1,6 +1,7 @@
 package com.gillsoft.control.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -208,12 +209,14 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 			}
 			additionalServices = additionalServices.stream().filter(com.gillsoft.ms.entity.AdditionalServiceItem::isUsedWithTrip).collect(Collectors.toList());
 			for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceEntity : additionalServices) {
-				if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
-					additionalServiceEntity.setValue(segment.getPrice().getTariff().getValue()
-							.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01))));
-					additionalServiceEntity.setCurrency(Currency.valueOf(segment.getPrice().getCurrency().name()));
-				}
 				AdditionalServiceItem additionalService = convert(additionalServiceEntity);
+				if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
+					additionalService.getPrice().setAmount(segment.getPrice().getTariff().getValue()
+								.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01)))
+										.setScale(2, RoundingMode.HALF_EVEN));
+					additionalService.getPrice().setCurrency(segment.getPrice().getCurrency());
+					additionalService.getPrice().getTariff().setValue(additionalService.getPrice().getAmount());
+				}
 				additionalService.setPrice(dataController.recalculate(additionalService.getPrice(), request.getCurrency()));
 				additionalService.setId(new IdModel(new AdditionalServiceEmptyResource().getId(), additionalService.getId()).asString());
 				segment.getAdditionalServices().add(additionalService);
@@ -308,6 +311,8 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 		for (AdditionalSearchRequest request : requests) {
 			if (request.getOrder() != null
 					&& request.getOrder().getSegments() != null) {
+				AdditionalSearchResponse requestResponse = new AdditionalSearchResponse();
+				requestResponse.setId(request.getId());
 				
 				signIn(request);
 				
@@ -320,18 +325,18 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 						// получаем список сервисов, к которым применяется допуслуга
 						List<ServiceItem> services = getSegmentServices(request.getOrder(), segmentEntry.getKey());
 						BigDecimal orderAmount = getServicesAmount(services);
-						Currency currency = getServicesCurrency(services);
+						com.gillsoft.model.Currency currency = getServicesCurrency(services);
 						
-						AdditionalSearchResponse requestResponse = new AdditionalSearchResponse();
-						requestResponse.setId(request.getId());
 						Map<String, AdditionalServiceItem> additionals = new HashMap<>();
 						for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceEntity : additionalServices) {
-							if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
-								additionalServiceEntity.setValue(orderAmount
-										.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01))));
-								additionalServiceEntity.setCurrency(currency);
-							}
 							AdditionalServiceItem additionalService = convert(additionalServiceEntity);
+							if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
+								additionalService.getPrice().setAmount(orderAmount
+										.multiply(additionalServiceEntity.getValue().multiply(new BigDecimal(0.01)))
+												.setScale(2, RoundingMode.HALF_EVEN));
+								additionalService.getPrice().setCurrency(currency);
+								additionalService.getPrice().getTariff().setValue(additionalService.getPrice().getAmount());
+							}
 							additionalService.setId(String.valueOf(additionalServiceEntity.getId()));
 							DataConverter.applyLang(additionalService, request.getLang());
 							AdditionalServiceItem present = additionals.get(additionalService.getId());
@@ -346,12 +351,12 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 							additionalServiceItem.setId(new AdditionalServiceIdModel(additionalServiceItem).asString());
 							requestResponse.getAdditionalServices().put(additionalServiceItem.getId(), additionalServiceItem);
 						}
-						if (response.getResult() == null) {
-							response.setResult(new ArrayList<>());
-						}
-						response.getResult().add(requestResponse);
 					}
 				}
+				if (response.getResult() == null) {
+					response.setResult(new ArrayList<>());
+				}
+				response.getResult().add(requestResponse);
 			}
 		}
 		String cacheId = StringUtil.generateUUID();
@@ -379,13 +384,35 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 	}
 	
 	private void joinServices(AdditionalServiceItem present, AdditionalServiceItem additionalService) {
-		present.getSegments().addAll(additionalService.getSegments());
-		present.getServices().addAll(additionalService.getServices());
-		present.getPrice().setAmount(present.getPrice().getAmount().add(additionalService.getPrice().getAmount()));
-		Tariff presentTariff = present.getPrice().getTariff();
-		Tariff tariff = additionalService.getPrice().getTariff();
-		presentTariff.setValue(presentTariff.getValue().add(tariff.getValue()));
-		presentTariff.setVat(presentTariff.getVat().add(tariff.getVat()));
+		if (present.getSegments() == null) {
+			present.setSegments(additionalService.getSegments());
+		} else {
+			present.getSegments().addAll(additionalService.getSegments());
+		}
+		if (present.getServices() == null) {
+			present.setServices(additionalService.getServices());
+		} else {
+			present.getServices().addAll(additionalService.getServices());
+		}
+		if (present.getPrice() == null) {
+			present.setPrice(additionalService.getPrice());
+		} else if (additionalService.getPrice() != null) {
+			present.getPrice().setAmount(present.getPrice().getAmount().add(additionalService.getPrice().getAmount()));
+			Tariff presentTariff = present.getPrice().getTariff();
+			Tariff tariff = additionalService.getPrice().getTariff();
+			if (presentTariff != null
+					&& tariff != null) {
+				presentTariff.setValue(presentTariff.getValue().add(tariff.getValue()));
+				if (presentTariff.getVat() != null
+						&& tariff.getVat() != null) {
+					presentTariff.setVat(presentTariff.getVat().add(tariff.getVat()));
+				} else {
+					presentTariff.setVat(null);
+				}
+			} else {
+				present.getPrice().setTariff(null);
+			}
+		}
 	}
 	
 	private List<ServiceItem> getSegmentServices(OrderResponse order, String segmentId) {
@@ -402,8 +429,8 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 		return total;
 	}
 	
-	private Currency getServicesCurrency(List<ServiceItem> services) {
-		return Currency.valueOf(services.get(0).getPrice().getCurrency().name());
+	private com.gillsoft.model.Currency getServicesCurrency(List<ServiceItem> services) {
+		return services.get(0).getPrice().getCurrency();
 	}
 
 	@Override
