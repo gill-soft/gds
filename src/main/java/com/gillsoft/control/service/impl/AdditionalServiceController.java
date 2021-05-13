@@ -317,6 +317,7 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 				signIn(request);
 				
 				// получаем допуслуги на сегменты заказа
+				Map<String, AdditionalServiceItem> additionals = new HashMap<>();
 				for (Entry<String, Segment> segmentEntry : request.getOrder().getSegments().entrySet()) {
 					List<com.gillsoft.ms.entity.AdditionalServiceItem> additionalServices = dataController.getAdditionalServices(segmentEntry.getValue());
 					if (additionalServices != null) {
@@ -327,7 +328,6 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 						BigDecimal orderAmount = getServicesAmount(services);
 						com.gillsoft.model.Currency currency = getServicesCurrency(services);
 						
-						Map<String, AdditionalServiceItem> additionals = new HashMap<>();
 						for (com.gillsoft.ms.entity.AdditionalServiceItem additionalServiceEntity : additionalServices) {
 							AdditionalServiceItem additionalService = convert(additionalServiceEntity);
 							if (additionalServiceEntity.getValueType() == ValueType.PERCENT) {
@@ -338,6 +338,9 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 								additionalService.getPrice().getTariff().setValue(additionalService.getPrice().getAmount());
 							}
 							additionalService.setId(String.valueOf(additionalServiceEntity.getId()));
+							additionalService.setServices(services.stream().map(ServiceItem::getId).collect(Collectors.toSet()));
+							additionalService.setSegments(new HashSet<>());
+							additionalService.getSegments().add(segmentEntry.getKey());
 							DataConverter.applyLang(additionalService, request.getLang());
 							AdditionalServiceItem present = additionals.get(additionalService.getId());
 							if (present != null) {
@@ -346,12 +349,14 @@ public class AdditionalServiceController implements AgregatorOrderService, Segme
 								additionals.put(additionalService.getId(), additionalService);
 							}
 						}
-						requestResponse.setAdditionalServices(new HashMap<>());
-						for (AdditionalServiceItem additionalServiceItem : additionals.values()) {
-							additionalServiceItem.setId(new AdditionalServiceIdModel(additionalServiceItem).asString());
-							requestResponse.getAdditionalServices().put(additionalServiceItem.getId(), additionalServiceItem);
-						}
 					}
+				}
+				if (requestResponse.getAdditionalServices() == null) {							
+					requestResponse.setAdditionalServices(new HashMap<>());
+				}
+				for (AdditionalServiceItem additionalServiceItem : additionals.values()) {
+					additionalServiceItem.setId(new AdditionalServiceIdModel(additionalServiceItem).asString());
+					requestResponse.getAdditionalServices().put(additionalServiceItem.getId(), additionalServiceItem);
 				}
 				if (response.getResult() == null) {
 					response.setResult(new ArrayList<>());
