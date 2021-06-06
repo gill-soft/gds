@@ -25,8 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import com.gillsoft.cache.CacheHandler;
@@ -36,6 +39,7 @@ import com.gillsoft.commission.Calculator;
 import com.gillsoft.control.core.Utils;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
+import com.gillsoft.control.service.model.NotificationView;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
@@ -52,6 +56,7 @@ import com.gillsoft.ms.entity.CodeEntity;
 import com.gillsoft.ms.entity.Commission;
 import com.gillsoft.ms.entity.ConnectionDiscount;
 import com.gillsoft.ms.entity.EntityType;
+import com.gillsoft.ms.entity.NotificationType;
 import com.gillsoft.ms.entity.OrderAccess;
 import com.gillsoft.ms.entity.Organisation;
 import com.gillsoft.ms.entity.Resource;
@@ -73,6 +78,8 @@ public class MsDataController {
 	private static final String ACTIVE_RESOURCES_CACHE_KEY = "active.resources.";
 	
 	private static final String ALL_COMMISSIONS_KEY = "all.commissions";
+	
+	private static final String ALL_NOTIFICATIONS_KEY = "all.notifications";
 	
 	private static final String ALL_TARIFF_MARKUPS_KEY = "all.tariff.markups";
 	
@@ -114,12 +121,22 @@ public class MsDataController {
 	@Autowired
 	private Calculator calculator;
 	
+	@Autowired
+	@Qualifier("UserDetailsService")
+	private UserDetailsService userService;
+	
 	public String getUserName() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication == null) {
 			return null;
 		}
 		return authentication.getName();
+	}
+	
+	public void signIn(String userName) {
+		UserDetails userDetails = userService.loadUserByUsername(userName);
+		Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(auth);
 	}
 	
 	public List<Resource> getUserResources() {
@@ -175,6 +192,14 @@ public class MsDataController {
 		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
 		return (Map<Long, List<CodeEntity>>) getFromCache(getAllCommissionsKey(),
 				new AllCommissionsUpdateTask(), () -> toMap(msService.getAllCommissions()), 120000l);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Map<Long, List<CodeEntity>> getAllNotifications() {
+		
+		// используют все, по-этому создаем конкурирующую мапу с такими же значениями
+		return (Map<Long, List<CodeEntity>>) getFromCache(getAllNotificationsKey(),
+				new AllNotificationsUpdateTask(), () -> toMap(msService.getAllNotifications()), 120000l);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -512,6 +537,29 @@ public class MsDataController {
 		return null;
 	}
 	
+	public List<NotificationView> getNotifications(NotificationType type) {
+		List<BaseEntity> entities = getParentEntities(null);
+		if (entities != null) {
+			return filterByType(type, getNotifications(entities));
+		}
+		return null;
+	}
+	
+	public List<NotificationView> getNotifications(NotificationType type, Segment segment) {
+		List<BaseEntity> entities = getParentEntities(segment);
+		if (entities != null) {
+			return filterByType(type, getNotifications(entities));
+		}
+		return null;
+	}
+	
+	private List<NotificationView> filterByType(NotificationType type, List<NotificationView> notifications) {
+		if (notifications == null) {
+			return null;
+		}
+		return notifications.stream().filter(n -> n.getNotificationType() == type).collect(Collectors.toList());
+	}
+	
 	public List<TariffMarkup> getTariffMarkups(Segment segment) {
 		List<BaseEntity> entities = getParentEntities(segment);
 		if (entities != null) {
@@ -705,6 +753,14 @@ public class MsDataController {
 			
 			// конвертируем из комиссий базы в комиссии апи gds-commons
 			return codeEntities.stream().map(c -> DataConverter.convert((Commission) c)).collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	public List<NotificationView> getNotifications(List<BaseEntity> entities) {
+		Collection<CodeEntity> codeEntities = getCodeEntities(entities, getAllNotifications());
+		if (codeEntities != null) {
+			return codeEntities.stream().map(n -> (NotificationView) n).collect(Collectors.toList());
 		}
 		return null;
 	}
@@ -991,6 +1047,10 @@ public class MsDataController {
 
 	public static String getAllCommissionsKey() {
 		return ALL_COMMISSIONS_KEY;
+	}
+	
+	public static String getAllNotificationsKey() {
+		return ALL_NOTIFICATIONS_KEY;
 	}
 	
 	public static String getAllTariffMarkupsKey() {

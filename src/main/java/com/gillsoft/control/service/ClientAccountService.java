@@ -1,11 +1,11 @@
 package com.gillsoft.control.service;
 
-import com.gillsoft.ms.entity.Client;
+import com.gillsoft.control.service.model.ClientView;
 
 public interface ClientAccountService {
 	
-	public Client register(Client client);
+	public ClientView register(ClientView client);
 	
-	public Client getByUser(String clientName);
+	public ClientView getByUser(String clientName);
 
 }

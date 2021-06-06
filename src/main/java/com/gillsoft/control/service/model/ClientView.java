@@ -1,24 +1,22 @@
 package com.gillsoft.control.service.model;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gillsoft.model.Customer;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.Client;
 
-public class ClientView extends Client implements SurnameView, NameView, ContactView {
+public class ClientView extends Client implements SurnameView, NameView, ContactView, AppUserTokenView, LanguageView {
 
-	private static final long serialVersionUID = 5327744450784387112L;
+	private static final long serialVersionUID = -586322446060696668L;
 	
-	private List<String> notifications;
+	private boolean sendValidationCode;
 
-	public List<String> getNotifications() {
-		return notifications;
+	public boolean isSendValidationCode() {
+		return sendValidationCode;
 	}
 
-	public void setNotifications(List<String> notifications) {
-		this.notifications = notifications;
+	public void setSendValidationCode(boolean sendValidationCode) {
+		this.sendValidationCode = sendValidationCode;
 	}
 
 	@Override

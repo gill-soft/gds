@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
+import com.gillsoft.control.service.model.NotificationView;
 import com.gillsoft.model.ResponseError;
 import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.Attribute;
@@ -78,6 +79,8 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	private static final String ALL_TARIFF_MARKUPS = "tariff_markup/all_with_sub_main";
 	
 	private static final String ALL_ADDITIONAL_SERVICES = "additional_service/all_with_sub_main";
+	
+	private static final String ALL_NOTIFICATIONS = "notification/all_with_parents";
 	
 	private static final String GET_USER_BY_NAME = "user/by_name_with_parents/{0}";
 	
@@ -263,6 +266,11 @@ public class MsDataRestService extends AbstractRestService implements MsDataServ
 	@Override
 	public List<AdditionalServiceItem> getAllAdditionalServices() {
 		return getResult(ALL_ADDITIONAL_SERVICES, null, new ParameterizedTypeReference<List<AdditionalServiceItem>>() { });
+	}
+	
+	@Override
+	public List<NotificationView> getAllNotifications() {
+		return getResult(ALL_NOTIFICATIONS, null, new ParameterizedTypeReference<List<NotificationView>>() { });
 	}
 	
 	@Override

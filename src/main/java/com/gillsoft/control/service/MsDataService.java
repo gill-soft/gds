@@ -2,6 +2,7 @@ package com.gillsoft.control.service;
 
 import java.util.List;
 
+import com.gillsoft.control.service.model.NotificationView;
 import com.gillsoft.ms.entity.AdditionalServiceItem;
 import com.gillsoft.ms.entity.Attribute;
 import com.gillsoft.ms.entity.Commission;
@@ -149,11 +150,19 @@ public interface MsDataService {
 	
 	/**
 	 * Возвращает список всех допуслуг, с родетельскими объектами, к которым
-	 * принадлежит надбавка.
+	 * принадлежит допуслуга.
 	 * 
 	 * @return Список допуслуг.
 	 */
 	public List<AdditionalServiceItem> getAllAdditionalServices();
+	
+	/**
+	 * Возвращает список всех уведомлений, с родетельскими объектами, к которым
+	 * принадлежит уведомление.
+	 * 
+	 * @return Список уведомлений.
+	 */
+	public List<NotificationView> getAllNotifications();
 	
 	/**
 	 * Возвращает список всех параметров доступа к ресурсам заказов с

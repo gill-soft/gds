@@ -98,6 +98,7 @@ public class OrderResponseConverter {
 	
 	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest resuorcesRequests, OrderResponse result,
 			OrderResponse resourcesResponses) {
+		clientController.updateCustomerPhones(originalRequest.getCustomers().values());
 		
 		OrderResponseHelper orderResponseHelper = ContextProvider.getBean(OrderResponseHelper.class);
 		result.setId(originalRequest.getId());
@@ -108,8 +109,6 @@ public class OrderResponseConverter {
 		Date created = new Date();
 		Order order = new Order();
 		order.setCreated(created);
-		
-		clientController.addClientsToOrder(order, originalRequest.getCustomers());
 		
 		// по умолчанию время на выкуп 20 минут
 		Date expire = new Date(System.currentTimeMillis() + 1200000l);
@@ -418,6 +417,7 @@ public class OrderResponseConverter {
 			}
 		}
 		updateResponse(order, responses, joinServices(order, requests, responses, confirmStatus, errorStatus));
+		clientController.registerClients(order);
 		return order;
 	}
 	
@@ -652,8 +652,10 @@ public class OrderResponseConverter {
 		for (ResourceOrder resourceOrder : newOrder.getOrders()) {
 			presentOrder.addResourceOrder(resourceOrder);
 		}
-		for (OrderClient client : newOrder.getClients()) {
-			presentOrder.addOrderClient(client);
+		if (newOrder.getClients() != null) {
+			for (OrderClient client : newOrder.getClients()) {
+				presentOrder.addOrderClient(client);
+			}
 		}
 		// обновляем словари
 		presentOrder.getResponse().join(newOrder.getResponse());

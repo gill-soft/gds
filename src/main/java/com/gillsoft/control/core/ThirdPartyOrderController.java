@@ -26,8 +26,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.SerializationUtils;
 
-import com.gillsoft.concurrent.PoolType;
-import com.gillsoft.concurrent.ThreadPoolStore;
 import com.gillsoft.control.api.NoDataFoundException;
 import com.gillsoft.control.config.Config;
 import com.gillsoft.control.core.mapping.TripSearchMapping;
@@ -38,14 +36,12 @@ import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.OrderParams;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
-import com.gillsoft.model.Customer;
 import com.gillsoft.model.Resource;
 import com.gillsoft.model.Segment;
 import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
-import com.gillsoft.ms.entity.Client;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -65,9 +61,6 @@ public class ThirdPartyOrderController {
 	
 	@Autowired
 	private ClientController clientController;
-	
-	@Autowired
-	private NotificationController notificationController;
 	
 	@Autowired
 	private TripSearchMapping searchMapping;
@@ -111,7 +104,7 @@ public class ThirdPartyOrderController {
 			} catch (Exception e1) {
 				LOGGER.error("findOrCreateOrder error");
 			}
-			registerClients(order);
+			clientController.registerClients(order);
 			return order;
 		}
 	}
@@ -134,22 +127,6 @@ public class ThirdPartyOrderController {
 			}
 		}
 		return -1;
-	}
-	
-	private void registerClients(Order order) {
-		Map<String, List<String>> notifications = notificationController.createOrderNotifications(order);
-		for (Entry<String, Customer> customer : order.getResponse().getCustomers().entrySet()) {
-			ThreadPoolStore.execute(PoolType.LOCALITY, () -> {
-				Client client = clientController.register(customer.getValue(), notifications.get(customer.getKey()));
-				if (client != null) {
-					try {
-						manager.addOrderClient(order, client);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-			});
-		}
 	}
 	
 	private void addToOrder(OrderResponse orderResponse, Order order) {

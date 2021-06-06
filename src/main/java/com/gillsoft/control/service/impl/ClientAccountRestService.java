@@ -36,7 +36,7 @@ public class ClientAccountRestService extends AbstractRestService implements Cli
 	private HttpHeaders msAuth;
 
 	@Override
-	public ClientView register(Client client) {
+	public ClientView register(ClientView client) {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getClientAccountUrl() + REGISTER).build().toUri();
 		RequestEntity<Client> entity = new RequestEntity<Client>(client, msAuth, HttpMethod.POST, uri);
 		try {
@@ -47,7 +47,7 @@ public class ClientAccountRestService extends AbstractRestService implements Cli
 	}
 	
 	@Override
-	public Client getByUser(String clientName) {
+	public ClientView getByUser(String clientName) {
 		URI uri = UriComponentsBuilder.fromUriString(Config.getClientAccountUrl() + BY_USER)
 				.queryParam("clientName", clientName).build().toUri();
 		RequestEntity<Client> entity = new RequestEntity<Client>(msAuth, HttpMethod.GET, uri);
