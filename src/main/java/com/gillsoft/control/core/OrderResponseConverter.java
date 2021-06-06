@@ -417,7 +417,6 @@ public class OrderResponseConverter {
 			}
 		}
 		updateResponse(order, responses, joinServices(order, requests, responses, confirmStatus, errorStatus));
-		clientController.registerClients(order);
 		return order;
 	}
 	

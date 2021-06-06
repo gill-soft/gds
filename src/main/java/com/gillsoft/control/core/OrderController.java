@@ -62,6 +62,9 @@ public class OrderController {
 	private OrderDocumentController documentController;
 	
 	@Autowired
+	private ClientController clientController;
+	
+	@Autowired
 	private OrderDAOManager manager;
 	
 	@Autowired
@@ -170,6 +173,7 @@ public class OrderController {
 			} catch (Exception e) {
 				LOGGER.error("Confirm order error in db", e);
 			}
+			clientController.registerClients(order);
 			return orderConverter.getResponse(order);
 		} finally {
 			
