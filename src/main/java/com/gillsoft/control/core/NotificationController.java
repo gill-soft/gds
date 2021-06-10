@@ -74,8 +74,9 @@ public class NotificationController {
 									ClientView client = clientController.getByCustomer(customer);
 									if (client != null) {
 										try {
+											Lang clientLang = getLang(client, lang);
 											sender.sendMessage(Collections.singletonList(createRecipient(notification.getChannels().iterator(), client)),
-													notification.getDescription(lang), service, lang);
+													notification.getDescription(clientLang), service, clientLang);
 										} catch (IOException e) {
 											LOGGER.error("Can not send message", e);
 										}
@@ -86,6 +87,14 @@ public class NotificationController {
 					}
 				}
 			}
+		}
+	}
+	
+	private Lang getLang(ClientView client, Lang lang) {
+		try {
+			return Lang.valueOf(client.getLanguage());
+		} catch (Exception e) {
+			return lang;
 		}
 	}
 	

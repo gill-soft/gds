@@ -55,7 +55,7 @@ public class ClientController {
 					}
 				}
 			}
-			notificationController.sendNotification(Lang.UA, copy);//TODO lang
+			notificationController.sendNotification(Lang.UA, copy);
 		});
 	}
 	
