@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gillsoft.ms.entity.BaseEntity;
 import com.gillsoft.ms.entity.Notification;
 
-public class NotificationView extends Notification implements DescriptionView {
+public class NotificationView extends Notification implements DescriptionView, ChannelDescriptionView {
 
 	private static final long serialVersionUID = -7903040328952418174L;
 

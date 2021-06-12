@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class NotificationController {
 									if (client != null) {
 										try {
 											Lang clientLang = getLang(client, lang);
-											sender.sendMessage(Collections.singletonList(createRecipient(notification.getChannels().iterator(), client)),
+											sender.sendMessage(Collections.singletonList(createRecipient(notification, lang, client)),
 													notification.getDescription(clientLang), service, clientLang);
 										} catch (IOException e) {
 											LOGGER.error("Can not send message", e);
@@ -98,35 +97,48 @@ public class NotificationController {
 		}
 	}
 	
-	private Recipient createRecipient(Iterator<String> chanel, ClientView client) {
-		Recipient recipient = new Recipient();
-		String chanelCode = chanel.next();
-		recipient.setCode(chanelCode);
-		setParams(recipient, chanelCode, client);
-		if (chanel.hasNext()) {
-			recipient.setRecipient(createRecipient(chanel, client));
+	private Recipient createRecipient(NotificationView notification, Lang lang, ClientView client) {
+		Recipient recipient = null;
+		for (String channel : notification.getChannels()) {
+			Recipient next = createRecipient(notification, lang, channel, client);
+			if (recipient != null) {
+				recipient.setRecipient(next);
+			}
+			recipient = next;
 		}
 		return recipient;
 	}
 	
-	private void setParams(Recipient recipient, String chanel, ClientView client) {
-		recipient.setParams(new HashMap<>());
-		switch (chanel) {
+	private Recipient createRecipient(NotificationView notification, Lang lang, String channel, ClientView client) {
+		Recipient recipient = new Recipient();
+		recipient.setCode(channel);
+		recipient.setParams(createParams(notification, lang, channel, client));
+		return recipient;
+	}
+	
+	private Map<String, Object> createParams(NotificationView notification, Lang lang, String channel, ClientView client) {
+		Map<String, Object> params = new HashMap<>();
+		switch (channel) {
 		case Const.CHANNEL_EMAIL:
-			recipient.getParams().put(Const.PARAM_EMAIL, client.getEmail());
+			params.put(Const.PARAM_EMAIL, client.getEmail());
 			break;
 		case Const.CHANNEL_FCM:
-			recipient.getParams().put(Const.PARAM_APP_TOKEN, client.getAppUserToken());
+			params.put(Const.PARAM_APP_TOKEN, client.getAppUserToken());
 			break;
 		case Const.CHANNEL_SMS:
 		case Const.CHANNEL_VIBER:
 		case Const.CHANNEL_VIBER_BOT:
 		case Const.CHANNEL_VIBER_DRIVER_BOT:
-			recipient.getParams().put(Const.PARAM_PHONE, StringUtil.getCorrectPhone(client.getPhone()));
+			params.put(Const.PARAM_PHONE, StringUtil.getCorrectPhone(client.getPhone()));
 			break;
 		default:
 			break;
 		}
+		String layout = notification.getDescription(channel, lang);
+		if (layout != null) {
+			params.put(Const.PARAM_BODY_LAYOUT, layout);
+		}
+		return params;
 	}
 	
 	private void updateOrder(OrderResponse order) {
