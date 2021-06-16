@@ -88,6 +88,7 @@ public class DataConverter {
 		converted.setId(String.valueOf(additionalService.getId()));
 		converted.setEnableReturn(additionalService.isEnableReturn());
 		converted.setEnableCount(additionalService.isEnableCount());
+		converted.setSelected(additionalService.isSelected());
 		converted.setCode(additionalService.getCode());
 		converted.setName(getValue("name", additionalService));
 		Map<String, Object> additionals = new HashMap<>();
