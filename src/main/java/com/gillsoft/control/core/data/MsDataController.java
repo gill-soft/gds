@@ -847,12 +847,9 @@ public class MsDataController {
 			for (BaseEntity entity : entities) {
 				List<CodeEntity> entityChilds = childs.get(entity.getId());
 				if (entityChilds != null) {
-					long currTime = System.currentTimeMillis();
 					
 					// отбираем только действующие сущности
-					mappedChilds.putAll(entityChilds.stream().filter(c -> 
-							(c.getStart() == null || c.getStart().getTime() <= currTime)
-							&& (c.getEnd() == null || c.getEnd().getTime() >= currTime))
+					mappedChilds.putAll(entityChilds.stream().filter(CodeEntity::isActive)
 							.collect(Collectors.toMap(BaseEntity::getId, c -> c, (c1, c2) -> c1)));
 				}
 			}
