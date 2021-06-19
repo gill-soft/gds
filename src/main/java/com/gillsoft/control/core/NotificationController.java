@@ -50,7 +50,7 @@ public class NotificationController {
 	@Autowired
 	private ClientController clientController;
 	
-	public void sendNotification(Lang lang, Order order) {
+	public void sendNotification(Lang lang, Order order, NotificationType notificationType) {
 		OrderResponse orderResponse = order.getResponse();
 		if (orderResponse != null) {
 			updateOrder(orderResponse);
@@ -65,7 +65,7 @@ public class NotificationController {
 							&& segment != null
 							&& !clientNotifications.contains(service.getCustomer().getId() + "_" + service.getSegment().getId())) {
 						clientNotifications.add(service.getCustomer().getId() + "_" + service.getSegment().getId());
-						List<NotificationView> notifications = dataController.getNotifications(NotificationType.BUY_TICKETS, segment);
+						List<NotificationView> notifications = dataController.getNotifications(notificationType, segment);
 						if (notifications != null
 								&& !notifications.isEmpty()) {
 							for (NotificationView notification : notifications) {

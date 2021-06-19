@@ -39,6 +39,7 @@ import com.gillsoft.commission.Calculator;
 import com.gillsoft.control.core.Utils;
 import com.gillsoft.control.service.MsDataService;
 import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
+import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.NotificationView;
 import com.gillsoft.control.service.model.Order;
 import com.gillsoft.control.service.model.ResourceOrder;
@@ -721,6 +722,7 @@ public class MsDataController {
 					entities.add(resource);
 				}
 				addMappedOrganisations(entities, segment);
+				addMappedTrips(entities, segment);
 				// TODO add segment object's ids which mapping in system
 			}
 			// TODO add ids of price tariff and commissions
@@ -743,6 +745,21 @@ public class MsDataController {
 					entities.add(org);
 				}
 			} catch (NumberFormatException e) {
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void addMappedTrips(List<BaseEntity> entities, Segment segment) {
+		if (segment.getAdditionals() != null) {
+			Set<MappedService> services = (Set<MappedService>) segment.getAdditionals().get(MappedService.MAPPED_SERVICES_KEY);
+			if (services != null) {
+				for (MappedService mappedService : services) {
+					Trip trip = getTrip(mappedService.getTripId());
+					if (trip != null) {
+						entities.add(trip);
+					}
+				}
 			}
 		}
 	}

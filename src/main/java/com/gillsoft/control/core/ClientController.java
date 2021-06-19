@@ -22,6 +22,7 @@ import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.model.Customer;
 import com.gillsoft.model.Lang;
 import com.gillsoft.ms.entity.Client;
+import com.gillsoft.ms.entity.NotificationType;
 import com.gillsoft.util.StringUtil;
 
 @Component
@@ -41,6 +42,10 @@ public class ClientController {
 	private MsDataController dataController;
 	
 	public void registerClients(Order order) {
+		registerClients(order, NotificationType.BUY_TICKETS);
+	}
+	
+	public void registerClients(Order order, NotificationType notificationType) {
 		final Order copy = copy(order);
 		String userName = dataController.getUserName();
 		ThreadPoolStore.execute(PoolType.ORDER, () -> {
@@ -55,7 +60,7 @@ public class ClientController {
 					}
 				}
 			}
-			notificationController.sendNotification(Lang.UA, copy);
+			notificationController.sendNotification(Lang.UA, copy, notificationType);
 		});
 	}
 	

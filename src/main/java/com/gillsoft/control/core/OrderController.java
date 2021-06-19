@@ -31,6 +31,7 @@ import com.gillsoft.model.PaymentMethod;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
+import com.gillsoft.ms.entity.NotificationType;
 import com.gillsoft.ms.entity.Resource;
 import com.gillsoft.ms.entity.User;
 
@@ -73,7 +74,10 @@ public class OrderController {
 	public OrderResponse create(OrderRequest request) {
 			
 		// заказ для сохранения
-		return saveOrder(createInResource(request));
+		Order order = createInResource(request);
+		OrderResponse response = saveOrder(order);
+		clientController.registerClients(order, NotificationType.CREATE_TICKETS);
+		return response;
 	}
 	
 	private Order createInResource(OrderRequest request) {
