@@ -752,7 +752,7 @@ public class MsDataController {
 	@SuppressWarnings("unchecked")
 	private void addMappedTrips(List<BaseEntity> entities, Segment segment) {
 		if (segment.getAdditionals() != null) {
-			Set<MappedService> services = (Set<MappedService>) segment.getAdditionals().get(MappedService.MAPPED_SERVICES_KEY);
+			Collection<MappedService> services = (Collection<MappedService>) segment.getAdditionals().get(MappedService.MAPPED_SERVICES_KEY);
 			if (services != null) {
 				for (MappedService mappedService : services) {
 					Trip trip = getTrip(mappedService.getTripId());
