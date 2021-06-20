@@ -1,5 +1,6 @@
 package com.gillsoft.control.core.data;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,6 +70,7 @@ import com.gillsoft.ms.entity.TariffMarkup;
 import com.gillsoft.ms.entity.TicketLayout;
 import com.gillsoft.ms.entity.Trip;
 import com.gillsoft.ms.entity.User;
+import com.gillsoft.util.StringUtil;
 
 @Component
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
@@ -752,12 +754,23 @@ public class MsDataController {
 	@SuppressWarnings("unchecked")
 	private void addMappedTrips(List<BaseEntity> entities, Segment segment) {
 		if (segment.getAdditionals() != null) {
-			Collection<MappedService> services = (Collection<MappedService>) segment.getAdditionals().get(MappedService.MAPPED_SERVICES_KEY);
+			Collection<Object> services = (Collection<Object>) segment.getAdditionals().get(MappedService.MAPPED_SERVICES_KEY);
 			if (services != null) {
-				for (MappedService mappedService : services) {
-					Trip trip = getTrip(mappedService.getTripId());
-					if (trip != null) {
-						entities.add(trip);
+				for (Object object : services) {
+					MappedService mappedService = null;
+					if (object instanceof MappedService) {
+						mappedService = (MappedService) object;
+					} else {
+						try {
+							mappedService = StringUtil.jsonStringToObject(MappedService.class, StringUtil.objectToJsonString(object));
+						} catch (IOException e) {
+						}
+					}
+					if (mappedService != null) {
+						Trip trip = getTrip(mappedService.getTripId());
+						if (trip != null) {
+							entities.add(trip);
+						}
 					}
 				}
 			}
