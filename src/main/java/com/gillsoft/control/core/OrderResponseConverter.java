@@ -440,7 +440,19 @@ public class OrderResponseConverter {
 	}
 	
 	public Order convertToReturn(Order order, List<OrderRequest> requests, List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
-
+		updateReturnPrice(returnResponses, calcResponses);
+		setIndividualReturnPrice(requests, returnResponses);
+		
+		// устанавливаем суммы возвратов
+		convertToReturnCalc(order, requests, returnResponses);
+		
+		// добавляем статусы возврата к заказу
+		joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR);
+		return order;
+	}
+	
+	private void updateReturnPrice(List<OrderResponse> returnResponses, List<OrderResponse> calcResponses) {
+		
 		// проверяем стоимости возвратов
 		for (OrderResponse orderResponse : returnResponses) {
 			if (orderResponse.getServices() != null) {
@@ -463,12 +475,32 @@ public class OrderResponseConverter {
 				}
 			}
 		}
-		// устанавливаем суммы возвратов
-		convertToReturnCalc(order, requests, returnResponses);
+	}
+	
+	public void setIndividualReturnPrice(List<OrderRequest> requests, List<OrderResponse> returnResponses) {
 		
-		// добавляем статусы возврата к заказу
-		joinServices(order, requests, returnResponses, ServiceStatus.RETURN, ServiceStatus.RETURN_ERROR);
-		return order;
+		// берем стоимости с индивидуальных условий возврата
+		for (OrderResponse orderResponse : returnResponses) {
+			Optional<OrderRequest> optional = requests.stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
+			if (optional != null) {
+				
+				// запрос, по которому получен результат
+				OrderRequest currRequest = optional.get();
+				if (currRequest.getServices() != null) {
+					for (ServiceItem requestService : currRequest.getServices()) {
+						if (requestService.getPrice() != null) {
+							
+							for (ServiceItem responseService : orderResponse.getServices()) {
+								if (Objects.equals(requestService.getId(), responseService.getId())) {
+									requestService.getPrice().setSource(responseService.getPrice());
+									responseService.setPrice(requestService.getPrice());
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	public ServiceItem getOrderService(Order order, ServiceItem service) {

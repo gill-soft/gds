@@ -120,6 +120,15 @@ public class OrderApiController {
 		return controller.confirmReturn(orderId, request);
 	}
 	
+	@ApiOperation(value = "Confirm return operation of selected services and return its by individual return condition",
+			response = OrderResponse.class, hidden = true)
+	@PostMapping("/{orderId}/return/confirm/individual")
+	public OrderResponse individualReturnServices(
+			@ApiParam(value = "The selected order id", required = true) @Validated @PathVariable long orderId,
+			@Validated @RequestBody OrderRequest request) {
+		return controller.confirmIndividualReturn(orderId, request);
+	}
+	
 	@ApiOperation(value = "Add new services to selected order and return result order",
 			response = OrderResponse.class)
 	@PostMapping("/{orderId}/service/add")

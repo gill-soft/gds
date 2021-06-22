@@ -28,6 +28,7 @@ import com.gillsoft.control.service.model.ServiceStatusEntity;
 import com.gillsoft.model.Lang;
 import com.gillsoft.model.Method;
 import com.gillsoft.model.PaymentMethod;
+import com.gillsoft.model.ServiceItem;
 import com.gillsoft.model.ServiceStatus;
 import com.gillsoft.model.request.OrderRequest;
 import com.gillsoft.model.response.OrderResponse;
@@ -389,6 +390,13 @@ public class OrderController {
 	}
 	
 	public OrderResponse confirmReturn(long orderId, OrderRequest request) {
+		for (ServiceItem serviceItem : request.getServices()) {
+			serviceItem.setPrice(null);
+		}
+		return confirmIndividualReturn(orderId, request);
+	}
+	
+	public OrderResponse confirmIndividualReturn(long orderId, OrderRequest request) {
 		try {
 			// блокировка заказа
 			String lockId = locker.lock(orderId);
