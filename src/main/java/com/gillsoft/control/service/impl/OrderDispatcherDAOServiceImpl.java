@@ -173,6 +173,7 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 		time.set(Calendar.MINUTE, 59);
 		time.set(Calendar.SECOND, 59);
 		time.set(Calendar.MILLISECOND, 999);
+		time.add(Calendar.HOUR_OF_DAY, 1);
 		return time.getTime();
 	}
 
