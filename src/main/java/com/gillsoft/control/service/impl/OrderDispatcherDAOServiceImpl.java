@@ -1,6 +1,5 @@
 package com.gillsoft.control.service.impl;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -110,14 +109,14 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDeparture) throws ManageException {
+	public List<Order> getFromMappedOrders(long carrierId, long tripId, long fromId, Date fromDepartureFrom, Date fromDepartureTo) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_FROM_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("fromId", fromId)
 					.setParameter("carrierId", carrierId)
-					.setParameter("fromDepartureFrom", beginOfDay(fromDeparture))
-					.setParameter("fromDepartureTo", endOfDay(fromDeparture))
+					.setParameter("fromDepartureFrom", fromDepartureFrom)
+					.setParameter("fromDepartureTo", fromDepartureTo)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get from mapped orders", e);
@@ -127,14 +126,14 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 	@SuppressWarnings("deprecation")
 	@Transactional(readOnly = true)
 	@Override
-	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toDeparture) throws ManageException {
+	public List<Order> getToMappedOrders(long carrierId, long tripId, long toId, Date toArrivalFrom, Date toArrivalTo) throws ManageException {
 		try {
 			return sessionFactory.getCurrentSession().createQuery(GET_TO_MAPPED_ORDERS, Order.class)
 					.setParameter("tripId", tripId)
 					.setParameter("toId", toId)
 					.setParameter("carrierId", carrierId)
-					.setParameter("toDepartureFrom", beginOfDay(toDeparture))
-					.setParameter("toDepartureTo", endOfDay(toDeparture))
+					.setParameter("toDepartureFrom", toArrivalFrom)
+					.setParameter("toDepartureTo", toArrivalTo)
 					.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
 		} catch (Exception e) {
 			throw new ManageException("Error when get to mapped orders", e);
@@ -154,27 +153,6 @@ public class OrderDispatcherDAOServiceImpl implements OrderDispatcherDAOService 
 		} catch (Exception e) {
 			throw new ManageException("Error when get trip mapped orders", e);
 		}
-	}
-	
-	private Date beginOfDay(Date date) {
-		Calendar time = Calendar.getInstance();
-		time.setTime(date);
-		time.set(Calendar.HOUR_OF_DAY, 0);
-		time.set(Calendar.MINUTE, 0);
-		time.set(Calendar.SECOND, 0);
-		time.set(Calendar.MILLISECOND, 0);
-		return time.getTime();
-	}
-	
-	private Date endOfDay(Date date) {
-		Calendar time = Calendar.getInstance();
-		time.setTime(date);
-		time.set(Calendar.HOUR_OF_DAY, 23);
-		time.set(Calendar.MINUTE, 59);
-		time.set(Calendar.SECOND, 59);
-		time.set(Calendar.MILLISECOND, 999);
-		time.add(Calendar.HOUR_OF_DAY, 1);
-		return time.getTime();
 	}
 
 }

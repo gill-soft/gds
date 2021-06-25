@@ -55,11 +55,11 @@ public class DispatcherApiController {
 		return dispatcherService.getFromMappedOrders(carrierId, tripId, fromId, Date.from(fromDeparture.toInstant(ZoneOffset.UTC)));
 	}
 	
-	@GetMapping("/{carrierId}/services/trip/{tripId}/to/{toId}/{toDeparture}")
+	@GetMapping("/{carrierId}/services/trip/{tripId}/to/{toId}/{toArrival}")
 	public List<Order> getToMappedOrders(@Validated @PathVariable long carrierId,
 			@Validated @PathVariable long tripId, @Validated @PathVariable long toId,
-			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime toDeparture) {
-		return dispatcherService.getToMappedOrders(carrierId, tripId, toId, Date.from(toDeparture.toInstant(ZoneOffset.UTC)));
+			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime toArrival) {
+		return dispatcherService.getToMappedOrders(carrierId, tripId, toId, Date.from(toArrival.toInstant(ZoneOffset.UTC)));
 	}
 	
 	@GetMapping("/{carrierId}/services/trip/{tripId}/{departure}")

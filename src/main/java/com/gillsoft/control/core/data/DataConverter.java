@@ -552,7 +552,7 @@ public class DataConverter {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static List<RoutePoint> getRoute(Trip trip) {
+	public static List<RoutePoint> getRoute(Trip trip) {
 		List<Route> routes = (List<Route>) getChildsByType(trip, EntityType.ROUTE);
 		if (!routes.isEmpty()) {
 			Route route = routes.get(0);
