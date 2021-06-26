@@ -3,6 +3,7 @@ package com.gillsoft.control.api;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -52,14 +53,16 @@ public class DispatcherApiController {
 	public List<Order> getFromMappedOrders(@Validated @PathVariable long carrierId,
 			@Validated @PathVariable long tripId, @Validated @PathVariable long fromId,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime fromDeparture) {
-		return dispatcherService.getFromMappedOrders(carrierId, tripId, fromId, Date.from(fromDeparture.toInstant(ZoneOffset.UTC)));
+		return dispatcherService.getFromMappedOrders(carrierId, tripId, fromId,
+				Date.from(fromDeparture.truncatedTo(ChronoUnit.MINUTES).toInstant(ZoneOffset.UTC)));
 	}
 	
 	@GetMapping("/{carrierId}/services/trip/{tripId}/to/{toId}/{toArrival}")
 	public List<Order> getToMappedOrders(@Validated @PathVariable long carrierId,
 			@Validated @PathVariable long tripId, @Validated @PathVariable long toId,
 			@Validated @PathVariable @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime toArrival) {
-		return dispatcherService.getToMappedOrders(carrierId, tripId, toId, Date.from(toArrival.toInstant(ZoneOffset.UTC)));
+		return dispatcherService.getToMappedOrders(carrierId, tripId, toId,
+				Date.from(toArrival.truncatedTo(ChronoUnit.MINUTES).toInstant(ZoneOffset.UTC)));
 	}
 	
 	@GetMapping("/{carrierId}/services/trip/{tripId}/{departure}")
