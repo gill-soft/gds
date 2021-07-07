@@ -43,6 +43,7 @@ import com.gillsoft.control.service.model.AdditionalServiceEmptyResource;
 import com.gillsoft.control.service.model.MappedService;
 import com.gillsoft.control.service.model.NotificationView;
 import com.gillsoft.control.service.model.Order;
+import com.gillsoft.control.service.model.OrderClient;
 import com.gillsoft.control.service.model.ResourceOrder;
 import com.gillsoft.control.service.model.ResourceService;
 import com.gillsoft.control.service.model.ServiceStatusEntity;
@@ -966,9 +967,6 @@ public class MsDataController {
 	
 	public boolean isOrderAvailable(Order order, ServiceStatus newStatus) {
 		
-		// список пользователей заказа
-		Set<Long> users = getOrderUsers(order);
-		
 		// текущий пользователь
 		User curr = getUser();
 		
@@ -977,6 +975,22 @@ public class MsDataController {
 		
 		// список доступов к заказу текущего пользователя
 		List<OrderAccess> access = getAvalaibleOrdersAccess(curr, userEntities);
+		
+		// список клиентов
+		Set<Long> clients = getOrderClients(order);
+		
+		// клиент - владелец заказа и ему доступно все
+		if (clients.contains(curr.getId())) {
+			
+			// если доступов нет, то все разрешено
+			if (access != null
+					&& !access.isEmpty()) {
+				setUnavalaibleServiceStatus(order, newStatus, access, curr.getId());
+			}
+			return isPresentAvalaibleStatus(order);
+		}
+		// список пользователей заказа
+		Set<Long> users = getOrderUsers(order);
 		for (Long id : users) {
 			
 			// для сервисов принадлежащих текущему пользователю
@@ -995,6 +1009,16 @@ public class MsDataController {
 			}
 		}
 		return isPresentAvalaibleStatus(order);
+	}
+	
+	private Set<Long> getOrderClients(Order order) {
+		Set<Long> clients = new HashSet<>();
+		for (OrderClient client : order.getClients()) {
+			if (client.getClientId() != 0) {
+				clients.add(client.getClientId());
+			}
+		}
+		return clients;
 	}
 	
 	private Set<Long> getOrderUsers(Order order) {

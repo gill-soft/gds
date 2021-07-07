@@ -96,7 +96,7 @@ public class OrderResponseConverter {
 		return -1;
 	}
 	
-	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest resuorcesRequests, OrderResponse result,
+	public Order convertToNewOrder(OrderRequest originalRequest, OrderRequest resourcesRequests, OrderResponse result,
 			OrderResponse resourcesResponses) {
 		clientController.updateCustomerPhones(originalRequest.getCustomers().values());
 		
@@ -117,11 +117,11 @@ public class OrderResponseConverter {
 		User user = dataController.getUser();
 		
 		// подготавливаем данные перед обработкой ответов
-		orderResponseHelper.beforeOrder(originalRequest, result, resuorcesRequests, resourcesResponses);
+		orderResponseHelper.beforeOrder(originalRequest, result, resourcesRequests, resourcesResponses);
 		
 		// преобразовываем ответ
 		for (OrderResponse orderResponse : resourcesResponses.getResources()) {
-			Optional<OrderRequest> optional = resuorcesRequests.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
+			Optional<OrderRequest> optional = resourcesRequests.getResources().stream().filter(r -> r.getId().equals(orderResponse.getId())).findFirst();
 			if (optional.isPresent()) {
 				orderResponse.fillMaps();
 				
@@ -183,7 +183,7 @@ public class OrderResponseConverter {
 			}
 		}
 		// обрабатываем данные после обработкой сервисов
-		orderResponseHelper.afterOrder(originalRequest, result, resuorcesRequests, resourcesResponses, order);
+		orderResponseHelper.afterOrder(originalRequest, result, resourcesRequests, resourcesResponses, order);
 		result.fillMaps();
 		return order;
 	}

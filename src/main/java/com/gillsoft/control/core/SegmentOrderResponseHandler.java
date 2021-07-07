@@ -52,7 +52,7 @@ public class SegmentOrderResponseHandler implements ServiceOrderResponseHandler 
 	private Map<Long, com.gillsoft.ms.entity.Trip> mappedTrips;
 
 	@Override
-	public void beforeOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resuorcesRequests,
+	public void beforeOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resourcesRequests,
 			OrderResponse resourcesResponses) {
 		segmentIds = getSegmentIds(originalRequest);
 		mappedTrips = new HashMap<>();
@@ -68,20 +68,20 @@ public class SegmentOrderResponseHandler implements ServiceOrderResponseHandler 
 	}
 
 	@Override
-	public void beforeServices(OrderResponse result, OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+	public void beforeServices(OrderResponse result, OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		resourceResponse = (OrderResponse) SerializationUtils.deserialize(SerializationUtils.serialize(resourceResponse));
 		if (resourceResponse.getError() != null) {
 			
 			// маппим рейсы заказа из запроса так как в ответе ошибка и их нет
-			resourceResponse.setSegments(resuorceRequest.getServices().stream().map(
+			resourceResponse.setSegments(resourceRequest.getServices().stream().map(
 					s -> s.getSegment() != null ? s.getSegment().getId() : null).filter(v -> v != null).collect(
 							Collectors.toMap(v -> v, v -> new Segment(), (v1, v2) -> v1)));
 		}
-		searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), resuorceRequest, resourceResponse, result);
+		searchController.mapScheduleSegment(new ArrayList<>(segmentIds.keySet()), resourceRequest, resourceResponse, result);
 	}
 	
 	@Override
-	public void beforeService(OrderResponse result, ServiceItem serviceItem, OrderRequest resuorceRequest,
+	public void beforeService(OrderResponse result, ServiceItem serviceItem, OrderRequest resourceRequest,
 			OrderResponse resourceResponse) {
 		if (serviceItem.getSegment() != null
 				&& result.getSegments() != null) {
@@ -91,7 +91,7 @@ public class SegmentOrderResponseHandler implements ServiceOrderResponseHandler 
 			// пересчитываем стоимость
 			if (serviceItem.getPrice() != null) {
 				serviceItem.setPrice(dataController.recalculate(
-						segment != null ? segment : null, serviceItem.getPrice(), resuorceRequest.getCurrency()));
+						segment != null ? segment : null, serviceItem.getPrice(), resourceRequest.getCurrency()));
 			} else if (segment != null) {
 				serviceItem.setPrice(segment.getPrice());
 			}
@@ -104,7 +104,7 @@ public class SegmentOrderResponseHandler implements ServiceOrderResponseHandler 
 
 	@Override
 	public void afterService(OrderResponse result, ServiceItem serviceItem, ResourceService resourceService,
-			OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+			OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		addMappedTrips(serviceItem, resourceService);
 	}
 	
@@ -151,12 +151,12 @@ public class SegmentOrderResponseHandler implements ServiceOrderResponseHandler 
 	}
 	
 	@Override
-	public void afterServices(OrderResponse result, OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+	public void afterServices(OrderResponse result, OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		
 	}
 
 	@Override
-	public void afterOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resuorcesRequests,
+	public void afterOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resourcesRequests,
 			OrderResponse resourcesResponses, Order order) {
 		updateResultSegmentIds(result);
 		applyConnectionDiscount(result, order);

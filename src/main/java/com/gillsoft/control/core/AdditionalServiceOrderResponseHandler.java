@@ -25,23 +25,23 @@ public class AdditionalServiceOrderResponseHandler implements ServiceOrderRespon
 	private MsDataController dataController;
 
 	@Override
-	public void beforeOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resuorcesRequests,
+	public void beforeOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resourcesRequests,
 			OrderResponse resourcesResponses) {
 		
 	}
 
 	@Override
-	public void beforeServices(OrderResponse result, OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+	public void beforeServices(OrderResponse result, OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		
 	}
 
 	@Override
-	public void beforeService(OrderResponse result, ServiceItem serviceItem, OrderRequest resuorceRequest,
+	public void beforeService(OrderResponse result, ServiceItem serviceItem, OrderRequest resourceRequest,
 			OrderResponse resourceResponse) {
 		AdditionalServiceItem additionalServiceItem = serviceItem.getAdditionalService();
 		if (additionalServiceItem != null) {
 			if (serviceItem.getPrice() != null) {
-				serviceItem.setPrice(dataController.recalculate(serviceItem.getPrice(), resuorceRequest.getCurrency()));
+				serviceItem.setPrice(dataController.recalculate(serviceItem.getPrice(), resourceRequest.getCurrency()));
 			} else if (result.getAdditionalServices() != null) {
 				AdditionalServiceItem additionalService = result.getAdditionalServices().get(additionalServiceItem.getId());
 				if (additionalService != null) {
@@ -66,17 +66,17 @@ public class AdditionalServiceOrderResponseHandler implements ServiceOrderRespon
 
 	@Override
 	public void afterService(OrderResponse result, ServiceItem serviceItem, ResourceService resourceService,
-			OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+			OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		
 	}
 
 	@Override
-	public void afterServices(OrderResponse result, OrderRequest resuorceRequest, OrderResponse resourceResponse) {
+	public void afterServices(OrderResponse result, OrderRequest resourceRequest, OrderResponse resourceResponse) {
 		
 	}
 
 	@Override
-	public void afterOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resuorcesRequests,
+	public void afterOrder(OrderRequest originalRequest, OrderResponse result, OrderRequest resourcesRequests,
 			OrderResponse resourcesResponses, Order order) {
 		
 	}
