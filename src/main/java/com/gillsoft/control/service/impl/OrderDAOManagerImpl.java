@@ -44,6 +44,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
+			+ "left join fetch o.clients as c "
 			+ "where (o.id = :orderId or :orderId is null) "
 			+ "and (rs.id = :serviceId or :serviceId is null) "
 			+ "and (ro.resourceNativeOrderId = :nativeOrderId or :nativeOrderId is null)";
@@ -53,6 +54,7 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 			+ "join fetch ro.services as rs "
 			+ "join fetch rs.statuses as ss "
 			+ "left join fetch ss.price as p "
+			+ "left join fetch o.clients as c "
 			+ "left join fetch o.documents as d "
 			+ "where (o.id = :orderId or :orderId is null) "
 			+ "and (rs.id = :serviceId or :serviceId is null) "
