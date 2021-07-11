@@ -1,7 +1,11 @@
 package com.gillsoft.control.service.impl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -75,12 +79,11 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 				+ "left join rse.mappedServices as mce "
 				+ "where oe = o "
 				+ "and (sse.reported is :reported or :reported is null) "
-				+ "and ((sse.userId = :userId or :userId is null) "
-						+ "or (:clientId is null or ce.clientId = :clientId) "
-						+ "or (:clientPhone is null or ce.phone = :clientPhone)) "
+				+ "and ((:userId is null and :clientId is null and :clientPhone is null) "
+						+ "{0}) "
 				+ "and (sse.created >= :from or :from is null) "
 				+ "and (sse.created <= :to or :to is null) "
-				+ "and (rse.departure >= :departureFrom or :departureFrom is null) "
+				+ "and (rse.departure >= :departureFrom or :departureFrom is null or mce.toDeparture >= :departureFrom) "
 				+ "and (rse.departure <= :departureTo or :departureTo is null) "
 				+ "and ((rse.departure >= :mappedDeparture or :mappedDeparture is null) "
 					+ "and (rse.mappedTrip is :mappedTrip or :mappedTrip is null)) "
@@ -90,6 +93,10 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 					+ "and ssee.created = (select max(sseem.created) from ServiceStatusEntity as sseem "
 						+ "where sseem.parent = rse) "
 					+ "and ssee.status in (:statuses))))";
+	
+	private final static String USER_ID_CONDITION = "or sse.userId = :userId";
+	private final static String CLIENT_ID_CONDITION = "or ce.clientId = :clientId";
+	private final static String CLIENT_PHONE_CONDITION = "or ce.phone = :clientPhone";
 	
 	private final static String REPORT_STATUSES = "update ServiceStatusEntity ss "
 			+ "set ss.reported = true "
@@ -200,28 +207,53 @@ public class OrderDAOManagerImpl implements OrderDAOManager {
 	@Override
 	public List<Order> getOrders(OrderParams params) throws ManageException {
 		try {
-			Query<Order> query = sessionFactory.getCurrentSession().createQuery(GET_ORDERS, Order.class)
-					.setParameter("reported", params.getReported())
-					.setParameter("userId", params.getUserId())
-					.setParameter("clientId", params.getClientId())
-					.setParameter("clientPhone", params.getClientPhone())
-					.setParameter("from", params.getFrom())
-					.setParameter("to", params.getTo())
-					.setParameter("departureFrom", params.getDepartureFrom())
-					.setParameter("departureTo", params.getDepartureTo())
-					.setParameter("mappedDeparture", params.getMappedDeparture())
-					.setParameter("mappedTrip", params.getMappedTrip())
-					.setParameter("statusesStr", params.getStatuses() == null || params.getStatuses().isEmpty() ? null :
-						params.getStatuses().stream().map(ServiceStatus::name).collect(Collectors.joining(",")))
-					.setParameterList("statuses", params.getStatuses() == null || params.getStatuses().isEmpty() ? 
-						Collections.singleton(ServiceStatus.UNAVAILABLE) : params.getStatuses());
-			if (params.getCount() != null) {
-				query.setMaxResults(params.getCount());
+			Map<Long, Order> result = new HashMap<>();
+			boolean queryCalled = false;
+			if (params.getUserId() != null) {
+				queryCalled = true;
+				result.putAll(createOrdersQuery(MessageFormat.format(GET_ORDERS, USER_ID_CONDITION), params)
+						.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList().stream()
+						.collect(Collectors.toMap(Order::getId, o -> o)));
 			}
-			return query.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList();
+			if (params.getClientId() != null) {
+				queryCalled = true;
+				result.putAll(createOrdersQuery(MessageFormat.format(GET_ORDERS, CLIENT_ID_CONDITION), params)
+						.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList().stream()
+						.collect(Collectors.toMap(Order::getId, o -> o)));
+			}
+			if (params.getClientPhone() != null) {
+				queryCalled = true;
+				result.putAll(createOrdersQuery(MessageFormat.format(GET_ORDERS, CLIENT_PHONE_CONDITION), params)
+						.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList().stream()
+						.collect(Collectors.toMap(Order::getId, o -> o)));
+			}
+			if (!queryCalled) {
+				result.putAll(createOrdersQuery(MessageFormat.format(GET_ORDERS, ""), params)
+						.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).getResultList().stream()
+						.collect(Collectors.toMap(Order::getId, o -> o)));
+			}
+			return new ArrayList<>(result.values());
 		} catch (Exception e) {
 			throw new ManageException("Error when get orders", e);
 		}
+	}
+	
+	private Query<Order> createOrdersQuery(String query, OrderParams params) {
+		return sessionFactory.getCurrentSession().createQuery(query, Order.class)
+				.setParameter("reported", params.getReported())
+				.setParameter("userId", params.getUserId())
+				.setParameter("clientId", params.getClientId())
+				.setParameter("clientPhone", params.getClientPhone())
+				.setParameter("from", params.getFrom())
+				.setParameter("to", params.getTo())
+				.setParameter("departureFrom", params.getDepartureFrom())
+				.setParameter("departureTo", params.getDepartureTo())
+				.setParameter("mappedDeparture", params.getMappedDeparture())
+				.setParameter("mappedTrip", params.getMappedTrip())
+				.setParameter("statusesStr", params.getStatuses() == null || params.getStatuses().isEmpty() ? null :
+					params.getStatuses().stream().map(ServiceStatus::name).collect(Collectors.joining(",")))
+				.setParameterList("statuses", params.getStatuses() == null || params.getStatuses().isEmpty() ? 
+					Collections.singleton(ServiceStatus.UNAVAILABLE) : params.getStatuses());
 	}
 
 	@Transactional
